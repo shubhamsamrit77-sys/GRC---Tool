@@ -2,354 +2,185 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GRC Shield — Compliance Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
-:root{
-  --ink:#0f1117;--ink2:#3d4152;--ink3:#7c8298;--ink4:#b0b6c8;
-  --canvas:#f5f6fa;--surface:#ffffff;--surface2:#f0f2f8;
-  --border:#e2e5f0;--border2:#cdd1e0;
-  --indigo:#4f52d9;--indigo-light:#eeeffe;--indigo-dark:#3538b0;
-  --teal:#0d9e7e;--teal-light:#e0f7f2;
-  --amber:#e07d1a;--amber-light:#fef3e2;
-  --rose:#d93f3f;--rose-light:#fdeaea;
-  --violet:#7c3aed;--violet-light:#f3effe;
-  --radius:14px;--radius-sm:8px;--radius-xs:6px;
-  --shadow:0 1px 3px rgba(15,17,23,.06),0 4px 16px rgba(15,17,23,.08);
-  --shadow-lg:0 8px 32px rgba(15,17,23,.12),0 2px 8px rgba(15,17,23,.06);
-}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',system-ui,sans-serif;background:var(--canvas);color:var(--ink);font-size:14px;min-height:100vh;min-height:100dvh;-webkit-font-smoothing:antialiased;scroll-behavior:smooth}
-
-/* ── LOGIN ── */
+body{font-family:'Segoe UI',sans-serif;background:#f5f6fa;color:#0f1117;font-size:14px;min-height:100vh}
 .login-wrap{min-height:100vh;display:grid;grid-template-columns:1fr 1fr}
-.login-left{background:var(--indigo);display:flex;flex-direction:column;justify-content:space-between;padding:48px;position:relative;overflow:hidden}
-.login-left::before{content:'';position:absolute;inset:0;background:linear-gradient(135deg,#3538b0 0%,#4f52d9 50%,#6366f1 100%)}
+.login-left{background:#4f52d9;display:flex;flex-direction:column;justify-content:space-between;padding:48px;overflow:hidden;position:relative}
 .login-left::after{content:'';position:absolute;top:-80px;right:-80px;width:320px;height:320px;border-radius:50%;background:rgba(255,255,255,.06)}
-.ll-content{position:relative;z-index:1}
-.ll-shield{width:56px;height:56px;background:rgba(255,255,255,.15);border-radius:16px;display:flex;align-items:center;justify-content:center;margin-bottom:32px;backdrop-filter:blur(10px)}
-.ll-shield svg{width:28px;height:28px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ll-title{font-family:'DM Serif Display',serif;font-size:36px;color:#fff;line-height:1.2;margin-bottom:16px}
+.ll-title{font-size:36px;font-weight:700;color:#fff;line-height:1.2;margin-bottom:16px;margin-top:32px}
 .ll-desc{font-size:15px;color:rgba(255,255,255,.7);line-height:1.7;max-width:340px}
-.ll-features{position:relative;z-index:1}
-.ll-feat{display:flex;align-items:center;gap:12px;margin-bottom:14px}
-.ll-feat-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);flex-shrink:0}
+.ll-feat{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.ll-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.4);flex-shrink:0}
 .ll-feat span{font-size:13px;color:rgba(255,255,255,.75)}
-.login-right{display:flex;align-items:center;justify-content:center;padding:48px;background:var(--surface)}
+.login-right{display:flex;align-items:center;justify-content:center;padding:48px;background:#fff}
 .login-box{width:100%;max-width:380px}
-.login-welcome{font-size:24px;font-weight:600;margin-bottom:6px;color:var(--ink)}
-.login-sub{font-size:14px;color:var(--ink3);margin-bottom:32px}
-.login-err{background:var(--rose-light);color:var(--rose);border-radius:var(--radius-sm);padding:10px 14px;font-size:13px;margin-bottom:16px;display:none;border:1px solid #f5c0c0}
-.lf{margin-bottom:18px}
-.lf label{font-size:12px;font-weight:500;color:var(--ink2);display:block;margin-bottom:6px;letter-spacing:.3px}
-.lf input{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:16px;font-family:'DM Sans',sans-serif;background:var(--canvas);color:var(--ink);transition:all .2s;min-height:44px}
-.lf input:focus{outline:none;border-color:var(--indigo);background:#fff;box-shadow:0 0 0 3px rgba(79,82,217,.12)}
-.login-btn{width:100%;padding:13px;background:var(--indigo);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;letter-spacing:.2px}
-.login-btn:hover{background:var(--indigo-dark);transform:translateY(-1px);box-shadow:0 4px 16px rgba(79,82,217,.3)}
-.login-btn:active{transform:translateY(0)}
-.sidebar{width:220px;background:var(--ink);flex-shrink:0;display:flex;flex-direction:column;padding:0;position:sticky;top:0;height:100vh;overflow-y:auto}
-.sb-header{padding:24px 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.login-welcome{font-size:24px;font-weight:700;margin-bottom:6px}
+.login-sub{font-size:14px;color:#7c8298;margin-bottom:28px}
+.login-err{background:#fdeaea;color:#d93f3f;border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none;border:1px solid #f5c0c0}
+.lf{margin-bottom:16px}
+.lf label{font-size:12px;font-weight:600;color:#3d4152;display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.3px}
+.lf input{width:100%;padding:12px 14px;border:1.5px solid #e2e5f0;border-radius:8px;font-size:14px;background:#f5f6fa;color:#0f1117;transition:border .2s;font-family:'Segoe UI',sans-serif}
+.lf input:focus{outline:none;border-color:#4f52d9;background:#fff}
+.login-btn{width:100%;padding:13px;background:#4f52d9;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Segoe UI',sans-serif}
+.login-btn:hover{background:#3538b0}
+.app-wrap{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#0f1117;flex-shrink:0;display:flex;flex-direction:column;position:sticky;top:0;height:100vh;overflow-y:auto}
+.sb-header{padding:20px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
 .sb-logo{display:flex;align-items:center;gap:10px}
-.sb-icon{width:34px;height:34px;background:var(--indigo);border-radius:10px;display:flex;align-items:center;justify-content:center}
-.sb-icon svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.sb-name{font-size:15px;font-weight:600;color:#fff;letter-spacing:-.3px}
-.sb-tagline{font-size:11px;color:rgba(255,255,255,.4);margin-top:1px}
-.sb-nav{padding:16px 12px;flex:1}
-.sb-section{font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.8px;padding:0 8px;margin-bottom:6px;margin-top:16px}
-.sb-section:first-child{margin-top:0}
-.sb-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-xs);border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);text-align:left;transition:all .15s;font-family:'DM Sans',sans-serif}
+.sb-icon{width:34px;height:34px;background:#4f52d9;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sb-name{font-size:15px;font-weight:700;color:#fff}
+.sb-tag{font-size:11px;color:rgba(255,255,255,.4)}
+.sb-nav{padding:12px;flex:1}
+.sb-sec{font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:.8px;padding:0 8px;margin:14px 0 5px}
+.sb-btn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:6px;border:none;background:transparent;cursor:pointer;font-size:13px;font-weight:500;color:rgba(255,255,255,.55);text-align:left;transition:all .15s;font-family:'Segoe UI',sans-serif;position:relative}
 .sb-btn:hover{background:rgba(255,255,255,.07);color:rgba(255,255,255,.85)}
-.sb-btn.active{background:var(--indigo);color:#fff}
-.sb-btn svg{width:16px;height:16px;flex-shrink:0;opacity:.8}
-.sb-btn.active svg{opacity:1}
-.sb-badge{margin-left:auto;background:var(--rose);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
-.sb-footer{padding:16px 12px;border-top:1px solid rgba(255,255,255,.08)}
-.user-card{display:flex;align-items:center;gap:10px}
-.user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;flex-shrink:0}
-.user-info{flex:1;min-width:0}
-.user-nm{font-size:13px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-btn.active{background:#4f52d9;color:#fff}
+.ov-badge{position:absolute;right:8px;background:#d93f3f;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sb-footer{padding:12px;border-top:1px solid rgba(255,255,255,.08)}
+.user-card{display:flex;align-items:center;gap:8px}
+.user-av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.user-nm{font-size:13px;font-weight:500;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
 .user-rl{font-size:11px;color:rgba(255,255,255,.4)}
-.logout-ico{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);transition:all .15s}
-.logout-ico:hover{background:rgba(255,255,255,.15);color:#fff}
-.logout-ico svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
-
-.main-content{flex:1;overflow:auto;display:flex;flex-direction:column;min-width:0}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:16px 28px;display:flex;align-items:center;justify-content:space-between}
-.page-title{font-size:18px;font-weight:600;color:var(--ink)}
-.page-sub{font-size:13px;color:var(--ink3);margin-top:1px}
-.topbar-right{display:flex;align-items:center;gap:10px}
-.conn-dot{width:8px;height:8px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 3px var(--teal-light)}
-.conn-label{font-size:12px;color:var(--teal);font-weight:500}
-
-.content{padding:24px 28px;flex:1}
+.logout-btn{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;cursor:pointer;border:none;background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);flex-shrink:0}
+.logout-btn:hover{background:rgba(255,255,255,.15);color:#fff}
+.main-content{flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{background:#fff;border-bottom:1px solid #e2e5f0;padding:14px 24px;display:flex;align-items:center;justify-content:space-between}
+.page-title{font-size:18px;font-weight:700}
+.page-sub{font-size:12px;color:#7c8298;margin-top:1px}
+.conn-wrap{display:flex;align-items:center;gap:8px}
+.conn-dot{width:8px;height:8px;border-radius:50%}
+.conn-lbl{font-size:12px;font-weight:500}
+.ham-btn{display:none;background:transparent;border:none;cursor:pointer;padding:4px;color:#3d4152}
+.content{padding:20px 24px;flex:1}
 .sec{display:none}.sec.active{display:block}
-
-/* ── METRICS ── */
-.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.metric{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
-.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:var(--radius) var(--radius) 0 0}
-.metric.m-total::before{background:var(--indigo)}
-.metric.m-done::before{background:var(--teal)}
-.metric.m-over::before{background:var(--rose)}
-.metric.m-prog::before{background:var(--amber)}
-.metric-label{font-size:11px;font-weight:600;color:var(--ink3);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
-.metric-value{font-size:32px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:4px}
-.metric-sub{font-size:12px;color:var(--ink4)}
-
-/* ── CARDS ── */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:16px;box-shadow:var(--shadow)}
-.card-title{font-size:14px;font-weight:600;color:var(--ink);margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
-.card-title svg{width:16px;height:16px;flex-shrink:0;color:var(--indigo)}
-.two-col{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
-
-/* ── FORM ── */
-.form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-bottom:12px}
-.form-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px}
-.form-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:12px}
-.field{display:flex;flex-direction:column;gap:5px}
-.field label{font-size:12px;font-weight:500;color:var(--ink2);letter-spacing:.2px}
-.field input,.field select{font-size:13px;border:1.5px solid var(--border);border-radius:var(--radius-xs);padding:9px 12px;background:var(--canvas);color:var(--ink);width:100%;font-family:'DM Sans',sans-serif;transition:all .2s;min-height:44px}
-.field input:focus,.field select:focus{outline:none;border-color:var(--indigo);background:#fff;box-shadow:0 0 0 3px rgba(79,82,217,.1)}
-.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
-.btn{padding:9px 18px;border-radius:var(--radius-xs);border:1.5px solid var(--border2);background:var(--surface);cursor:pointer;font-size:13px;font-weight:500;color:var(--ink2);font-family:'DM Sans',sans-serif;transition:all .15s}
-.btn:hover{background:var(--canvas);border-color:var(--border2)}
-.btn-primary{background:var(--indigo);color:#fff;border-color:var(--indigo)}
-.btn-primary:hover{background:var(--indigo-dark);border-color:var(--indigo-dark);box-shadow:0 4px 12px rgba(79,82,217,.25)}
-.btn-sm{padding:5px 12px;font-size:12px}
-.btn-danger{color:var(--rose);border-color:#f5c0c0}
-.btn-danger:hover{background:var(--rose-light)}
-
-/* ── TABLE ── */
-.table-wrap{overflow-x:auto;border-radius:var(--radius-sm);border:1px solid var(--border);-webkit-overflow-scrolling:touch}
+.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+.metric{background:#fff;border:1px solid #e2e5f0;border-radius:12px;padding:18px;position:relative;overflow:hidden}
+.metric::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:12px 12px 0 0}
+.m-total::before{background:#4f52d9}.m-done::before{background:#0d9e7e}.m-over::before{background:#d93f3f}.m-prog::before{background:#e07d1a}
+.metric-label{font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.metric-value{font-size:30px;font-weight:700;line-height:1}
+.metric-sub{font-size:12px;color:#b0b6c8;margin-top:4px}
+.card{background:#fff;border:1px solid #e2e5f0;border-radius:12px;padding:18px 20px;margin-bottom:14px}
+.card-title{font-size:14px;font-weight:700;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e2e5f0}
+.two-col{display:grid;grid-template-columns:repeat(2,1fr);gap:14px}
+.form-row{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:10px}
+.form-row-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:10px}
+.form-row-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:600;color:#3d4152;text-transform:uppercase;letter-spacing:.3px}
+.field input,.field select{font-size:13px;border:1.5px solid #e2e5f0;border-radius:6px;padding:9px 11px;background:#f5f6fa;color:#0f1117;width:100%;font-family:'Segoe UI',sans-serif;min-height:40px}
+.field input:focus,.field select:focus{outline:none;border-color:#4f52d9;background:#fff}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:12px}
+.btn{padding:9px 16px;border-radius:6px;border:1.5px solid #cdd1e0;background:#fff;cursor:pointer;font-size:13px;font-weight:500;color:#3d4152;font-family:'Segoe UI',sans-serif}
+.btn:hover{background:#f5f6fa}
+.btn-primary{background:#4f52d9;color:#fff;border-color:#4f52d9}
+.btn-primary:hover{background:#3538b0}
+.btn-sm{padding:5px 10px;font-size:12px}
+.btn-danger{color:#d93f3f;border-color:#f5c0c0}
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #e2e5f0;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
-th{font-size:11px;font-weight:600;color:var(--ink3);padding:11px 12px;text-align:left;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;background:var(--canvas)}
-td{padding:11px 12px;border-bottom:1px solid var(--border);color:var(--ink);vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+th{font-size:11px;font-weight:600;color:#7c8298;padding:10px;text-align:left;border-bottom:1px solid #e2e5f0;text-transform:uppercase;letter-spacing:.4px;background:#f5f6fa}
+td{padding:10px;border-bottom:1px solid #e2e5f0;color:#0f1117;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--indigo-light)}
-
-/* ── BADGES ── */
-.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;gap:4px}
-.b-daily{background:#f3effe;color:#6d28d9}
-.b-weekly{background:#e0f2fe;color:#0369a1}
-.b-monthly{background:var(--teal-light);color:#065f46}
-.b-quarterly{background:var(--amber-light);color:#92400e}
-.b-halfyearly{background:#fff1f2;color:#9f1239}
-.b-yearly{background:var(--surface2);color:var(--ink2)}
-.b-done{background:var(--teal-light);color:#065f46}
-.b-pending{background:var(--amber-light);color:#92400e}
-.b-overdue{background:var(--rose-light);color:var(--rose)}
-.r-admin{background:#eeeffe;color:var(--indigo)}
-.r-manager{background:var(--teal-light);color:#065f46}
-.r-viewer{background:#e0f2fe;color:#0369a1}
-.r-stakeholder{background:var(--amber-light);color:#92400e}
-
-.fu-count{display:inline-flex;align-items:center;background:var(--rose-light);color:var(--rose);border-radius:20px;font-size:11px;font-weight:700;padding:2px 8px}
-.empty{text-align:center;padding:40px;color:var(--ink4);font-size:13px}
-.loading{text-align:center;padding:30px;color:var(--ink3);font-size:13px}
-
-/* ── PROGRESS ── */
-.progress-bar{height:6px;border-radius:3px;background:var(--border);margin-top:6px;overflow:hidden}
-.progress-fill{height:100%;border-radius:3px;background:var(--teal);transition:width .5s cubic-bezier(.4,0,.2,1)}
-
-/* ── ALERTS ── */
-.info-box{background:var(--indigo-light);border:1px solid #c7c9f9;border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--indigo);margin-bottom:16px;display:flex;align-items:center;gap:8px}
-.warn-box{background:var(--amber-light);border:1px solid #fcd9a0;border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--amber);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-.danger-box{background:var(--rose-light);border:1px solid #f5c0c0;border-radius:var(--radius-sm);padding:12px 16px;font-size:13px;color:var(--rose);margin-bottom:14px;display:flex;align-items:center;gap:8px}
-
-/* ── EMAIL ── */
-.email-meta{font-size:12px;color:var(--ink2);margin-bottom:12px;padding:10px 14px;background:var(--canvas);border-radius:var(--radius-xs);border:1px solid var(--border)}
-.email-body{background:var(--canvas);border:1px solid var(--border);border-radius:var(--radius-xs);padding:20px;font-size:13px;color:var(--ink);white-space:pre-wrap;line-height:1.8;font-family:'DM Sans',sans-serif}
-
-/* ── FILTER TAGS ── */
-.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px}
-.filter-tag{padding:5px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-weight:500;color:var(--ink3);transition:all .15s}
-.filter-tag:hover{border-color:var(--indigo);color:var(--indigo)}
-.filter-tag.active{background:var(--indigo);color:#fff;border-color:var(--indigo)}
-
-/* ── STAT ROW IN DASH ── */
-.freq-row{display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:4px}
-.freq-name{color:var(--ink2);font-weight:500}
-.freq-stat{color:var(--ink3);font-size:12px}
-
-/* ── HAMBURGER ── */
-.hamburger{display:none;background:transparent;border:none;cursor:pointer;padding:4px;border-radius:6px;color:var(--ink2)}
-.hamburger:hover{background:var(--surface2)}
+tbody tr:hover td{background:#f5f6fa}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer}
+.b-daily{background:#f3effe;color:#6d28d9}.b-weekly{background:#e0f2fe;color:#0369a1}.b-monthly{background:#e0f7f2;color:#065f46}
+.b-quarterly{background:#fef3e2;color:#92400e}.b-halfyearly{background:#fff1f2;color:#9f1239}.b-yearly{background:#f0f2f8;color:#3d4152}
+.b-done{background:#e0f7f2;color:#065f46}.b-pending{background:#fef3e2;color:#92400e}.b-overdue{background:#fdeaea;color:#d93f3f}
+.r-admin{background:#eeeffe;color:#4f52d9}.r-manager{background:#e0f7f2;color:#065f46}.r-viewer{background:#e0f2fe;color:#0369a1}.r-stakeholder{background:#fef3e2;color:#92400e}
+.fu-count{display:inline-block;background:#fdeaea;color:#d93f3f;border-radius:20px;font-size:11px;font-weight:700;padding:2px 7px}
+.empty{text-align:center;padding:36px;color:#b0b6c8;font-size:13px}
+.progress-bar{height:6px;border-radius:3px;background:#e2e5f0;margin-top:5px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;background:#0d9e7e}
+.info-box{background:#eeeffe;border:1px solid #c7c9f9;border-radius:8px;padding:11px 14px;font-size:13px;color:#4f52d9;margin-bottom:14px}
+.warn-box{background:#fef3e2;border:1px solid #fcd9a0;border-radius:8px;padding:11px 14px;font-size:13px;color:#92400e;margin-bottom:12px}
+.danger-box{background:#fdeaea;border:1px solid #f5c0c0;border-radius:8px;padding:11px 14px;font-size:13px;color:#d93f3f;margin-bottom:12px}
+.email-meta{font-size:12px;color:#3d4152;margin-bottom:10px;padding:10px 12px;background:#f5f6fa;border-radius:6px}
+.email-body{background:#f5f6fa;border:1px solid #e2e5f0;border-radius:6px;padding:18px;font-size:13px;color:#0f1117;white-space:pre-wrap;line-height:1.8}
+.tag-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.filter-tag{padding:5px 12px;border-radius:20px;border:1.5px solid #e2e5f0;background:#fff;cursor:pointer;font-size:12px;font-weight:500;color:#7c8298}
+.filter-tag.active{background:#4f52d9;color:#fff;border-color:#4f52d9}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
-/* ── ANIMATIONS ── */
-@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.sec.active{animation:fadeIn .2s ease}
-
-
-/* ── TABLET ── */
-@media(max-width:900px){
-  .login-left{display:none}
-  .login-wrap{grid-template-columns:1fr}
-  .metrics{grid-template-columns:repeat(2,1fr)}
-  .form-row-3,.form-row-4{grid-template-columns:1fr 1fr}
-  .two-col{grid-template-columns:1fr}
-  .app-wrap{flex-direction:column}
-  .sidebar{width:100%;flex-direction:column}
-  .sb-nav{display:flex;flex-wrap:wrap;gap:4px;padding:10px}
-  .sb-section{display:none}
-  .sb-btn{width:auto;padding:7px 12px;font-size:12px}
-  .sb-footer{padding:10px}
-  .main-content{flex:1}
-  .topbar{padding:12px 16px}
-  .content{padding:16px}
-}
-/* ── MOBILE ── */
-@media(max-width:600px){
-  .hamburger{display:flex;align-items:center;justify-content:center}
-  .sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:100;transition:left .25s cubic-bezier(.4,0,.2,1)}
-  .sidebar.open{left:0}
-
-  .login-right{padding:28px 20px}
-  .login-box{max-width:100%}
-  .login-welcome{font-size:20px}
-  .metrics{grid-template-columns:repeat(2,1fr);gap:10px}
-  .metric{padding:14px}
-  .metric-value{font-size:24px}
-  .form-row,.form-row-3,.form-row-4{grid-template-columns:1fr}
-  .two-col{grid-template-columns:1fr}
-  .card{padding:14px}
-  .topbar{padding:10px 14px;flex-wrap:wrap;gap:6px}
-  .page-title{font-size:16px}
-  .content{padding:12px}
-  .sb-nav{padding:8px;gap:3px}
-  .sb-btn{font-size:11px;padding:6px 10px}
-  .sb-btn span.sb-badge{display:none}
-  .user-nm{font-size:12px;max-width:80px}
-  .table-wrap{font-size:12px}
-  th{padding:8px 6px;font-size:10px}
-  td{padding:8px 6px;font-size:12px}
-  .btn{padding:7px 12px;font-size:12px}
-  .btn-sm{padding:4px 8px;font-size:11px}
-  .actions{flex-wrap:wrap}
-  .tag-row{gap:4px}
-  .filter-tag{padding:4px 10px;font-size:11px}
-  .sb-header{padding:14px 16px}
-  .sb-logo .sb-tagline{display:none}
-  .email-body{padding:14px;font-size:12px}
-  .topbar-right{width:100%;justify-content:flex-end}
-}
-
+@media(max-width:900px){.login-left{display:none}.login-wrap{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.form-row-3,.form-row-4{grid-template-columns:1fr 1fr}}
+@media(max-width:600px){.ham-btn{display:flex;align-items:center}.sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:100;transition:left .25s}.sidebar.open{left:0}.metrics{grid-template-columns:repeat(2,1fr)}.form-row,.form-row-3,.form-row-4{grid-template-columns:1fr}.content{padding:12px}.topbar{padding:10px 14px}.login-right{padding:28px 20px}th,td{padding:8px 6px;font-size:11px}}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
 <div class="login-wrap" id="login-screen">
   <div class="login-left">
-    <div class="ll-content">
-      <div class="ll-shield">
-        <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
-      </div>
+    <div>
       <div class="ll-title">GRC Shield</div>
-      <div class="ll-desc">Your organization's compliance and risk management command centre — built for teams that take governance seriously.</div>
+      <div class="ll-desc" style="margin-top:12px">Your organization's compliance and risk management command centre.</div>
     </div>
-    <div class="ll-features">
-      <div class="ll-feat"><div class="ll-feat-dot"></div><span>Track 100+ compliance items with frequencies</span></div>
-      <div class="ll-feat"><div class="ll-feat-dot"></div><span>Auto-generate follow-up emails in one click</span></div>
-      <div class="ll-feat"><div class="ll-feat-dot"></div><span>Role-based access for your whole team</span></div>
-      <div class="ll-feat"><div class="ll-feat-dot"></div><span>Live shared database — everyone in sync</span></div>
+    <div>
+      <div class="ll-feat"><div class="ll-dot"></div><span>Track 100+ compliance items with frequencies</span></div>
+      <div class="ll-feat"><div class="ll-dot"></div><span>Auto-generate follow-up emails in one click</span></div>
+      <div class="ll-feat"><div class="ll-dot"></div><span>Role-based access for your whole team</span></div>
+      <div class="ll-feat"><div class="ll-dot"></div><span>Live shared database — everyone in sync</span></div>
     </div>
   </div>
   <div class="login-right">
     <div class="login-box">
       <div class="login-welcome">Welcome back</div>
-      <div class="login-sub">Sign in to your GRC Tracker account</div>
-      <div class="login-err" id="login-err">Invalid email or password. Please try again.</div>
-      <div class="lf"><label>Email address</label><input id="l-email" type="email" placeholder="you@company.com" onkeydown="if(event.key==='Enter'&&typeof doLogin!=='undefined')doLogin()"></div>
-      <div class="lf"><label>Password</label><input id="l-pass" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter'&&typeof doLogin!=='undefined')doLogin()"></div>
-      <button class="login-btn" onclick="if(typeof doLogin!=='undefined'){doLogin();}else{alert('Page still loading, please wait 3 seconds and try again.');}">Sign in to GRC Shield</button>
-      </div>
+      <div class="login-sub">Sign in to your GRC Shield account</div>
+      <div class="login-err" id="login-err">Invalid email or password.</div>
+      <div class="lf"><label>Email address</label><input id="l-email" type="email" placeholder="you@company.com"></div>
+      <div class="lf"><label>Password</label><input id="l-pass" type="password" placeholder="Enter your password"></div>
+      <button class="login-btn" id="login-btn">Sign in to GRC Shield</button>
     </div>
   </div>
 </div>
 
-<!-- MAIN APP -->
 <div id="main-app" style="display:none" class="app-wrap">
-  <!-- SIDEBAR -->
-  <div class="sidebar">
+  <div class="sidebar" id="main-sidebar">
     <div class="sb-header">
       <div class="sb-logo">
-        <div class="sb-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
-        </div>
-        <div>
-          <div class="sb-name">GRC Shield</div>
-          <div class="sb-tagline">Compliance Tracker</div>
-        </div>
+        <div class="sb-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg></div>
+        <div><div class="sb-name">GRC Shield</div><div class="sb-tag">Compliance Tracker</div></div>
       </div>
     </div>
     <div class="sb-nav">
-      <div class="sb-section">Overview</div>
-      <button class="sb-btn active" onclick="showTab(event,'s-dash','Dashboard','Your compliance overview')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
-        Dashboard
-      </button>
-      <div class="sb-section">Compliance</div>
-      <button class="sb-btn" onclick="showTab(event,'s-items','All Items','Manage compliance tasks')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
-        All items
-      </button>
-      <button class="sb-btn" onclick="showTab(event,'s-overdue','Overdue / Due Soon','Items needing attention')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        Overdue / due soon
-        <span class="sb-badge" id="overdue-count" style="display:none">0</span>
-      </button>
-      <button class="sb-btn" onclick="showTab(event,'s-email','Follow-up Emails','Generate reminder emails')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Follow-up emails
-      </button>
-      <div class="sb-section">Risk</div>
-      <button class="sb-btn" onclick="showTab(event,'s-risks','Risk Register','Track organizational risks')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        Risk register
-      </button>
-      <div class="sb-section" id="admin-section" style="display:none">Admin</div>
-      <button class="sb-btn" id="nav-admin" style="display:none" onclick="showTab(event,'s-admin','Manage Users','Control team access')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
-        Manage users
-      </button>
+      <div class="sb-sec">Overview</div>
+      <button class="sb-btn active" id="nav-dash">Dashboard</button>
+      <div class="sb-sec">Compliance</div>
+      <button class="sb-btn" id="nav-items">All items</button>
+      <button class="sb-btn" id="nav-overdue">Overdue / due soon <span class="ov-badge" id="ov-badge" style="display:none">0</span></button>
+      <button class="sb-btn" id="nav-email">Follow-up emails</button>
+      <div class="sb-sec">Risk</div>
+      <button class="sb-btn" id="nav-risks">Risk register</button>
+      <div class="sb-sec" id="admin-sec" style="display:none">Admin</div>
+      <button class="sb-btn" id="nav-admin" style="display:none">Manage users</button>
     </div>
     <div class="sb-footer">
       <div class="user-card">
-        <div class="user-av" id="user-avatar" style="background:var(--indigo)">A</div>
-        <div class="user-info">
-          <div class="user-nm" id="user-name">User</div>
-          <div class="user-rl" id="user-role-label">role</div>
-        </div>
-        <button class="logout-ico" onclick="doLogout()" title="Sign out">
-          <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        <div class="user-av" id="user-av" style="background:#4f52d9">A</div>
+        <div style="flex:1;min-width:0"><div class="user-nm" id="user-nm">User</div><div class="user-rl" id="user-rl">role</div></div>
+        <button class="logout-btn" id="logout-btn" title="Sign out">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
         </button>
       </div>
     </div>
   </div>
 
-  <!-- MAIN -->
   <div class="main-content">
     <div class="topbar">
       <div style="display:flex;align-items:center;gap:12px">
-        <button class="hamburger" onclick="toggleSidebar()" id="hamburger-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <button class="ham-btn" id="ham-btn">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <div>
-          <div class="page-title" id="page-title">Dashboard</div>
-          <div class="page-sub" id="page-sub">Your compliance overview</div>
-        </div>
+        <div><div class="page-title" id="page-title">Dashboard</div><div class="page-sub" id="page-sub">Your compliance overview</div></div>
       </div>
-      <div class="topbar-right">
-        <div class="conn-dot" id="conn-dot" style="background:#e07d1a;box-shadow:0 0 0 3px #fef3e2"></div>
-        <span class="conn-label" id="conn-label" style="color:#e07d1a">Connecting...</span>
+      <div class="conn-wrap">
+        <div class="conn-dot" id="conn-dot" style="background:#e07d1a"></div>
+        <span class="conn-lbl" id="conn-lbl" style="color:#e07d1a">Connecting...</span>
       </div>
     </div>
-
     <div class="content">
-      <!-- DASHBOARD -->
       <div id="s-dash" class="sec active">
         <div class="metrics" id="dash-metrics">
           <div class="metric m-total"><div class="metric-label">Total items</div><div class="metric-value">—</div></div>
@@ -358,414 +189,262 @@ tbody tr:hover td{background:var(--indigo-light)}
           <div class="metric m-prog"><div class="metric-label">Progress</div><div class="metric-value">—</div></div>
         </div>
         <div class="two-col">
-          <div class="card"><div class="card-title">Progress by frequency</div><div id="freq-bars"><div class="loading">Loading...</div></div></div>
-          <div class="card"><div class="card-title">Overdue items</div><div id="dash-ov"><div class="loading">Loading...</div></div></div>
+          <div class="card"><div class="card-title">Progress by frequency</div><div id="freq-bars"><div class="empty">Loading...</div></div></div>
+          <div class="card"><div class="card-title">Overdue items</div><div id="dash-ov"><div class="empty">Loading...</div></div></div>
         </div>
       </div>
-
-      <!-- ALL ITEMS -->
       <div id="s-items" class="sec">
         <div class="card" id="add-item-card">
           <div class="card-title">Add compliance item</div>
-          <div class="form-row">
-            <div class="field"><label>Task name *</label><input id="i-name" placeholder="e.g. Monthly server patch review"></div>
-            <div class="field"><label>Stakeholder name *</label><input id="i-stake" placeholder="e.g. Rahul Sharma"></div>
-          </div>
-          <div class="form-row-4">
-            <div class="field"><label>Stakeholder email</label><input id="i-email" type="email" placeholder="rahul@company.com"></div>
-            <div class="field"><label>Department</label><input id="i-dept" placeholder="e.g. IT, HR"></div>
-            <div class="field"><label>Frequency</label>
-              <select id="i-freq">
-                <option value="daily">Daily</option><option value="weekly">Weekly</option>
-                <option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option>
-                <option value="halfyearly">Half-yearly</option><option value="yearly">Yearly</option>
-              </select>
-            </div>
-            <div class="field"><label>Due date</label><input id="i-due" type="date"></div>
-          </div>
-          <div class="form-row">
-            <div class="field"><label>Category</label>
-              <select id="i-cat">
-                <option>Cybersecurity</option><option>Data Privacy</option><option>HR Compliance</option>
-                <option>Legal</option><option>Financial</option><option>Operational</option><option>Audit</option><option>Other</option>
-              </select>
-            </div>
-            <div class="field"><label>Notes</label><input id="i-notes" placeholder="Any extra details..."></div>
-          </div>
-          <div class="actions"><button class="btn btn-primary" onclick="addItem()">+ Add item</button></div>
+          <div class="form-row"><div class="field"><label>Task name *</label><input id="i-name" placeholder="e.g. Monthly server patch review"></div><div class="field"><label>Stakeholder name *</label><input id="i-stake" placeholder="e.g. Rahul Sharma"></div></div>
+          <div class="form-row-4"><div class="field"><label>Email</label><input id="i-email" type="email" placeholder="rahul@company.com"></div><div class="field"><label>Department</label><input id="i-dept" placeholder="e.g. IT"></div><div class="field"><label>Frequency</label><select id="i-freq"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="halfyearly">Half-yearly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>Due date</label><input id="i-due" type="date"></div></div>
+          <div class="form-row"><div class="field"><label>Category</label><select id="i-cat"><option>Cybersecurity</option><option>Data Privacy</option><option>HR Compliance</option><option>Legal</option><option>Financial</option><option>Operational</option><option>Audit</option><option>Other</option></select></div><div class="field"><label>Notes</label><input id="i-notes" placeholder="Any extra details..."></div></div>
+          <div class="actions"><button class="btn btn-primary" id="add-item-btn">+ Add item</button></div>
         </div>
-        <div class="card">
-          <div class="card-title">All compliance items</div>
-          <div class="tag-row" id="freq-filters"></div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th style="width:21%">Task</th><th style="width:14%">Stakeholder</th>
-                <th style="width:9%">Dept</th><th style="width:11%">Frequency</th>
-                <th style="width:9%">Due date</th><th style="width:9%">Status</th>
-                <th style="width:7%">Follow-ups</th><th style="width:20%">Actions</th>
-              </tr></thead>
-              <tbody id="items-body"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-title">All compliance items</div><div class="tag-row" id="freq-filters"></div><div class="table-wrap"><table><thead><tr><th style="width:21%">Task</th><th style="width:14%">Stakeholder</th><th style="width:9%">Dept</th><th style="width:10%">Frequency</th><th style="width:9%">Due</th><th style="width:8%">Status</th><th style="width:7%">FU</th><th style="width:22%">Actions</th></tr></thead><tbody id="items-body"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody></table></div></div>
       </div>
-
-      <!-- OVERDUE -->
       <div id="s-overdue" class="sec"><div id="overdue-content"></div></div>
-
-      <!-- EMAILS -->
       <div id="s-email" class="sec">
-        <div class="card">
-          <div class="card-title">Generate follow-up email</div>
-          <div class="info-box">Select an item, choose the reminder number, enter your name — and get a professional email ready to copy into Outlook or Gmail.</div>
-          <div class="form-row-3">
-            <div class="field"><label>Select compliance item *</label><select id="fu-select"><option value="">-- select item --</option></select></div>
-            <div class="field"><label>Follow-up number</label>
-              <select id="fu-num">
-                <option value="1">1st reminder — gentle</option>
-                <option value="2">2nd reminder — firm</option>
-                <option value="3">3rd reminder — escalation</option>
-              </select>
-            </div>
-            <div class="field"><label>Your name (sender) *</label><input id="fu-sender" placeholder="e.g. Amit Verma"></div>
-          </div>
-          <div class="actions"><button class="btn btn-primary" onclick="generateEmail()">Generate email</button></div>
-        </div>
-        <div id="email-result" style="display:none">
-          <div class="card">
-            <div class="card-title">Your follow-up email</div>
-            <div class="email-meta" id="email-meta"></div>
-            <div class="email-body" id="email-body-text"></div>
-            <div class="actions" style="margin-top:14px">
-              <button class="btn btn-sm" onclick="copyEmail()">Copy full email</button>
-              <button class="btn btn-sm btn-primary" onclick="markSent()">Mark as sent and log it</button>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Follow-up log</div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th style="width:28%">Task</th><th style="width:20%">Stakeholder</th>
-                <th style="width:12%">Follow-up #</th><th style="width:15%">Date</th><th style="width:25%">Type</th>
-              </tr></thead>
-              <tbody id="log-body"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-title">Generate follow-up email</div><div class="info-box">Select an item, choose the reminder number, enter your name and click Generate.</div><div class="form-row-3"><div class="field"><label>Select item *</label><select id="fu-select"><option value="">-- select item --</option></select></div><div class="field"><label>Follow-up number</label><select id="fu-num"><option value="1">1st reminder — gentle</option><option value="2">2nd reminder — firm</option><option value="3">3rd reminder — escalation</option></select></div><div class="field"><label>Your name *</label><input id="fu-sender" placeholder="e.g. Amit Verma"></div></div><div class="actions"><button class="btn btn-primary" id="gen-email-btn">Generate email</button></div></div>
+        <div id="email-result" style="display:none"><div class="card"><div class="card-title">Your follow-up email</div><div class="email-meta" id="email-meta"></div><div class="email-body" id="email-body-text"></div><div class="actions" style="margin-top:12px"><button class="btn btn-sm" id="copy-email-btn">Copy full email</button><button class="btn btn-sm btn-primary" id="mark-sent-btn">Mark as sent and log it</button></div></div></div>
+        <div class="card"><div class="card-title">Follow-up log</div><div class="table-wrap"><table><thead><tr><th style="width:28%">Task</th><th style="width:20%">Stakeholder</th><th style="width:12%">#</th><th style="width:15%">Date</th><th style="width:25%">Type</th></tr></thead><tbody id="log-body"><tr><td colspan="5" class="empty">No follow-ups yet.</td></tr></tbody></table></div></div>
       </div>
-
-      <!-- RISKS -->
       <div id="s-risks" class="sec">
-        <div class="card" id="add-risk-card">
-          <div class="card-title">Add new risk</div>
-          <div class="form-row">
-            <div class="field"><label>Risk name *</label><input id="r-name" placeholder="e.g. Data breach"></div>
-            <div class="field"><label>Category</label>
-              <select id="r-cat">
-                <option>Cybersecurity</option><option>Operational</option><option>Financial</option>
-                <option>Legal/Compliance</option><option>HR</option><option>Other</option>
-              </select>
-            </div>
-          </div>
-          <div class="form-row-3">
-            <div class="field"><label>Likelihood (1–5)</label><input id="r-like" type="number" min="1" max="5" placeholder="1=unlikely · 5=very likely"></div>
-            <div class="field"><label>Impact (1–5)</label><input id="r-impact" type="number" min="1" max="5" placeholder="1=minor · 5=critical"></div>
-            <div class="field"><label>Owner</label><input id="r-owner" placeholder="Person responsible"></div>
-          </div>
-          <div class="actions"><button class="btn btn-primary" onclick="addRisk()">+ Add risk</button></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Risk register</div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th style="width:22%">Risk</th><th style="width:16%">Category</th>
-                <th style="width:9%">Score</th><th style="width:10%">Level</th>
-                <th style="width:15%">Owner</th><th style="width:12%">Status</th><th style="width:16%">Actions</th>
-              </tr></thead>
-              <tbody id="risk-body"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card" id="add-risk-card"><div class="card-title">Add new risk</div><div class="form-row"><div class="field"><label>Risk name *</label><input id="r-name" placeholder="e.g. Data breach"></div><div class="field"><label>Category</label><select id="r-cat"><option>Cybersecurity</option><option>Operational</option><option>Financial</option><option>Legal/Compliance</option><option>HR</option><option>Other</option></select></div></div><div class="form-row-3"><div class="field"><label>Likelihood (1–5)</label><input id="r-like" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Impact (1–5)</label><input id="r-impact" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Owner</label><input id="r-owner" placeholder="Person responsible"></div></div><div class="actions"><button class="btn btn-primary" id="add-risk-btn">+ Add risk</button></div></div>
+        <div class="card"><div class="card-title">Risk register</div><div class="table-wrap"><table><thead><tr><th style="width:22%">Risk</th><th style="width:16%">Category</th><th style="width:9%">Score</th><th style="width:10%">Level</th><th style="width:15%">Owner</th><th style="width:12%">Status</th><th style="width:16%">Actions</th></tr></thead><tbody id="risk-body"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody></table></div></div>
       </div>
-
-      <!-- ADMIN -->
       <div id="s-admin" class="sec">
-        <div class="card">
-          <div class="card-title">Add new user</div>
-          <div class="form-row-4">
-            <div class="field"><label>Full name *</label><input id="u-name" placeholder="e.g. Rahul Sharma"></div>
-            <div class="field"><label>Email *</label><input id="u-email" type="email" placeholder="rahul@company.com"></div>
-            <div class="field"><label>Password *</label><input id="u-pass" type="password" placeholder="Set a password"></div>
-            <div class="field"><label>Role *</label>
-              <select id="u-role">
-                <option value="admin">Admin — full access</option>
-                <option value="manager">Manager — add, not delete</option>
-                <option value="viewer">Viewer — read only</option>
-                <option value="stakeholder">Stakeholder — own tasks</option>
-              </select>
-            </div>
-          </div>
-          <div class="actions"><button class="btn btn-primary" onclick="addUser()">+ Add user</button></div>
-        </div>
-        <div class="card">
-          <div class="card-title">All users</div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th style="width:25%">Name</th><th style="width:30%">Email</th>
-                <th style="width:15%">Role</th><th style="width:15%">Added</th><th style="width:15%">Actions</th>
-              </tr></thead>
-              <tbody id="user-body"></tbody>
-            </table>
-          </div>
-        </div>
+        <div class="card"><div class="card-title">Add new user</div><div class="form-row-4"><div class="field"><label>Full name *</label><input id="u-name" placeholder="Rahul Sharma"></div><div class="field"><label>Email *</label><input id="u-email" type="email" placeholder="rahul@company.com"></div><div class="field"><label>Password *</label><input id="u-pass" type="password" placeholder="Set a password"></div><div class="field"><label>Role *</label><select id="u-role"><option value="admin">Admin — full access</option><option value="manager">Manager — add not delete</option><option value="viewer">Viewer — read only</option><option value="stakeholder">Stakeholder — own tasks</option></select></div></div><div class="actions"><button class="btn btn-primary" id="add-user-btn">+ Add user</button></div></div>
+        <div class="card"><div class="card-title">All users</div><div class="table-wrap"><table><thead><tr><th style="width:25%">Name</th><th style="width:30%">Email</th><th style="width:15%">Role</th><th style="width:15%">Added</th><th style="width:15%">Actions</th></tr></thead><tbody id="user-body"></tbody></table></div></div>
       </div>
     </div>
   </div>
 </div>
+<div class="sb-overlay" id="sb-overlay"></div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-document.addEventListener("DOMContentLoaded", function() {
+<script>
 var SUPA_URL='https://kqvvqriyaundzefmrqzk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdnZxcml5YXVuZHplZm1ycXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTA4MjQsImV4cCI6MjA4OTY2NjgyNH0.r8JlSYTPunPO6-N_TlipqZ92sPtLf_FrtHz47nVA0Mg';
-var db=supabase.createClient(SUPA_URL,SUPA_KEY);
-var items=[],logs=[],risks=[],users=[],currentEmail=null,activeFreqFilter='',currentUser=null;
+var items=[],logs=[],risks=[],users=[],currentUser=null,currentEmail=null,activeFreq='';
 var FL={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
-var ROLE_COLORS={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'};
+var RC={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'};
 
 function today(){return new Date().toISOString().split('T')[0];}
-function getStatus(it){if(it.done)return 'done';if(it.due_date&&it.due_date<today())return 'overdue';return 'pending';}
-function can(a){if(!currentUser)return false;var r=currentUser.role;if(a==='view')return true;if(a==='add')return r==='admin'||r==='manager';if(a==='delete')return r==='admin';if(a==='toggle_done')return r==='admin'||r==='manager'||r==='stakeholder';if(a==='manage_users')return r==='admin';if(a==='send_email')return r==='admin'||r==='manager';return false;}
+function getStatus(it){if(it.done)return'done';if(it.due_date&&it.due_date<today())return'overdue';return'pending';}
+function can(a){if(!currentUser)return false;var r=currentUser.role;if(a==='view')return true;if(a==='add')return r==='admin'||r==='manager';if(a==='delete')return r==='admin';if(a==='toggle')return r==='admin'||r==='manager'||r==='stakeholder';if(a==='admin')return r==='admin';if(a==='email')return r==='admin'||r==='manager';return false;}
 
-window.doLogin = async function(){
+function api(path,opts){
+  var h={'Content-Type':'application/json','apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY};
+  if(opts&&opts.extra)Object.assign(h,opts.extra);
+  return fetch(SUPA_URL+'/rest/v1/'+path,{method:(opts&&opts.method)||'GET',headers:h,body:opts&&opts.body?JSON.stringify(opts.body):undefined});
+}
+
+document.getElementById('login-btn').onclick=async function(){
   var email=document.getElementById('l-email').value.trim().toLowerCase();
   var pass=document.getElementById('l-pass').value.trim();
-  if(!email||!pass){showErr('Please enter your email and password.');return;}
-  var {data,error}=await db.from('grc_users').select('*').eq('email',email).eq('password',pass).single();
-  if(error||!data){showErr('Invalid email or password. Please try again.');return;}
-  currentUser=data;
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('main-app').style.display='flex';
-  setupUI();await loadAll();
-}
-window.showErr = function(m){var e=document.getElementById('login-err');e.textContent=m;e.style.display='block';}
-window.doLogout = function(){currentUser=null;document.getElementById('main-app').style.display='none';document.getElementById('login-screen').style.display='grid';document.getElementById('l-email').value='';document.getElementById('l-pass').value='';document.getElementById('login-err').style.display='none';}
-
-window.setupUI = function(){
-  var r=currentUser.role;
-  var ini=currentUser.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
-  document.getElementById('user-avatar').textContent=ini;
-  document.getElementById('user-avatar').style.background=ROLE_COLORS[r]||'#4f52d9';
-  document.getElementById('user-name').textContent=currentUser.name;
-  document.getElementById('user-role-label').textContent=r.charAt(0).toUpperCase()+r.slice(1);
-  document.getElementById('nav-admin').style.display=can('manage_users')?'':'none';
-  document.getElementById('admin-section').style.display=can('manage_users')?'':'none';
-  document.getElementById('add-item-card').style.display=can('add')?'':'none';
-  document.getElementById('add-risk-card').style.display=can('add')?'':'none';
-}
-
-window.loadAll = async function(){
+  var err=document.getElementById('login-err');
+  err.style.display='none';
+  if(!email||!pass){err.textContent='Please enter email and password.';err.style.display='block';return;}
   try{
-    var r1=await db.from('grc_items').select('*').order('created_at',{ascending:false});
-    var r2=await db.from('grc_logs').select('*').order('created_at',{ascending:false});
-    var r3=await db.from('grc_risks').select('*').order('created_at',{ascending:false});
-    if(r1.error||r2.error||r3.error)throw new Error();
-    items=currentUser.role==='stakeholder'?(r1.data||[]).filter(function(it){return it.email===currentUser.email||it.stakeholder_email===currentUser.email;}):(r1.data||[]);
-    logs=r2.data||[];risks=r3.data||[];
-    var dot=document.getElementById('conn-dot'),lbl=document.getElementById('conn-label');
-    dot.style.background='#0d9e7e';dot.style.boxShadow='0 0 0 3px #e0f7f2';lbl.style.color='#0d9e7e';lbl.textContent='Live — shared database';
+    var res=await api('grc_users?select=*&email=eq.'+encodeURIComponent(email)+'&password=eq.'+encodeURIComponent(pass));
+    var data=await res.json();
+    if(!Array.isArray(data)||!data.length){err.textContent='Invalid email or password. Please try again.';err.style.display='block';return;}
+    currentUser=data[0];
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('main-app').style.display='flex';
+    var r=currentUser.role;
+    var ini=currentUser.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+    document.getElementById('user-av').textContent=ini;
+    document.getElementById('user-av').style.background=RC[r]||'#4f52d9';
+    document.getElementById('user-nm').textContent=currentUser.name;
+    document.getElementById('user-rl').textContent=r.charAt(0).toUpperCase()+r.slice(1);
+    document.getElementById('nav-admin').style.display=can('admin')?'flex':'none';
+    document.getElementById('admin-sec').style.display=can('admin')?'block':'none';
+    document.getElementById('add-item-card').style.display=can('add')?'block':'none';
+    document.getElementById('add-risk-card').style.display=can('add')?'block':'none';
+    if(!can('email'))document.getElementById('nav-email').style.display='none';
+    await loadAll();
+  }catch(e){err.textContent='Connection error. Check your internet and try again. Error: '+e.message;err.style.display='block';}
+};
+document.getElementById('l-pass').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
+document.getElementById('l-email').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
+
+document.getElementById('logout-btn').onclick=function(){
+  currentUser=null;
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-screen').style.display='grid';
+  document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
+};
+
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-admin','s-admin','Manage Users','Control team access']];
+navCfg.forEach(function(m){
+  var btn=document.getElementById(m[0]);if(!btn)return;
+  btn.onclick=function(){
+    document.querySelectorAll('.sb-btn').forEach(function(b){b.classList.remove('active');});
+    document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
+    btn.classList.add('active');document.getElementById(m[1]).classList.add('active');
+    document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
+    if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
+    if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();
+    if(window.innerWidth<=600){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+  };
+});
+document.getElementById('ham-btn').onclick=function(){document.getElementById('main-sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');};
+document.getElementById('sb-overlay').onclick=function(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');};
+
+async function loadAll(){
+  try{
+    var r1=await api('grc_items?select=*&order=created_at.desc');
+    var r2=await api('grc_logs?select=*&order=created_at.desc');
+    var r3=await api('grc_risks?select=*&order=created_at.desc');
+    var d1=await r1.json(),d2=await r2.json(),d3=await r3.json();
+    items=currentUser.role==='stakeholder'?(d1||[]).filter(function(it){return it.email===currentUser.email||it.stakeholder_email===currentUser.email;}):(d1||[]);
+    logs=d2||[];risks=d3||[];
+    document.getElementById('conn-dot').style.background='#0d9e7e';document.getElementById('conn-lbl').style.color='#0d9e7e';document.getElementById('conn-lbl').textContent='Live — shared database';
     var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length;
-    var ob=document.getElementById('overdue-count');
-    ob.textContent=ov;ob.style.display=ov>0?'':'none';
+    var ob=document.getElementById('ov-badge');ob.textContent=ov;ob.style.display=ov>0?'inline-block':'none';
     renderDash();renderFreqFilters();renderItems();renderLog();renderRisks();
-    if(can('manage_users'))loadUsers();
-  }catch(e){
-    var dot=document.getElementById('conn-dot'),lbl=document.getElementById('conn-label');
-    dot.style.background='#d93f3f';dot.style.boxShadow='0 0 0 3px #fdeaea';lbl.style.color='#d93f3f';lbl.textContent='Connection error';
-  }
+    if(can('admin'))loadUsers();
+  }catch(e){document.getElementById('conn-dot').style.background='#d93f3f';document.getElementById('conn-lbl').style.color='#d93f3f';document.getElementById('conn-lbl').textContent='Connection error';}
 }
 
-window.showTab = function(e,id,title,sub){
-  document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
-  document.querySelectorAll('.sb-btn').forEach(function(b){b.classList.remove('active');});
-  document.getElementById(id).classList.add('active');
-  e.currentTarget.classList.add('active');
-  document.getElementById('page-title').textContent=title;
-  document.getElementById('page-sub').textContent=sub;
-  if(id==='s-dash')renderDash();
-  if(id==='s-items'){renderFreqFilters();renderItems();}
-  if(id==='s-overdue')renderOverdue();
-  if(id==='s-email')renderEmailTab();
-  if(id==='s-risks')renderRisks();
-  if(id==='s-admin')loadUsers();
-}
-
-window.addItem = async function(){
-  if(!can('add')){alert('You do not have permission to add items.');return;}
+document.getElementById('add-item-btn').onclick=async function(){
+  if(!can('add')){alert('No permission.');return;}
   var name=document.getElementById('i-name').value.trim(),stake=document.getElementById('i-stake').value.trim();
-  if(!name){alert('Please enter a task name.');return;}
-  if(!stake){alert('Please enter a stakeholder name.');return;}
+  if(!name){alert('Please enter a task name.');return;}if(!stake){alert('Please enter a stakeholder name.');return;}
   var row={id:Date.now(),name:name,stakeholder:stake,email:document.getElementById('i-email').value.trim(),dept:document.getElementById('i-dept').value.trim(),freq:document.getElementById('i-freq').value,due_date:document.getElementById('i-due').value,category:document.getElementById('i-cat').value,notes:document.getElementById('i-notes').value.trim(),done:false,followups:0,stakeholder_email:document.getElementById('i-email').value.trim()};
-  var {error}=await db.from('grc_items').insert(row);
-  if(error){alert('Could not save: '+error.message);return;}
+  var res=await api('grc_items',{method:'POST',body:row,extra:{'Prefer':'return=minimal'}});
+  if(!res.ok){var e=await res.json();alert('Error: '+(e.message||res.status));return;}
   ['i-name','i-stake','i-email','i-dept','i-notes','i-due'].forEach(function(id){document.getElementById(id).value='';});
   await loadAll();
-}
+};
 
-window.renderFreqFilters = function(){
+function renderFreqFilters(){
   var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'];
-  var html='<button class="filter-tag'+(activeFreqFilter===''?' active':'')+'" onclick="setFilter(\'\')">All</button>';
-  freqs.forEach(function(f){if(items.some(function(it){return it.freq===f;}))html+='<button class="filter-tag'+(activeFreqFilter===f?' active':'')+'" onclick="setFilter(\''+f+'\')">'+FL[f]+'</button>';});
-  document.getElementById('freq-filters').innerHTML=html;
+  var html='<button class="filter-tag'+(activeFreq===''?' active':'')+'" data-f="">All</button>';
+  freqs.forEach(function(f){if(items.some(function(it){return it.freq===f;}))html+='<button class="filter-tag'+(activeFreq===f?' active':'')+'" data-f="'+f+'">'+FL[f]+'</button>';});
+  var el=document.getElementById('freq-filters');el.innerHTML=html;
+  el.querySelectorAll('.filter-tag').forEach(function(b){b.onclick=function(){activeFreq=b.getAttribute('data-f');renderFreqFilters();renderItems();};});
 }
-window.setFilter = function(f){activeFreqFilter=f;renderFreqFilters();renderItems();}
 
-window.renderItems = function(){
-  var filtered=activeFreqFilter?items.filter(function(it){return it.freq===activeFreqFilter;}):items;
+function renderItems(){
+  var filtered=activeFreq?items.filter(function(it){return it.freq===activeFreq;}):items;
   var tb=document.getElementById('items-body');
-  if(!filtered.length){tb.innerHTML='<tr><td colspan="8" class="empty">No items yet. Add your first compliance item above.</td></tr>';return;}
+  if(!filtered.length){tb.innerHTML='<tr><td colspan="8" class="empty">No items yet.</td></tr>';return;}
   tb.innerHTML=filtered.map(function(it){
-    var s=getStatus(it);
-    var fu=it.followups>0?'<span class="fu-count">'+it.followups+'</span>':'<span style="color:var(--ink4)">—</span>';
-    var canT=can('toggle_done')&&(currentUser.role!=='stakeholder'||(it.email===currentUser.email||it.stakeholder_email===currentUser.email));
-    var statusHtml=canT?'<span class="badge b-'+s+'" onclick="toggleDone('+it.id+','+it.done+')" title="Click to toggle">':'<span class="badge b-'+s+'">';
-    statusHtml+=s.charAt(0).toUpperCase()+s.slice(1)+'</span>';
-    var acts='';
-    if(can('send_email'))acts+='<button class="btn btn-sm" style="margin-right:4px" onclick="goEmail('+it.id+')">Remind</button>';
-    if(can('delete'))acts+='<button class="btn btn-sm btn-danger" onclick="delItem('+it.id+')">Delete</button>';
-    return '<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td>'+(it.dept||'—')+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td>'+(it.due_date||'—')+'</td><td>'+statusHtml+'</td><td style="text-align:center">'+fu+'</td><td>'+acts+'</td></tr>';
+    var s=getStatus(it),fu=it.followups>0?'<span class="fu-count">'+it.followups+'</span>':'—';
+    var canT=can('toggle')&&(currentUser.role!=='stakeholder'||(it.email===currentUser.email||it.stakeholder_email===currentUser.email));
+    var sb='<span class="badge b-'+s+'"'+(canT?' data-toggle="'+it.id+'" style="cursor:pointer"':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>';
+    var acts=(can('email')?'<button class="btn btn-sm" data-email="'+it.id+'" style="margin-right:4px">Remind</button>':'')+
+             (can('delete')?'<button class="btn btn-sm btn-danger" data-del="'+it.id+'">Del</button>':'');
+    return '<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td>'+(it.dept||'—')+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td>'+(it.due_date||'—')+'</td><td>'+sb+'</td><td style="text-align:center">'+fu+'</td><td>'+acts+'</td></tr>';
   }).join('');
+  tb.querySelectorAll('[data-toggle]').forEach(function(el){el.onclick=async function(){var it=items.find(function(x){return x.id==el.getAttribute('data-toggle');});if(it){await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{done:!it.done},extra:{'Prefer':'return=minimal'}});await loadAll();}};});
+  tb.querySelectorAll('[data-del]').forEach(function(el){el.onclick=async function(){if(!confirm('Delete?'))return;await api('grc_items?id=eq.'+el.getAttribute('data-del'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};});
+  tb.querySelectorAll('[data-email]').forEach(function(el){el.onclick=function(){goEmail(el.getAttribute('data-email'));};});
 }
 
-window.toggleDone = async function(id,current){await db.from('grc_items').update({done:!current}).eq('id',id);await loadAll();}
-window.delItem = async function(id){if(!can('delete')){alert('No permission.');return;}if(!confirm('Delete this item?'))return;await db.from('grc_items').delete().eq('id',id);await loadAll();}
-window.goEmail = function(id){document.querySelectorAll('.sb-btn')[3].click();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
+function goEmail(id){document.getElementById('nav-email').onclick();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
 
-window.renderDash = function(){
+function renderDash(){
   var total=items.length,done=items.filter(function(it){return getStatus(it)==='done';}).length;
   var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length,pct=total?Math.round(done/total*100):0;
-  document.getElementById('dash-metrics').innerHTML=
-    '<div class="metric m-total"><div class="metric-label">Total items</div><div class="metric-value">'+total+'</div><div class="metric-sub">compliance tasks</div></div>'+
-    '<div class="metric m-done"><div class="metric-label">Completed</div><div class="metric-value" style="color:var(--teal)">'+done+'</div><div class="metric-sub">on track</div></div>'+
-    '<div class="metric m-over"><div class="metric-label">Overdue</div><div class="metric-value" style="color:var(--rose)">'+ov+'</div><div class="metric-sub">need attention</div></div>'+
-    '<div class="metric m-prog"><div class="metric-label">Progress</div><div class="metric-value" style="color:var(--amber)">'+pct+'%</div><div class="metric-sub">overall completion</div></div>';
+  document.getElementById('dash-metrics').innerHTML='<div class="metric m-total"><div class="metric-label">Total items</div><div class="metric-value">'+total+'</div><div class="metric-sub">compliance tasks</div></div><div class="metric m-done"><div class="metric-label">Completed</div><div class="metric-value" style="color:#0d9e7e">'+done+'</div><div class="metric-sub">on track</div></div><div class="metric m-over"><div class="metric-label">Overdue</div><div class="metric-value" style="color:#d93f3f">'+ov+'</div><div class="metric-sub">need attention</div></div><div class="metric m-prog"><div class="metric-label">Progress</div><div class="metric-value" style="color:#e07d1a">'+pct+'%</div><div class="metric-sub">overall</div></div>';
   var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'],fb='';
-  freqs.forEach(function(f){
-    var grp=items.filter(function(it){return it.freq===f;});if(!grp.length)return;
-    var gd=grp.filter(function(it){return getStatus(it)==='done';}).length,gp=Math.round(gd/grp.length*100);
-    fb+='<div style="margin-bottom:14px"><div class="freq-row"><span class="freq-name">'+FL[f]+'</span><span class="freq-stat">'+gd+' / '+grp.length+' · '+gp+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+gp+'%"></div></div></div>';
-  });
+  freqs.forEach(function(f){var grp=items.filter(function(it){return it.freq===f;});if(!grp.length)return;var gd=grp.filter(function(it){return getStatus(it)==='done';}).length,gp=Math.round(gd/grp.length*100);fb+='<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:600">'+FL[f]+'</span><span style="color:#7c8298">'+gd+'/'+grp.length+' · '+gp+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+gp+'%"></div></div></div>';});
   document.getElementById('freq-bars').innerHTML=fb||'<div class="empty">No items yet</div>';
   var ovI=items.filter(function(it){return getStatus(it)==='overdue';}).slice(0,6);
-  document.getElementById('dash-ov').innerHTML=ovI.length?ovI.map(function(it){
-    return '<div style="padding:10px 0;border-bottom:1px solid var(--border)"><div style="font-size:13px;font-weight:500;color:var(--ink);margin-bottom:2px">'+it.name+'</div><div style="font-size:11px;color:var(--ink3)">'+it.stakeholder+' · Due: '+it.due_date+' · '+it.followups+' follow-up(s)</div></div>';
-  }).join(''):'<div class="empty">No overdue items</div>';
+  document.getElementById('dash-ov').innerHTML=ovI.length?ovI.map(function(it){return'<div style="padding:9px 0;border-bottom:1px solid #e2e5f0"><div style="font-size:13px;font-weight:600">'+it.name+'</div><div style="font-size:11px;color:#7c8298;margin-top:2px">'+it.stakeholder+' · Due: '+it.due_date+' · '+it.followups+' follow-up(s)</div></div>';}).join(''):'<div class="empty">No overdue items</div>';
 }
 
-window.renderOverdue = function(){
+function renderOverdue(){
   var ov=items.filter(function(it){return getStatus(it)==='overdue';});
   var soon=items.filter(function(it){if(getStatus(it)!=='pending'||!it.due_date)return false;return(new Date(it.due_date)-new Date(today()))/86400000<=7;});
   var html='';
-  if(ov.length){
-    html+='<div class="danger-box">'+ov.length+' item(s) are overdue — stakeholders have not completed on time.</div>';
-    html+='<div class="card"><div class="card-title">Overdue items</div><div class="table-wrap"><table><thead><tr><th style="width:26%">Task</th><th style="width:18%">Stakeholder</th><th style="width:12%">Frequency</th><th style="width:12%">Due date</th><th style="width:10%">Follow-ups</th><th style="width:22%">Action</th></tr></thead><tbody>';
-    html+=ov.map(function(it){var btn=can('send_email')?'<button class="btn btn-sm btn-primary" onclick="goEmail('+it.id+')">Send follow-up</button>':'';return '<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:var(--rose);font-weight:600">'+it.due_date+'</td><td style="text-align:center">'+it.followups+'</td><td>'+btn+'</td></tr>';}).join('');
-    html+='</tbody></table></div></div>';
-  }
-  if(soon.length){
-    html+='<div class="warn-box">'+soon.length+' item(s) due within 7 days — send a reminder now.</div>';
-    html+='<div class="card"><div class="card-title">Due within 7 days</div><div class="table-wrap"><table><thead><tr><th style="width:30%">Task</th><th style="width:20%">Stakeholder</th><th style="width:14%">Frequency</th><th style="width:14%">Due date</th><th style="width:22%">Action</th></tr></thead><tbody>';
-    html+=soon.map(function(it){var btn=can('send_email')?'<button class="btn btn-sm" onclick="goEmail('+it.id+')">Send reminder</button>':'';return '<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:var(--amber);font-weight:600">'+it.due_date+'</td><td>'+btn+'</td></tr>';}).join('');
-    html+='</tbody></table></div></div>';
-  }
-  if(!ov.length&&!soon.length)html='<div class="empty" style="padding:60px;font-size:15px">All items on track — nothing overdue or due soon.</div>';
-  document.getElementById('overdue-content').innerHTML=html;
+  if(ov.length){html+='<div class="danger-box">'+ov.length+' item(s) overdue.</div><div class="card"><div class="card-title">Overdue items</div><div class="table-wrap"><table><thead><tr><th style="width:26%">Task</th><th style="width:18%">Stakeholder</th><th style="width:12%">Frequency</th><th style="width:12%">Due date</th><th style="width:10%">FU</th><th style="width:22%">Action</th></tr></thead><tbody>'+ov.map(function(it){return'<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:#d93f3f;font-weight:600">'+it.due_date+'</td><td style="text-align:center">'+it.followups+'</td><td>'+(can('email')?'<button class="btn btn-sm btn-primary" data-email="'+it.id+'">Send follow-up</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div></div>';}
+  if(soon.length){html+='<div class="warn-box">'+soon.length+' item(s) due within 7 days.</div><div class="card"><div class="card-title">Due within 7 days</div><div class="table-wrap"><table><thead><tr><th style="width:30%">Task</th><th style="width:20%">Stakeholder</th><th style="width:14%">Frequency</th><th style="width:14%">Due date</th><th style="width:22%">Action</th></tr></thead><tbody>'+soon.map(function(it){return'<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:#e07d1a;font-weight:600">'+it.due_date+'</td><td>'+(can('email')?'<button class="btn btn-sm" data-email="'+it.id+'">Send reminder</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div></div>';}
+  if(!ov.length&&!soon.length)html='<div class="empty" style="padding:60px">All items on track!</div>';
+  var el=document.getElementById('overdue-content');el.innerHTML=html;
+  el.querySelectorAll('[data-email]').forEach(function(b){b.onclick=function(){goEmail(b.getAttribute('data-email'));};});
 }
 
-window.renderEmailTab = function(){
+function renderEmailTab(){
   var sel=document.getElementById('fu-select'),prev=sel.value;
   sel.innerHTML='<option value="">-- select item --</option>';
   items.forEach(function(it){sel.innerHTML+='<option value="'+it.id+'">'+it.name+' — '+it.stakeholder+'</option>';});
   if(prev)sel.value=prev;renderLog();
 }
 
-window.generateEmail = function(){
-  if(!can('send_email')){alert('You do not have permission.');return;}
+document.getElementById('gen-email-btn').onclick=function(){
+  if(!can('email')){alert('No permission.');return;}
   var id=document.getElementById('fu-select').value,num=parseInt(document.getElementById('fu-num').value),sender=document.getElementById('fu-sender').value.trim();
-  if(!id){alert('Please select a compliance item.');return;}
-  if(!sender){alert('Please enter your name.');return;}
+  if(!id){alert('Please select a compliance item.');return;}if(!sender){alert('Please enter your name.');return;}
   var it=items.find(function(x){return x.id==id;});if(!it)return;
-  var subs=['Reminder: Action required — '+it.name,'Second reminder: '+it.name+' still pending','URGENT ESCALATION: '+it.name+' — immediate action required'];
+  var subs=['Reminder: Action required — '+it.name,'Second reminder: '+it.name+' still pending','URGENT ESCALATION: '+it.name];
   var types=['1st reminder — gentle','2nd reminder — firm','3rd reminder — escalation'];
-  var b1='Dear '+it.stakeholder+',\n\nI hope you are doing well.\n\nThis is a gentle reminder that the following compliance task is due:\n\n  Task        : '+it.name+'\n  Frequency   : '+FL[it.freq]+'\n  Due date    : '+(it.due_date||'As discussed')+'\n  Department  : '+(it.dept||'Your team')+'\n\nKindly complete this at your earliest convenience and inform us once done.\n\nBest regards,\n'+sender+'\nGRC / Compliance Team';
-  var b2='Dear '+it.stakeholder+',\n\nThis is a follow-up to our earlier reminder. The task below is still incomplete:\n\n  Task        : '+it.name+'\n  Frequency   : '+FL[it.freq]+'\n  Due date    : '+(it.due_date||'As discussed')+'\n  Department  : '+(it.dept||'Your team')+'\n\nPlease prioritize this and confirm completion by reply.\n\nRegards,\n'+sender+'\nGRC / Compliance Team';
-  var b3='Dear '+it.stakeholder+',\n\nDespite two previous reminders, the task below remains incomplete. We are escalating:\n\n  Task           : '+it.name+'\n  Frequency      : '+FL[it.freq]+'\n  Due date       : '+(it.due_date||'As discussed')+'\n  Follow-ups sent: '+it.followups+'\n\nPlease complete IMMEDIATELY or respond within 24 hours with a reason and revised date.\n\nThis will be escalated to senior management if not resolved.\n\nRegards,\n'+sender+'\nGRC / Compliance Team';
-  var bodies=[b1,b2,b3];
+  var bodies=['Dear '+it.stakeholder+',\n\nThis is a gentle reminder that the following compliance task is due:\n\n  Task        : '+it.name+'\n  Frequency   : '+FL[it.freq]+'\n  Due date    : '+(it.due_date||'As discussed')+'\n  Department  : '+(it.dept||'Your team')+'\n\nKindly complete this at your earliest convenience.\n\nBest regards,\n'+sender+'\nGRC / Compliance Team','Dear '+it.stakeholder+',\n\nThis is a follow-up. The task below is still incomplete:\n\n  Task        : '+it.name+'\n  Frequency   : '+FL[it.freq]+'\n  Due date    : '+(it.due_date||'As discussed')+'\n\nPlease prioritize and confirm completion by reply.\n\nRegards,\n'+sender+'\nGRC / Compliance Team','Dear '+it.stakeholder+',\n\nDespite two reminders, the task below remains incomplete. We are escalating:\n\n  Task           : '+it.name+'\n  Follow-ups sent: '+it.followups+'\n\nPlease complete IMMEDIATELY or respond within 24 hours.\n\nRegards,\n'+sender+'\nGRC / Compliance Team'];
   currentEmail={itemId:it.id,itemName:it.name,stakeholder:it.stakeholder,email:it.email,num:num,type:types[num-1],subject:subs[num-1],body:bodies[num-1]};
-  document.getElementById('email-meta').innerHTML='<strong>To:</strong> '+(it.email||it.stakeholder)+'&nbsp;&nbsp;&nbsp;<strong>Subject:</strong> '+subs[num-1];
+  document.getElementById('email-meta').innerHTML='<strong>To:</strong> '+(it.email||it.stakeholder)+'&nbsp;&nbsp;<strong>Subject:</strong> '+subs[num-1];
   document.getElementById('email-body-text').textContent=bodies[num-1];
   document.getElementById('email-result').style.display='block';
   document.getElementById('email-result').scrollIntoView({behavior:'smooth'});
-}
+};
 
-window.copyEmail = function(){if(!currentEmail)return;navigator.clipboard.writeText('Subject: '+currentEmail.subject+'\n\n'+currentEmail.body).then(function(){alert('Copied! Paste into Outlook or Gmail (Ctrl+V).');}).catch(function(){alert('Please manually select the email text and press Ctrl+C.');});}
+document.getElementById('copy-email-btn').onclick=function(){
+  if(!currentEmail)return;
+  navigator.clipboard.writeText('Subject: '+currentEmail.subject+'\n\n'+currentEmail.body).then(function(){alert('Copied! Paste into Outlook or Gmail.');}).catch(function(){alert('Please manually select and copy the email text.');});
+};
 
-window.markSent = async function(){
+document.getElementById('mark-sent-btn').onclick=async function(){
   if(!currentEmail)return;
   var it=items.find(function(x){return x.id==currentEmail.itemId;});
-  if(it)await db.from('grc_items').update({followups:(it.followups||0)+1}).eq('id',it.id);
-  await db.from('grc_logs').insert({item_name:currentEmail.itemName,stakeholder:currentEmail.stakeholder,followup_num:currentEmail.num,followup_type:currentEmail.type,log_date:today()});
-  document.getElementById('email-result').style.display='none';currentEmail=null;await loadAll();alert('Logged! Follow-up recorded.');
-}
+  if(it)await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{followups:(it.followups||0)+1},extra:{'Prefer':'return=minimal'}});
+  await api('grc_logs',{method:'POST',body:{item_name:currentEmail.itemName,stakeholder:currentEmail.stakeholder,followup_num:currentEmail.num,followup_type:currentEmail.type,log_date:today()},extra:{'Prefer':'return=minimal'}});
+  document.getElementById('email-result').style.display='none';currentEmail=null;await loadAll();alert('Logged!');
+};
 
-window.renderLog = function(){
+function renderLog(){
   var tb=document.getElementById('log-body');
-  if(!logs.length){tb.innerHTML='<tr><td colspan="5" class="empty">No follow-ups logged yet.</td></tr>';return;}
-  tb.innerHTML=logs.map(function(l){return '<tr><td title="'+l.item_name+'">'+l.item_name+'</td><td>'+l.stakeholder+'</td><td style="text-align:center;font-weight:600">#'+l.followup_num+'</td><td>'+l.log_date+'</td><td>'+l.followup_type+'</td></tr>';}).join('');
+  if(!logs.length){tb.innerHTML='<tr><td colspan="5" class="empty">No follow-ups yet.</td></tr>';return;}
+  tb.innerHTML=logs.map(function(l){return'<tr><td title="'+l.item_name+'">'+l.item_name+'</td><td>'+l.stakeholder+'</td><td style="text-align:center;font-weight:700">#'+l.followup_num+'</td><td>'+l.log_date+'</td><td>'+l.followup_type+'</td></tr>';}).join('');
 }
 
-window.addRisk = async function(){
+document.getElementById('add-risk-btn').onclick=async function(){
   if(!can('add')){alert('No permission.');return;}
   var name=document.getElementById('r-name').value.trim();if(!name){alert('Please enter a risk name.');return;}
   var like=Math.min(5,Math.max(1,parseInt(document.getElementById('r-like').value)||1));
   var impact=Math.min(5,Math.max(1,parseInt(document.getElementById('r-impact').value)||1));
-  await db.from('grc_risks').insert({id:Date.now(),name:name,category:document.getElementById('r-cat').value,likelihood:like,impact:impact,owner:document.getElementById('r-owner').value.trim(),status:'Open'});
+  await api('grc_risks',{method:'POST',body:{id:Date.now(),name:name,category:document.getElementById('r-cat').value,likelihood:like,impact:impact,owner:document.getElementById('r-owner').value.trim(),status:'Open'},extra:{'Prefer':'return=minimal'}});
   ['r-name','r-like','r-impact','r-owner'].forEach(function(id){document.getElementById(id).value='';});await loadAll();
-}
+};
 
-window.riskLevel = function(s){return s>=15?'high':s>=8?'medium':'low';}
-window.renderRisks = function(){
+function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
+function renderRisks(){
   var tb=document.getElementById('risk-body');
   if(!risks.length){tb.innerHTML='<tr><td colspan="7" class="empty">No risks yet.</td></tr>';return;}
   var sorted=risks.slice().sort(function(a,b){return(b.likelihood*b.impact)-(a.likelihood*a.impact);});
-  tb.innerHTML=sorted.map(function(r){
-    var score=r.likelihood*r.impact,lv=riskLevel(score);
-    var lvBadge={high:'b-overdue',medium:'b-pending',low:'b-done'}[lv];
-    var del=can('delete')?'<button class="btn btn-sm btn-danger" onclick="delRisk('+r.id+')">Delete</button>':'';
-    return '<tr><td title="'+r.name+'">'+r.name+'</td><td>'+r.category+'</td><td style="font-weight:600">'+score+'/25</td><td><span class="badge '+lvBadge+'">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span></td><td>'+(r.owner||'—')+'</td><td><span class="badge b-'+r.status.toLowerCase().replace(/ /g,'')+'" onclick="cycleRisk('+r.id+',\''+r.status+'\')" style="cursor:pointer">'+r.status+'</span></td><td>'+del+'</td></tr>';
-  }).join('');
+  tb.innerHTML=sorted.map(function(r){var score=r.likelihood*r.impact,lv=riskLevel(score),lvB={high:'b-overdue',medium:'b-pending',low:'b-done'}[lv];return'<tr><td title="'+r.name+'">'+r.name+'</td><td>'+r.category+'</td><td style="font-weight:700">'+score+'/25</td><td><span class="badge '+lvB+'">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span></td><td>'+(r.owner||'—')+'</td><td><span class="badge b-'+r.status.toLowerCase().replace(/ /g,'')+'" data-cycle="'+r.id+'" data-st="'+r.status+'" style="cursor:pointer">'+r.status+'</span></td><td>'+(can('delete')?'<button class="btn btn-sm btn-danger" data-dr="'+r.id+'">Delete</button>':'')+'</td></tr>';}).join('');
+  tb.querySelectorAll('[data-cycle]').forEach(function(el){el.onclick=async function(){var s=['Open','In progress','Closed'],cur=el.getAttribute('data-st'),next=s[(s.indexOf(cur)+1)%s.length];await api('grc_risks?id=eq.'+el.getAttribute('data-cycle'),{method:'PATCH',body:{status:next},extra:{'Prefer':'return=minimal'}});await loadAll();};});
+  tb.querySelectorAll('[data-dr]').forEach(function(el){el.onclick=async function(){if(!confirm('Delete?'))return;await api('grc_risks?id=eq.'+el.getAttribute('data-dr'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};});
 }
-window.cycleRisk = async function(id,cur){if(!can('add')){alert('No permission.');return;}var s=['Open','In progress','Closed'],next=s[(s.indexOf(cur)+1)%s.length];await db.from('grc_risks').update({status:next}).eq('id',id);await loadAll();}
-window.delRisk = async function(id){if(!can('delete')){alert('No permission.');return;}if(!confirm('Delete?'))return;await db.from('grc_risks').delete().eq('id',id);await loadAll();}
 
-window.loadUsers = async function(){var {data}=await db.from('grc_users').select('*').order('created_at',{ascending:true});users=data||[];renderUsers();}
-window.addUser = async function(){
+async function loadUsers(){
+  var res=await api('grc_users?select=*&order=created_at.asc');var data=await res.json();users=data||[];renderUsers();
+}
+document.getElementById('add-user-btn').onclick=async function(){
   var name=document.getElementById('u-name').value.trim(),email=document.getElementById('u-email').value.trim().toLowerCase(),pass=document.getElementById('u-pass').value.trim(),role=document.getElementById('u-role').value;
   if(!name||!email||!pass){alert('Please fill all fields.');return;}
-  var {error}=await db.from('grc_users').insert({name:name,email:email,password:pass,role:role});
-  if(error){alert('Could not add user. Email may already exist.\n'+error.message);return;}
-  ['u-name','u-email','u-pass'].forEach(function(id){document.getElementById(id).value='';});
-  await loadUsers();alert('User added!');
-}
-window.deleteUser = async function(id){if(id===currentUser.id){alert('Cannot delete your own account.');return;}if(!confirm('Remove this user?'))return;await db.from('grc_users').delete().eq('id',id);await loadUsers();}
-window.renderUsers = function(){
+  var res=await api('grc_users',{method:'POST',body:{name:name,email:email,password:pass,role:role},extra:{'Prefer':'return=minimal'}});
+  if(!res.ok){var e=await res.json();alert('Error: '+(e.message||'Could not add user'));return;}
+  ['u-name','u-email','u-pass'].forEach(function(id){document.getElementById(id).value='';});await loadUsers();alert('User added!');
+};
+function renderUsers(){
   var tb=document.getElementById('user-body');
   if(!users.length){tb.innerHTML='<tr><td colspan="5" class="empty">No users.</td></tr>';return;}
-  tb.innerHTML=users.map(function(u){
-    var ini=u.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
-    var col=ROLE_COLORS[u.role]||'#4f52d9',date=u.created_at?u.created_at.split('T')[0]:'';
-    var del=u.id!==currentUser.id?'<button class="btn btn-sm btn-danger" onclick="deleteUser('+u.id+')">Remove</button>':'<span style="font-size:12px;color:var(--ink4)">
+  tb.innerHTML=users.map(function(u){var ini=u.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(),col=RC[u.role]||'#4f52d9',date=u.created_at?u.created_at.split('T')[0]:'';return'<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:'+col+';display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+ini+'</span>'+u.name+'</span></td><td>'+u.email+'</td><td><span class="badge r-'+u.role+'">'+u.role+'</span></td><td>'+date+'</td><td>'+(u.id!==currentUser.id?'<button class="btn btn-sm btn-danger" data-du="'+u.id+'">Remove</button>':'<span style="font-size:12px;color:#b0b6c8">You</span>')+'</td></tr>';}).join('');
+  tb.querySelectorAll('[data-du]').forEach(function(el){el.onclick=async function(){if(!confirm('Remove user?'))return;await api('grc_users?id=eq.'+el.getAttribute('data-du'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadUsers();};});
+}
+</script>
+</body>
+</html>
