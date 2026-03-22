@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>GRC Shield — Compliance Tracker</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Serif+Display&display=swap" rel="stylesheet">
-<script src="https://unpkg.com/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <style>
 :root{
   --ink:#0f1117;--ink2:#3d4152;--ink3:#7c8298;--ink4:#b0b6c8;
@@ -262,9 +262,9 @@ tbody tr:hover td{background:var(--indigo-light)}
       <div class="login-welcome">Welcome back</div>
       <div class="login-sub">Sign in to your GRC Tracker account</div>
       <div class="login-err" id="login-err">Invalid email or password. Please try again.</div>
-      <div class="lf"><label>Email address</label><input id="l-email" type="email" placeholder="you@company.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <div class="lf"><label>Password</label><input id="l-pass" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter')doLogin()"></div>
-      <button class="login-btn" onclick="doLogin()">Sign in to GRC Shield</button>
+      <div class="lf"><label>Email address</label><input id="l-email" type="email" placeholder="you@company.com" onkeydown="if(event.key==='Enter'&&typeof doLogin!=='undefined')doLogin()"></div>
+      <div class="lf"><label>Password</label><input id="l-pass" type="password" placeholder="Enter your password" onkeydown="if(event.key==='Enter'&&typeof doLogin!=='undefined')doLogin()"></div>
+      <button class="login-btn" onclick="if(typeof doLogin!=='undefined'){doLogin();}else{alert('Page still loading, please wait 3 seconds and try again.');}">Sign in to GRC Shield</button>
       </div>
     </div>
   </div>
@@ -529,6 +529,7 @@ tbody tr:hover td{background:var(--indigo-light)}
 </div>
 
 <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+document.addEventListener("DOMContentLoaded", function() {
 var SUPA_URL='https://kqvvqriyaundzefmrqzk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdnZxcml5YXVuZHplZm1ycXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTA4MjQsImV4cCI6MjA4OTY2NjgyNH0.r8JlSYTPunPO6-N_TlipqZ92sPtLf_FrtHz47nVA0Mg';
 var db=supabase.createClient(SUPA_URL,SUPA_KEY);
@@ -540,7 +541,7 @@ function today(){return new Date().toISOString().split('T')[0];}
 function getStatus(it){if(it.done)return 'done';if(it.due_date&&it.due_date<today())return 'overdue';return 'pending';}
 function can(a){if(!currentUser)return false;var r=currentUser.role;if(a==='view')return true;if(a==='add')return r==='admin'||r==='manager';if(a==='delete')return r==='admin';if(a==='toggle_done')return r==='admin'||r==='manager'||r==='stakeholder';if(a==='manage_users')return r==='admin';if(a==='send_email')return r==='admin'||r==='manager';return false;}
 
-async function doLogin(){
+window.doLogin = async function(){
   var email=document.getElementById('l-email').value.trim().toLowerCase();
   var pass=document.getElementById('l-pass').value.trim();
   if(!email||!pass){showErr('Please enter your email and password.');return;}
@@ -551,10 +552,10 @@ async function doLogin(){
   document.getElementById('main-app').style.display='flex';
   setupUI();await loadAll();
 }
-function showErr(m){var e=document.getElementById('login-err');e.textContent=m;e.style.display='block';}
-function doLogout(){currentUser=null;document.getElementById('main-app').style.display='none';document.getElementById('login-screen').style.display='grid';document.getElementById('l-email').value='';document.getElementById('l-pass').value='';document.getElementById('login-err').style.display='none';}
+window.showErr = function(m){var e=document.getElementById('login-err');e.textContent=m;e.style.display='block';}
+window.doLogout = function(){currentUser=null;document.getElementById('main-app').style.display='none';document.getElementById('login-screen').style.display='grid';document.getElementById('l-email').value='';document.getElementById('l-pass').value='';document.getElementById('login-err').style.display='none';}
 
-function setupUI(){
+window.setupUI = function(){
   var r=currentUser.role;
   var ini=currentUser.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
   document.getElementById('user-avatar').textContent=ini;
@@ -567,7 +568,7 @@ function setupUI(){
   document.getElementById('add-risk-card').style.display=can('add')?'':'none';
 }
 
-async function loadAll(){
+window.loadAll = async function(){
   try{
     var r1=await db.from('grc_items').select('*').order('created_at',{ascending:false});
     var r2=await db.from('grc_logs').select('*').order('created_at',{ascending:false});
@@ -588,7 +589,7 @@ async function loadAll(){
   }
 }
 
-function showTab(e,id,title,sub){
+window.showTab = function(e,id,title,sub){
   document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
   document.querySelectorAll('.sb-btn').forEach(function(b){b.classList.remove('active');});
   document.getElementById(id).classList.add('active');
@@ -603,7 +604,7 @@ function showTab(e,id,title,sub){
   if(id==='s-admin')loadUsers();
 }
 
-async function addItem(){
+window.addItem = async function(){
   if(!can('add')){alert('You do not have permission to add items.');return;}
   var name=document.getElementById('i-name').value.trim(),stake=document.getElementById('i-stake').value.trim();
   if(!name){alert('Please enter a task name.');return;}
@@ -615,15 +616,15 @@ async function addItem(){
   await loadAll();
 }
 
-function renderFreqFilters(){
+window.renderFreqFilters = function(){
   var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'];
   var html='<button class="filter-tag'+(activeFreqFilter===''?' active':'')+'" onclick="setFilter(\'\')">All</button>';
   freqs.forEach(function(f){if(items.some(function(it){return it.freq===f;}))html+='<button class="filter-tag'+(activeFreqFilter===f?' active':'')+'" onclick="setFilter(\''+f+'\')">'+FL[f]+'</button>';});
   document.getElementById('freq-filters').innerHTML=html;
 }
-function setFilter(f){activeFreqFilter=f;renderFreqFilters();renderItems();}
+window.setFilter = function(f){activeFreqFilter=f;renderFreqFilters();renderItems();}
 
-function renderItems(){
+window.renderItems = function(){
   var filtered=activeFreqFilter?items.filter(function(it){return it.freq===activeFreqFilter;}):items;
   var tb=document.getElementById('items-body');
   if(!filtered.length){tb.innerHTML='<tr><td colspan="8" class="empty">No items yet. Add your first compliance item above.</td></tr>';return;}
@@ -640,11 +641,11 @@ function renderItems(){
   }).join('');
 }
 
-async function toggleDone(id,current){await db.from('grc_items').update({done:!current}).eq('id',id);await loadAll();}
-async function delItem(id){if(!can('delete')){alert('No permission.');return;}if(!confirm('Delete this item?'))return;await db.from('grc_items').delete().eq('id',id);await loadAll();}
-function goEmail(id){document.querySelectorAll('.sb-btn')[3].click();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
+window.toggleDone = async function(id,current){await db.from('grc_items').update({done:!current}).eq('id',id);await loadAll();}
+window.delItem = async function(id){if(!can('delete')){alert('No permission.');return;}if(!confirm('Delete this item?'))return;await db.from('grc_items').delete().eq('id',id);await loadAll();}
+window.goEmail = function(id){document.querySelectorAll('.sb-btn')[3].click();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
 
-function renderDash(){
+window.renderDash = function(){
   var total=items.length,done=items.filter(function(it){return getStatus(it)==='done';}).length;
   var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length,pct=total?Math.round(done/total*100):0;
   document.getElementById('dash-metrics').innerHTML=
@@ -665,7 +666,7 @@ function renderDash(){
   }).join(''):'<div class="empty">No overdue items</div>';
 }
 
-function renderOverdue(){
+window.renderOverdue = function(){
   var ov=items.filter(function(it){return getStatus(it)==='overdue';});
   var soon=items.filter(function(it){if(getStatus(it)!=='pending'||!it.due_date)return false;return(new Date(it.due_date)-new Date(today()))/86400000<=7;});
   var html='';
@@ -685,14 +686,14 @@ function renderOverdue(){
   document.getElementById('overdue-content').innerHTML=html;
 }
 
-function renderEmailTab(){
+window.renderEmailTab = function(){
   var sel=document.getElementById('fu-select'),prev=sel.value;
   sel.innerHTML='<option value="">-- select item --</option>';
   items.forEach(function(it){sel.innerHTML+='<option value="'+it.id+'">'+it.name+' — '+it.stakeholder+'</option>';});
   if(prev)sel.value=prev;renderLog();
 }
 
-function generateEmail(){
+window.generateEmail = function(){
   if(!can('send_email')){alert('You do not have permission.');return;}
   var id=document.getElementById('fu-select').value,num=parseInt(document.getElementById('fu-num').value),sender=document.getElementById('fu-sender').value.trim();
   if(!id){alert('Please select a compliance item.');return;}
@@ -711,9 +712,9 @@ function generateEmail(){
   document.getElementById('email-result').scrollIntoView({behavior:'smooth'});
 }
 
-function copyEmail(){if(!currentEmail)return;navigator.clipboard.writeText('Subject: '+currentEmail.subject+'\n\n'+currentEmail.body).then(function(){alert('Copied! Paste into Outlook or Gmail (Ctrl+V).');}).catch(function(){alert('Please manually select the email text and press Ctrl+C.');});}
+window.copyEmail = function(){if(!currentEmail)return;navigator.clipboard.writeText('Subject: '+currentEmail.subject+'\n\n'+currentEmail.body).then(function(){alert('Copied! Paste into Outlook or Gmail (Ctrl+V).');}).catch(function(){alert('Please manually select the email text and press Ctrl+C.');});}
 
-async function markSent(){
+window.markSent = async function(){
   if(!currentEmail)return;
   var it=items.find(function(x){return x.id==currentEmail.itemId;});
   if(it)await db.from('grc_items').update({followups:(it.followups||0)+1}).eq('id',it.id);
@@ -721,13 +722,13 @@ async function markSent(){
   document.getElementById('email-result').style.display='none';currentEmail=null;await loadAll();alert('Logged! Follow-up recorded.');
 }
 
-function renderLog(){
+window.renderLog = function(){
   var tb=document.getElementById('log-body');
   if(!logs.length){tb.innerHTML='<tr><td colspan="5" class="empty">No follow-ups logged yet.</td></tr>';return;}
   tb.innerHTML=logs.map(function(l){return '<tr><td title="'+l.item_name+'">'+l.item_name+'</td><td>'+l.stakeholder+'</td><td style="text-align:center;font-weight:600">#'+l.followup_num+'</td><td>'+l.log_date+'</td><td>'+l.followup_type+'</td></tr>';}).join('');
 }
 
-async function addRisk(){
+window.addRisk = async function(){
   if(!can('add')){alert('No permission.');return;}
   var name=document.getElementById('r-name').value.trim();if(!name){alert('Please enter a risk name.');return;}
   var like=Math.min(5,Math.max(1,parseInt(document.getElementById('r-like').value)||1));
@@ -736,8 +737,8 @@ async function addRisk(){
   ['r-name','r-like','r-impact','r-owner'].forEach(function(id){document.getElementById(id).value='';});await loadAll();
 }
 
-function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
-function renderRisks(){
+window.riskLevel = function(s){return s>=15?'high':s>=8?'medium':'low';}
+window.renderRisks = function(){
   var tb=document.getElementById('risk-body');
   if(!risks.length){tb.innerHTML='<tr><td colspan="7" class="empty">No risks yet.</td></tr>';return;}
   var sorted=risks.slice().sort(function(a,b){return(b.likelihood*b.impact)-(a.likelihood*a.impact);});
@@ -748,11 +749,11 @@ function renderRisks(){
     return '<tr><td title="'+r.name+'">'+r.name+'</td><td>'+r.category+'</td><td style="font-weight:600">'+score+'/25</td><td><span class="badge '+lvBadge+'">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span></td><td>'+(r.owner||'—')+'</td><td><span class="badge b-'+r.status.toLowerCase().replace(/ /g,'')+'" onclick="cycleRisk('+r.id+',\''+r.status+'\')" style="cursor:pointer">'+r.status+'</span></td><td>'+del+'</td></tr>';
   }).join('');
 }
-async function cycleRisk(id,cur){if(!can('add')){alert('No permission.');return;}var s=['Open','In progress','Closed'],next=s[(s.indexOf(cur)+1)%s.length];await db.from('grc_risks').update({status:next}).eq('id',id);await loadAll();}
-async function delRisk(id){if(!can('delete')){alert('No permission.');return;}if(!confirm('Delete?'))return;await db.from('grc_risks').delete().eq('id',id);await loadAll();}
+window.cycleRisk = async function(id,cur){if(!can('add')){alert('No permission.');return;}var s=['Open','In progress','Closed'],next=s[(s.indexOf(cur)+1)%s.length];await db.from('grc_risks').update({status:next}).eq('id',id);await loadAll();}
+window.delRisk = async function(id){if(!can('delete')){alert('No permission.');return;}if(!confirm('Delete?'))return;await db.from('grc_risks').delete().eq('id',id);await loadAll();}
 
-async function loadUsers(){var {data}=await db.from('grc_users').select('*').order('created_at',{ascending:true});users=data||[];renderUsers();}
-async function addUser(){
+window.loadUsers = async function(){var {data}=await db.from('grc_users').select('*').order('created_at',{ascending:true});users=data||[];renderUsers();}
+window.addUser = async function(){
   var name=document.getElementById('u-name').value.trim(),email=document.getElementById('u-email').value.trim().toLowerCase(),pass=document.getElementById('u-pass').value.trim(),role=document.getElementById('u-role').value;
   if(!name||!email||!pass){alert('Please fill all fields.');return;}
   var {error}=await db.from('grc_users').insert({name:name,email:email,password:pass,role:role});
@@ -760,8 +761,8 @@ async function addUser(){
   ['u-name','u-email','u-pass'].forEach(function(id){document.getElementById(id).value='';});
   await loadUsers();alert('User added!');
 }
-async function deleteUser(id){if(id===currentUser.id){alert('Cannot delete your own account.');return;}if(!confirm('Remove this user?'))return;await db.from('grc_users').delete().eq('id',id);await loadUsers();}
-function renderUsers(){
+window.deleteUser = async function(id){if(id===currentUser.id){alert('Cannot delete your own account.');return;}if(!confirm('Remove this user?'))return;await db.from('grc_users').delete().eq('id',id);await loadUsers();}
+window.renderUsers = function(){
   var tb=document.getElementById('user-body');
   if(!users.length){tb.innerHTML='<tr><td colspan="5" class="empty">No users.</td></tr>';return;}
   tb.innerHTML=users.map(function(u){
