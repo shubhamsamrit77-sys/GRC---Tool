@@ -105,6 +105,7 @@ tbody tr:hover td{background:#f5f6fa}
 .filter-tag.active{background:#4f52d9;color:#fff;border-color:#4f52d9}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
+@keyframes spin{to{transform:rotate(360deg)}}
 @media(max-width:900px){.login-left{display:none}.login-wrap{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.form-row-3,.form-row-4{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.ham-btn{display:flex;align-items:center}.sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:100;transition:left .25s}.sidebar.open{left:0}.metrics{grid-template-columns:repeat(2,1fr)}.form-row,.form-row-3,.form-row-4{grid-template-columns:1fr}.content{padding:12px}.topbar{padding:10px 14px}.login-right{padding:28px 20px}th,td{padding:8px 6px;font-size:11px}}
 </style>
@@ -330,11 +331,99 @@ tbody tr:hover td{background:#f5f6fa}
       </div>
 <div id="s-overdue" class="sec"><div id="overdue-content"></div></div>
       <div id="s-email" class="sec">
-        <div class="card"><div class="card-title">Generate follow-up email</div><div class="info-box">Select an item, choose the reminder number, enter your name and click Generate.</div><div class="form-row-3"><div class="field"><label>Select item *</label><select id="fu-select"><option value="">-- select item --</option></select></div><div class="field"><label>Follow-up number</label><select id="fu-num"><option value="1">1st reminder — gentle</option><option value="2">2nd reminder — firm</option><option value="3">3rd reminder — escalation</option></select></div><div class="field"><label>Your name *</label><input id="fu-sender" placeholder="e.g. Amit Verma"></div></div><div class="actions"><button class="btn btn-primary" id="gen-email-btn">Generate email</button></div></div>
-        <div id="email-result" style="display:none"><div class="card"><div class="card-title">Your follow-up email</div><div class="email-meta" id="email-meta"></div><div class="email-body" id="email-body-text"></div><div class="actions" style="margin-top:12px"><button class="btn btn-sm" id="copy-email-btn">Copy full email</button><button class="btn btn-sm btn-primary" id="mark-sent-btn">Mark as sent and log it</button></div></div></div>
-        <div class="card"><div class="card-title">Follow-up log</div><div class="table-wrap"><table><thead><tr><th style="width:28%">Task</th><th style="width:20%">Stakeholder</th><th style="width:12%">#</th><th style="width:15%">Date</th><th style="width:25%">Type</th></tr></thead><tbody id="log-body"><tr><td colspan="5" class="empty">No follow-ups yet.</td></tr></tbody></table></div></div>
+        <div class="card">
+          <div class="card-title">Generate follow-up email</div>
+          <div class="info-box">Select an item, set follow-up number, customize subject and tone — then generate with AI or use the standard template.</div>
+          <div class="form-row">
+            <div class="field"><label>Select compliance item *</label><select id="fu-select"><option value="">-- select item --</option></select></div>
+            <div class="field"><label>Your name (sender) *</label><input id="fu-sender" placeholder="e.g. Deepak Sharma"></div>
+          </div>
+          <div class="form-row-3">
+            <div class="field">
+              <label>Follow-up number</label>
+              <div style="display:flex;align-items:center;gap:8px">
+                <button class="btn btn-sm" id="fu-num-minus" style="padding:6px 12px;font-size:16px;font-weight:700">−</button>
+                <span id="fu-num-display" style="font-size:18px;font-weight:700;color:#4f52d9;min-width:40px;text-align:center">1</span>
+                <button class="btn btn-sm" id="fu-num-plus" style="padding:6px 12px;font-size:16px;font-weight:700">+</button>
+                <span id="fu-num-label" style="font-size:12px;color:#7c8298;margin-left:4px">1st reminder</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Email tone</label>
+              <select id="fu-tone">
+                <option value="gentle">Gentle — polite reminder</option>
+                <option value="firm">Firm — strong reminder</option>
+                <option value="escalation">Escalation — senior management</option>
+                <option value="final">Final notice — last warning</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Escalate to (CC)</label>
+              <input id="fu-cc" placeholder="manager@company.com (optional)">
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:10px">
+            <label>Email subject (auto-filled — you can edit)</label>
+            <input id="fu-subject" placeholder="Subject will appear here after selecting item">
+          </div>
+          <div class="field" style="margin-bottom:12px">
+            <label>Additional instructions for AI (optional)</label>
+            <textarea id="fu-ai-instructions" placeholder="e.g. Make it more formal. Add that audit is next week. Mention GDPR compliance deadline. Mention penalty if not done..." style="width:100%;border:1.5px solid #e2e5f0;border-radius:6px;padding:9px 11px;font-family:Segoe UI,sans-serif;font-size:13px;background:#f5f6fa;color:#0f1117;resize:vertical;min-height:64px"></textarea>
+          </div>
+          <div class="actions">
+            <button class="btn" id="gen-standard-btn">Use standard template</button>
+            <button class="btn btn-primary" id="gen-ai-btn">Generate with AI</button>
+          </div>
+          <div id="ai-loading" style="display:none;text-align:center;padding:16px;color:#7c8298;font-size:13px">
+            <div style="display:inline-block;width:20px;height:20px;border:2px solid #e2e5f0;border-top-color:#4f52d9;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle"></div>
+            AI is writing your email...
+          </div>
+        </div>
+
+        <div id="email-result" style="display:none">
+          <div class="card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e2e5f0;flex-wrap:wrap;gap:8px">
+              <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">Your follow-up email</div>
+              <div style="display:flex;gap:6px">
+                <span id="email-fu-badge" style="background:#eeeffe;color:#4f52d9;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">Follow-up #1</span>
+                <span id="email-tone-badge" style="background:#e0f7f2;color:#065f46;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">Gentle</span>
+              </div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px 14px;margin-bottom:12px">
+              <div style="font-size:12px;margin-bottom:6px"><strong>To:</strong> <span id="email-to"></span> &nbsp;&nbsp; <span id="email-cc-show" style="display:none"><strong>CC:</strong> <span id="email-cc-val"></span></span></div>
+              <div style="font-size:12px;display:flex;align-items:center;gap:8px">
+                <strong>Subject:</strong>
+                <input id="email-subject-edit" style="flex:1;border:1px solid #e2e5f0;border-radius:4px;padding:4px 8px;font-size:12px;background:#fff;color:#0f1117" placeholder="Email subject">
+              </div>
+            </div>
+            <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
+              <span style="font-size:12px;color:#7c8298">Email body — you can edit before copying</span>
+              <button class="btn btn-sm" id="regen-ai-btn" style="font-size:11px">Regenerate with AI</button>
+            </div>
+            <textarea id="email-body-edit" style="width:100%;border:1px solid #e2e5f0;border-radius:6px;padding:16px;font-size:13px;color:#0f1117;line-height:1.8;font-family:Segoe UI,sans-serif;resize:vertical;min-height:280px;background:#f5f6fa"></textarea>
+            <div class="actions" style="margin-top:12px">
+              <button class="btn btn-sm" id="copy-email-btn">Copy full email</button>
+              <button class="btn btn-sm btn-primary" id="mark-sent-btn">Mark as sent and log it</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Follow-up log</div>
+          <div class="table-wrap"><table>
+            <thead><tr>
+              <th style="width:24%">Task</th>
+              <th style="width:16%">Stakeholder</th>
+              <th style="width:8%">FU #</th>
+              <th style="width:12%">Date</th>
+              <th style="width:16%">Tone</th>
+              <th style="width:24%">Subject used</th>
+            </tr></thead>
+            <tbody id="log-body"><tr><td colspan="6" class="empty">No follow-ups yet.</td></tr></tbody>
+          </table></div>
+        </div>
       </div>
-      <div id="s-risks" class="sec">
+<div id="s-risks" class="sec">
         <div class="card" id="add-risk-card"><div class="card-title">Add new risk</div><div class="form-row"><div class="field"><label>Risk name *</label><input id="r-name" placeholder="e.g. Data breach"></div><div class="field"><label>Category</label><select id="r-cat"><option>Cybersecurity</option><option>Operational</option><option>Financial</option><option>Legal/Compliance</option><option>HR</option><option>Other</option></select></div></div><div class="form-row-3"><div class="field"><label>Likelihood (1–5)</label><input id="r-like" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Impact (1–5)</label><input id="r-impact" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Owner</label><input id="r-owner" placeholder="Person responsible"></div></div><div class="actions"><button class="btn btn-primary" id="add-risk-btn">+ Add risk</button></div></div>
         <div class="card"><div class="card-title">Risk register</div><div class="table-wrap"><table><thead><tr><th style="width:22%">Risk</th><th style="width:16%">Category</th><th style="width:9%">Score</th><th style="width:10%">Level</th><th style="width:15%">Owner</th><th style="width:12%">Status</th><th style="width:16%">Actions</th></tr></thead><tbody id="risk-body"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody></table></div></div>
       </div>
@@ -570,69 +659,151 @@ function renderEmailTab(){
   if(prev)sel.value=prev;renderLog();
 }
 
-document.getElementById('gen-email-btn').onclick=function(){
-  if(!can('email')){alert('No permission.');return;}
-  var id=document.getElementById('fu-select').value,num=parseInt(document.getElementById('fu-num').value),sender=document.getElementById('fu-sender').value.trim();
-  if(!id){alert('Please select a compliance item.');return;}if(!sender){alert('Please enter your name.');return;}
+// ── EMAIL MODULE ──
+var fuNum=1;
+var toneLabels={gentle:'Gentle',firm:'Firm',escalation:'Escalation',final:'Final notice'};
+
+document.getElementById('fu-num-plus').onclick=function(){fuNum++;updateFuNum();};
+document.getElementById('fu-num-minus').onclick=function(){if(fuNum>1)fuNum--;updateFuNum();};
+function updateFuNum(){
+  document.getElementById('fu-num-display').textContent=fuNum;
+  var s=fuNum===1?'st':fuNum===2?'nd':fuNum===3?'rd':'th';
+  document.getElementById('fu-num-label').textContent=fuNum+s+' reminder';
+}
+
+document.getElementById('fu-select').addEventListener('change',function(){
+  var it=items.find(function(x){return x.id==this.value;},this);
+  if(it) autoSubject(it,document.getElementById('fu-tone').value);
+});
+document.getElementById('fu-tone').addEventListener('change',function(){
+  var id=document.getElementById('fu-select').value;
+  var it=items.find(function(x){return x.id==id;});
+  if(it) autoSubject(it,this.value);
+});
+function autoSubject(it,tone){
+  var m={'gentle':'[Reminder #'+fuNum+'] Action required: '+it.name,'firm':'[Follow-up #'+fuNum+'] Pending: '+it.name+' — '+it.dept,'escalation':'[Escalation #'+fuNum+'] URGENT: '+it.name+' — '+it.stakeholder,'final':'[FINAL NOTICE #'+fuNum+'] Non-compliance: '+it.name};
+  document.getElementById('fu-subject').value=m[tone]||m.gentle;
+}
+
+function buildEmail(it,tone,num,sender){
+  var ord=num===1?'1st':num===2?'2nd':num===3?'3rd':num+'th';
+  var L1='Dear '+it.stakeholder+',';
+  var L2s={gentle:'I hope this message finds you well. This is our '+ord+' reminder regarding the following compliance task which remains pending.',firm:'This is our '+ord+' follow-up. Despite previous reminders, the task below remains incomplete and requires your immediate attention.',escalation:'Despite '+(num-1)+' previous reminder(s), the following task is still incomplete. This matter is now being formally escalated to senior management.',final:'FINAL NOTICE. After '+(num-1)+' reminders with no action, this is your final opportunity to complete the task before formal escalation.'};
+  var L3='Task           : '+it.name+'\nFrequency      : '+FL[it.freq]+'\nDue date       : '+(it.due_date||'As discussed')+'\nDepartment     : '+(it.dept||'Your team')+'\nFollow-up no.  : '+num+'\nStatus         : '+(it.done?'Done':'Pending');
+  var L4s={gentle:'Kindly complete this at your earliest convenience and confirm by reply.',firm:'Please treat this as urgent and complete immediately. Confirm by reply.',escalation:'Please complete IMMEDIATELY and respond within 24 hours. Non-compliance will be recorded in the audit report.',final:'Failure to act will result in formal audit findings and reporting to senior leadership.'};
+  var L5='Best regards,\n'+sender+'\nGRC / Compliance Team';
+  return L1+'\n\n'+(L2s[tone]||L2s.gentle)+'\n\n'+L3+'\n\n'+(L4s[tone]||L4s.gentle)+'\n\n'+L5;
+}
+
+document.getElementById('gen-standard-btn').onclick=function(){
+  var id=document.getElementById('fu-select').value;
+  var sender=document.getElementById('fu-sender').value.trim();
+  if(!id){alert('Please select a compliance item.');return;}
+  if(!sender){alert('Please enter your name.');return;}
   var it=items.find(function(x){return x.id==id;});if(!it)return;
-  var subs=['Reminder: Action required — '+it.name,'Second reminder: '+it.name+' still pending','URGENT ESCALATION: '+it.name];
-  var types=['1st reminder — gentle','2nd reminder — firm','3rd reminder — escalation'];
-  var bodies=['Dear '+it.stakeholder+',\n\nThis is a gentle reminder that the following compliance task is due:\n\n  Task        : '+it.name+'\n  Frequency   : '+FL[it.freq]+'\n  Due date    : '+(it.due_date||'As discussed')+'\n  Department  : '+(it.dept||'Your team')+'\n\nKindly complete this at your earliest convenience.\n\nBest regards,\n'+sender+'\nGRC / Compliance Team','Dear '+it.stakeholder+',\n\nThis is a follow-up. The task below is still incomplete:\n\n  Task        : '+it.name+'\n  Frequency   : '+FL[it.freq]+'\n  Due date    : '+(it.due_date||'As discussed')+'\n\nPlease prioritize and confirm completion by reply.\n\nRegards,\n'+sender+'\nGRC / Compliance Team','Dear '+it.stakeholder+',\n\nDespite two reminders, the task below remains incomplete. We are escalating:\n\n  Task           : '+it.name+'\n  Follow-ups sent: '+it.followups+'\n\nPlease complete IMMEDIATELY or respond within 24 hours.\n\nRegards,\n'+sender+'\nGRC / Compliance Team'];
-  currentEmail={itemId:it.id,itemName:it.name,stakeholder:it.stakeholder,email:it.email,num:num,type:types[num-1],subject:subs[num-1],body:bodies[num-1]};
-  document.getElementById('email-meta').innerHTML='<strong>To:</strong> '+(it.email||it.stakeholder)+'&nbsp;&nbsp;<strong>Subject:</strong> '+subs[num-1];
-  document.getElementById('email-body-text').textContent=bodies[num-1];
+  var tone=document.getElementById('fu-tone').value;
+  var subj=document.getElementById('fu-subject').value||'[Follow-up #'+fuNum+'] '+it.name;
+  showEmail(it,tone,subj,buildEmail(it,tone,fuNum,sender));
+};
+
+document.getElementById('gen-ai-btn').onclick=async function(){
+  var id=document.getElementById('fu-select').value;
+  var sender=document.getElementById('fu-sender').value.trim();
+  if(!id){alert('Please select a compliance item.');return;}
+  if(!sender){alert('Please enter your name.');return;}
+  var it=items.find(function(x){return x.id==id;});if(!it)return;
+  var tone=document.getElementById('fu-tone').value;
+  var subj=document.getElementById('fu-subject').value||'[Follow-up #'+fuNum+'] '+it.name;
+  var extra=document.getElementById('fu-ai-instructions').value.trim();
+  var ord=fuNum===1?'1st':fuNum===2?'2nd':fuNum===3?'3rd':fuNum+'th';
+  document.getElementById('ai-loading').style.display='block';
+  document.getElementById('gen-ai-btn').disabled=true;
+  document.getElementById('email-result').style.display='none';
+  try{
+    var promptParts=[
+      'Write a professional GRC compliance follow-up email.',
+      'Follow-up number: '+ord,
+      'Tone: '+toneLabels[tone],
+      'Task name: '+it.name,
+      'Stakeholder: '+it.stakeholder,
+      'Department: '+(it.dept||'Not specified'),
+      'Frequency: '+FL[it.freq],
+      'Due date: '+(it.due_date||'As discussed'),
+      'Previous reminders sent: '+(fuNum-1),
+      'Sender name: '+sender
+    ];
+    if(extra) promptParts.push('Additional instructions: '+extra);
+    promptParts.push('Write ONLY the email body. Start with Dear. End with Best regards / Regards, '+sender+', GRC / Compliance Team. No subject line. No extra text outside the email.');
+    var prompt=promptParts.join('\n');
+    var res=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:1000,messages:[{role:'user',content:prompt}]})});
+    var data=await res.json();
+    var aiBody=data.content&&data.content[0]?data.content[0].text:buildEmail(it,tone,fuNum,sender);
+    showEmail(it,tone,subj,aiBody);
+  }catch(e){
+    showEmail(it,tone,subj,buildEmail(it,tone,fuNum,sender));
+  }
+  document.getElementById('ai-loading').style.display='none';
+  document.getElementById('gen-ai-btn').disabled=false;
+};
+
+document.getElementById('regen-ai-btn').onclick=function(){document.getElementById('gen-ai-btn').onclick();};
+
+function showEmail(it,tone,subj,body){
+  var cc=document.getElementById('fu-cc').value.trim();
+  currentEmail={itemId:it.id,itemName:it.name,stakeholder:it.stakeholder,email:it.email,num:fuNum,type:toneLabels[tone],subject:subj,body:body,cc:cc};
+  document.getElementById('email-to').textContent=(it.email||it.stakeholder);
+  document.getElementById('email-subject-edit').value=subj;
+  document.getElementById('email-body-edit').value=body;
+  document.getElementById('email-fu-badge').textContent='Follow-up #'+fuNum;
+  document.getElementById('email-tone-badge').textContent=toneLabels[tone];
+  var ccShow=document.getElementById('email-cc-show');
+  if(cc){ccShow.style.display='inline';document.getElementById('email-cc-val').textContent=cc;}
+  else{ccShow.style.display='none';}
   document.getElementById('email-result').style.display='block';
   document.getElementById('email-result').scrollIntoView({behavior:'smooth'});
-};
+}
 
 document.getElementById('copy-email-btn').onclick=function(){
   if(!currentEmail)return;
-  navigator.clipboard.writeText('Subject: '+currentEmail.subject+'\n\n'+currentEmail.body).then(function(){alert('Copied! Paste into Outlook or Gmail.');}).catch(function(){alert('Please manually select and copy the email text.');});
+  var subj=document.getElementById('email-subject-edit').value;
+  var body=document.getElementById('email-body-edit').value;
+  var cc=document.getElementById('fu-cc').value.trim();
+  var text='Subject: '+subj+(cc?'\nCC: '+cc:'')+'\n\n'+body;
+  navigator.clipboard.writeText(text).then(function(){alert('Copied! Paste into Outlook or Gmail.');}).catch(function(){alert('Please select the email text manually and copy.');});
 };
 
 document.getElementById('mark-sent-btn').onclick=async function(){
   if(!currentEmail)return;
+  var subj=document.getElementById('email-subject-edit').value;
+  var tone=document.getElementById('fu-tone').value;
+  var savedNum=currentEmail.num;
   var it=items.find(function(x){return x.id==currentEmail.itemId;});
   if(it)await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{followups:(it.followups||0)+1},extra:{'Prefer':'return=minimal'}});
-  await api('grc_logs',{method:'POST',body:{item_name:currentEmail.itemName,stakeholder:currentEmail.stakeholder,followup_num:currentEmail.num,followup_type:currentEmail.type,log_date:today()},extra:{'Prefer':'return=minimal'}});
-  document.getElementById('email-result').style.display='none';currentEmail=null;await loadAll();alert('Logged!');
+  await api('grc_logs',{method:'POST',body:{item_name:currentEmail.itemName,stakeholder:currentEmail.stakeholder,followup_num:currentEmail.num,followup_type:toneLabels[tone],log_date:today(),subject_used:subj},extra:{'Prefer':'return=minimal'}});
+  document.getElementById('email-result').style.display='none';
+  currentEmail=null;fuNum=1;updateFuNum();
+  await loadAll();
+  alert('Logged! Follow-up #'+savedNum+' recorded.');
 };
+
+function renderEmailTab(){
+  var sel=document.getElementById('fu-select'),prev=sel.value;
+  sel.innerHTML='<option value="">-- select item --</option>';
+  items.forEach(function(it){sel.innerHTML+='<option value="'+it.id+'">'+it.name+' — '+it.stakeholder+'</option>';});
+  if(prev)sel.value=prev;
+  renderLog();
+}
 
 function renderLog(){
   var tb=document.getElementById('log-body');
-  if(!logs.length){tb.innerHTML='<tr><td colspan="5" class="empty">No follow-ups yet.</td></tr>';return;}
-  tb.innerHTML=logs.map(function(l){return'<tr><td title="'+l.item_name+'">'+l.item_name+'</td><td>'+l.stakeholder+'</td><td style="text-align:center;font-weight:700">#'+l.followup_num+'</td><td>'+l.log_date+'</td><td>'+l.followup_type+'</td></tr>';}).join('');
+  if(!logs.length){tb.innerHTML='<tr><td colspan="6" class="empty">No follow-ups yet.</td></tr>';return;}
+  tb.innerHTML=logs.map(function(l){
+    var badge=l.followup_type==='Escalation'?'b-overdue':l.followup_type==='Firm'?'b-pending':l.followup_type==='Final notice'?'b-overdue':'b-done';
+    return '<tr><td title="'+l.item_name+'">'+l.item_name+'</td><td>'+l.stakeholder+'</td><td style="text-align:center;font-weight:700;color:#4f52d9">#'+l.followup_num+'</td><td>'+l.log_date+'</td><td><span class="badge '+badge+'">'+l.followup_type+'</span></td><td title="'+(l.subject_used||'')+'\" style="font-size:12px;color:#7c8298">'+(l.subject_used?(l.subject_used.length>35?l.subject_used.substring(0,35)+'...':l.subject_used):'—')+'</td></tr>';
+  }).join('');
 }
 
-document.getElementById('add-risk-btn').onclick=async function(){
-  if(!can('add')){alert('No permission.');return;}
-  var name=document.getElementById('r-name').value.trim();if(!name){alert('Please enter a risk name.');return;}
-  var like=Math.min(5,Math.max(1,parseInt(document.getElementById('r-like').value)||1));
-  var impact=Math.min(5,Math.max(1,parseInt(document.getElementById('r-impact').value)||1));
-  await api('grc_risks',{method:'POST',body:{id:Date.now(),name:name,category:document.getElementById('r-cat').value,likelihood:like,impact:impact,owner:document.getElementById('r-owner').value.trim(),status:'Open'},extra:{'Prefer':'return=minimal'}});
-  ['r-name','r-like','r-impact','r-owner'].forEach(function(id){document.getElementById(id).value='';});await loadAll();
-};
 
-function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
-function renderRisks(){
-  var tb=document.getElementById('risk-body');
-  if(!risks.length){tb.innerHTML='<tr><td colspan="7" class="empty">No risks yet.</td></tr>';return;}
-  var sorted=risks.slice().sort(function(a,b){return(b.likelihood*b.impact)-(a.likelihood*a.impact);});
-  tb.innerHTML=sorted.map(function(r){var score=r.likelihood*r.impact,lv=riskLevel(score),lvB={high:'b-overdue',medium:'b-pending',low:'b-done'}[lv];return'<tr><td title="'+r.name+'">'+r.name+'</td><td>'+r.category+'</td><td style="font-weight:700">'+score+'/25</td><td><span class="badge '+lvB+'">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span></td><td>'+(r.owner||'—')+'</td><td><span class="badge b-'+r.status.toLowerCase().replace(/ /g,'')+'" data-cycle="'+r.id+'" data-st="'+r.status+'" style="cursor:pointer">'+r.status+'</span></td><td>'+(can('delete')?'<button class="btn btn-sm btn-danger" data-dr="'+r.id+'">Delete</button>':'')+'</td></tr>';}).join('');
-  tb.querySelectorAll('[data-cycle]').forEach(function(el){el.onclick=async function(){var s=['Open','In progress','Closed'],cur=el.getAttribute('data-st'),next=s[(s.indexOf(cur)+1)%s.length];await api('grc_risks?id=eq.'+el.getAttribute('data-cycle'),{method:'PATCH',body:{status:next},extra:{'Prefer':'return=minimal'}});await loadAll();};});
-  tb.querySelectorAll('[data-dr]').forEach(function(el){el.onclick=async function(){if(!confirm('Delete?'))return;await api('grc_risks?id=eq.'+el.getAttribute('data-dr'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};});
-}
-
-async function loadUsers(){
-  var res=await api('grc_users?select=*&order=created_at.asc');var data=await res.json();users=data||[];renderUsers();
-}
-document.getElementById('add-user-btn').onclick=async function(){
-  var name=document.getElementById('u-name').value.trim(),email=document.getElementById('u-email').value.trim().toLowerCase(),pass=document.getElementById('u-pass').value.trim(),role=document.getElementById('u-role').value;
-  if(!name||!email||!pass){alert('Please fill all fields.');return;}
-  var res=await api('grc_users',{method:'POST',body:{name:name,email:email,password:pass,role:role},extra:{'Prefer':'return=minimal'}});
-  if(!res.ok){var e=await res.json();alert('Error: '+(e.message||'Could not add user'));return;}
-  ['u-name','u-email','u-pass'].forEach(function(id){document.getElementById(id).value='';});await loadUsers();alert('User added!');
-};
 // ── BULK EXPORT ──
 function getStatusLabel(it){
   if(it.done) return 'Done';
