@@ -605,13 +605,26 @@ function exportToXLSX(filename, sheetName, rows){
 }
 
 function exportToCSV(filename, rows){
-  var csv=rows.map(function(r){return r.map(function(c){var s=String(c||'');return s.indexOf(',')>-1||s.indexOf('"')>-1?'"'+s.replace(/"/g,'""')+'"':s;}).join(',');}).join('
-');
+  var lines=[];
+  for(var i=0;i<rows.length;i++){
+    var cells=[];
+    for(var j=0;j<rows[i].length;j++){
+      var s=String(rows[i][j]===null||rows[i][j]===undefined?'':rows[i][j]);
+      if(s.indexOf(',')>-1||s.indexOf('"')>-1){s='"'+s.split('"').join('""')+'"';}
+      cells.push(s);
+    }
+    lines.push(cells.join(','));
+  }
+  var csv=lines.join(String.fromCharCode(13,10));
   var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  var a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download=filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }
 
-function getDateStr(){return new Date().toISOString().split('T')[0];}
 
 document.getElementById('export-items-xlsx').onclick=function(){
   if(!items.length){alert('No compliance items to export.');return;}
