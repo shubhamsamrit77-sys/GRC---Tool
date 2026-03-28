@@ -108,6 +108,7 @@ tbody tr:hover td{background:#f5f6fa}
 @media(max-width:900px){.login-left{display:none}.login-wrap{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.form-row-3,.form-row-4{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.ham-btn{display:flex;align-items:center}.sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:100;transition:left .25s}.sidebar.open{left:0}.metrics{grid-template-columns:repeat(2,1fr)}.form-row,.form-row-3,.form-row-4{grid-template-columns:1fr}.content{padding:12px}.topbar{padding:10px 14px}.login-right{padding:28px 20px}th,td{padding:8px 6px;font-size:11px}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 
@@ -149,6 +150,8 @@ tbody tr:hover td{background:#f5f6fa}
       <button class="sb-btn active" id="nav-dash">Dashboard</button>
       <div class="sb-sec">Compliance</div>
       <button class="sb-btn" id="nav-items">All items</button>
+      <button class="sb-btn" id="nav-import">Bulk import Excel</button>
+      <button class="sb-btn" id="nav-export">Export reports</button>
       <button class="sb-btn" id="nav-overdue">Overdue / due soon <span class="ov-badge" id="ov-badge" style="display:none">0</span></button>
       <button class="sb-btn" id="nav-email">Follow-up emails</button>
       <div class="sb-sec">Risk</div>
@@ -203,7 +206,129 @@ tbody tr:hover td{background:#f5f6fa}
         </div>
         <div class="card"><div class="card-title">All compliance items</div><div class="tag-row" id="freq-filters"></div><div class="table-wrap"><table><thead><tr><th style="width:21%">Task</th><th style="width:14%">Stakeholder</th><th style="width:9%">Dept</th><th style="width:10%">Frequency</th><th style="width:9%">Due</th><th style="width:8%">Status</th><th style="width:7%">FU</th><th style="width:22%">Actions</th></tr></thead><tbody id="items-body"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody></table></div></div>
       </div>
-      <div id="s-overdue" class="sec"><div id="overdue-content"></div></div>
+      <div id="s-export" class="sec">
+        <div class="card">
+          <div class="card-title">Export compliance items</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download your compliance data in Excel or CSV format. Perfect for sharing with management or for audit purposes.</p>
+          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
+            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;margin-bottom:8px">📊</div>
+              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">All items</div>
+              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Export complete compliance register</div>
+              <button class="btn btn-primary" style="width:100%" id="export-items-xlsx">Download Excel</button>
+              <button class="btn" style="width:100%;margin-top:6px" id="export-items-csv">Download CSV</button>
+            </div>
+            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;margin-bottom:8px">⚠️</div>
+              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">Overdue items only</div>
+              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Export only items that are overdue</div>
+              <button class="btn btn-primary" style="width:100%" id="export-overdue-xlsx">Download Excel</button>
+              <button class="btn" style="width:100%;margin-top:6px" id="export-overdue-csv">Download CSV</button>
+            </div>
+            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;margin-bottom:8px">📋</div>
+              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">Follow-up log</div>
+              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Export all follow-up history</div>
+              <button class="btn btn-primary" style="width:100%" id="export-logs-xlsx">Download Excel</button>
+              <button class="btn" style="width:100%;margin-top:6px" id="export-logs-csv">Download CSV</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Export risk register</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download your complete risk register with scores and status.</p>
+          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
+            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;margin-bottom:8px">🛡️</div>
+              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">All risks</div>
+              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Complete risk register with scores</div>
+              <button class="btn btn-primary" style="width:100%" id="export-risks-xlsx">Download Excel</button>
+              <button class="btn" style="width:100%;margin-top:6px" id="export-risks-csv">Download CSV</button>
+            </div>
+            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
+              <div style="font-size:28px;margin-bottom:8px">📈</div>
+              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">High risks only</div>
+              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Only risks with score 15 or above</div>
+              <button class="btn btn-primary" style="width:100%" id="export-highrisks-xlsx">Download Excel</button>
+              <button class="btn" style="width:100%;margin-top:6px" id="export-highrisks-csv">Download CSV</button>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Full GRC report</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download everything in one Excel file with multiple sheets — compliance items, risks, follow-up log and summary. Perfect for audits and management presentations.</p>
+          <div class="actions" style="justify-content:flex-start">
+            <button class="btn btn-primary" id="export-full-report">Download full GRC report (Excel)</button>
+          </div>
+        </div>
+      </div>
+<div id="s-import" class="sec">
+        <div class="card">
+          <div class="card-title">Step 1 — Download the Excel template</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:12px;line-height:1.7">First download our template, fill in your compliance items in Excel, then upload it back here. All 100 items will be imported automatically.</p>
+          <div class="actions" style="justify-content:flex-start"><button class="btn btn-primary" id="download-template-btn">Download Excel template</button></div>
+        </div>
+        <div class="card">
+          <div class="card-title">Step 2 — Upload your filled Excel file</div>
+          <div id="import-drop-zone" style="border:2px dashed #e2e5f0;border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px">
+            <div style="font-size:32px;margin-bottom:10px">📂</div>
+            <div style="font-size:14px;font-weight:600;color:#0f1117;margin-bottom:6px">Drag and drop your Excel file here</div>
+            <div style="font-size:13px;color:#7c8298;margin-bottom:14px">or click to browse — supports .xlsx and .xls files</div>
+            <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none">
+            <button class="btn btn-primary" onclick="document.getElementById('import-file-input').click()">Choose Excel file</button>
+          </div>
+          <div id="import-preview" style="display:none">
+            <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:10px" id="import-preview-title">Preview — 0 items found</div>
+            <div class="table-wrap" style="max-height:320px;overflow-y:auto"><table>
+              <thead><tr><th style="width:25%">Task name</th><th style="width:18%">Stakeholder</th><th style="width:12%">Department</th><th style="width:12%">Frequency</th><th style="width:12%">Due date</th><th style="width:11%">Category</th><th style="width:10%">Status</th></tr></thead>
+              <tbody id="import-preview-body"></tbody>
+            </table></div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
+              <button class="btn btn-primary" id="confirm-import-btn">Import all items to GRC tool</button>
+              <button class="btn" id="cancel-import-btn">Cancel</button>
+              <span id="import-status" style="font-size:13px;color:#7c8298"></span>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">How to fill the Excel template</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column A — Task name</div>
+              <div style="font-size:12px;color:#7c8298">Write the compliance task. e.g. Monthly server patch review</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column B — Stakeholder</div>
+              <div style="font-size:12px;color:#7c8298">Name of person responsible. e.g. Rahul Sharma</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column C — Email</div>
+              <div style="font-size:12px;color:#7c8298">Stakeholder email address</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column D — Department</div>
+              <div style="font-size:12px;color:#7c8298">e.g. IT, HR, Finance, Legal</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column E — Frequency</div>
+              <div style="font-size:12px;color:#7c8298">daily / weekly / monthly / quarterly / halfyearly / yearly</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column F — Due date</div>
+              <div style="font-size:12px;color:#7c8298">Format: YYYY-MM-DD e.g. 2026-04-30</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column G — Category</div>
+              <div style="font-size:12px;color:#7c8298">Cybersecurity / Data Privacy / HR Compliance / Legal / Financial / Operational / Audit / Other</div>
+            </div>
+            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
+              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column H — Notes</div>
+              <div style="font-size:12px;color:#7c8298">Any extra details (optional)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+<div id="s-overdue" class="sec"><div id="overdue-content"></div></div>
       <div id="s-email" class="sec">
         <div class="card"><div class="card-title">Generate follow-up email</div><div class="info-box">Select an item, choose the reminder number, enter your name and click Generate.</div><div class="form-row-3"><div class="field"><label>Select item *</label><select id="fu-select"><option value="">-- select item --</option></select></div><div class="field"><label>Follow-up number</label><select id="fu-num"><option value="1">1st reminder — gentle</option><option value="2">2nd reminder — firm</option><option value="3">3rd reminder — escalation</option></select></div><div class="field"><label>Your name *</label><input id="fu-sender" placeholder="e.g. Amit Verma"></div></div><div class="actions"><button class="btn btn-primary" id="gen-email-btn">Generate email</button></div></div>
         <div id="email-result" style="display:none"><div class="card"><div class="card-title">Your follow-up email</div><div class="email-meta" id="email-meta"></div><div class="email-body" id="email-body-text"></div><div class="actions" style="margin-top:12px"><button class="btn btn-sm" id="copy-email-btn">Copy full email</button><button class="btn btn-sm btn-primary" id="mark-sent-btn">Mark as sent and log it</button></div></div></div>
@@ -276,7 +401,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -439,6 +564,291 @@ document.getElementById('add-user-btn').onclick=async function(){
   if(!res.ok){var e=await res.json();alert('Error: '+(e.message||'Could not add user'));return;}
   ['u-name','u-email','u-pass'].forEach(function(id){document.getElementById(id).value='';});await loadUsers();alert('User added!');
 };
+// ── BULK EXPORT ──
+function getStatusLabel(it){
+  if(it.done) return 'Done';
+  if(it.due_date&&it.due_date<today()) return 'Overdue';
+  return 'Pending';
+}
+
+function itemsToRows(data){
+  var rows=[['Task name','Stakeholder','Email','Department','Frequency','Due date','Category','Notes','Status','Follow-ups sent']];
+  data.forEach(function(it){
+    rows.push([it.name,it.stakeholder,it.email||'',it.dept||'',FL[it.freq]||it.freq,it.due_date||'',it.category||'',it.notes||'',getStatusLabel(it),it.followups||0]);
+  });
+  return rows;
+}
+
+function risksToRows(data){
+  var rows=[['Risk name','Category','Likelihood (1-5)','Impact (1-5)','Risk score','Risk level','Owner','Status']];
+  data.forEach(function(r){
+    var score=r.likelihood*r.impact,lv=score>=15?'High':score>=8?'Medium':'Low';
+    rows.push([r.name,r.category,r.likelihood,r.impact,score,lv,r.owner||'',r.status||'']);
+  });
+  return rows;
+}
+
+function logsToRows(data){
+  var rows=[['Task name','Stakeholder','Follow-up number','Type','Date logged']];
+  data.forEach(function(l){rows.push([l.item_name,l.stakeholder,l.followup_num,l.followup_type,l.log_date]);});
+  return rows;
+}
+
+function exportToXLSX(filename, sheetName, rows){
+  if(typeof XLSX==='undefined'){alert('Excel library loading. Wait 3 seconds and try again.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  var cols=rows[0].map(function(h){return{wch:Math.max(h.length+4,14)};});
+  ws['!cols']=cols;
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,filename);
+}
+
+function exportToCSV(filename, rows){
+  var csv=rows.map(function(r){return r.map(function(c){var s=String(c||'');return s.indexOf(',')>-1||s.indexOf('"')>-1?'"'+s.replace(/"/g,'""')+'"':s;}).join(',');}).join('
+');
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+}
+
+function getDateStr(){return new Date().toISOString().split('T')[0];}
+
+document.getElementById('export-items-xlsx').onclick=function(){
+  if(!items.length){alert('No compliance items to export.');return;}
+  exportToXLSX('GRC_All_Items_'+getDateStr()+'.xlsx','Compliance Items',itemsToRows(items));
+};
+document.getElementById('export-items-csv').onclick=function(){
+  if(!items.length){alert('No compliance items to export.');return;}
+  exportToCSV('GRC_All_Items_'+getDateStr()+'.csv',itemsToRows(items));
+};
+
+document.getElementById('export-overdue-xlsx').onclick=function(){
+  var ov=items.filter(function(it){return getStatus(it)==='overdue';});
+  if(!ov.length){alert('No overdue items to export.');return;}
+  exportToXLSX('GRC_Overdue_Items_'+getDateStr()+'.xlsx','Overdue Items',itemsToRows(ov));
+};
+document.getElementById('export-overdue-csv').onclick=function(){
+  var ov=items.filter(function(it){return getStatus(it)==='overdue';});
+  if(!ov.length){alert('No overdue items to export.');return;}
+  exportToCSV('GRC_Overdue_Items_'+getDateStr()+'.csv',itemsToRows(ov));
+};
+
+document.getElementById('export-logs-xlsx').onclick=function(){
+  if(!logs.length){alert('No follow-up logs to export.');return;}
+  exportToXLSX('GRC_Followup_Log_'+getDateStr()+'.xlsx','Follow-up Log',logsToRows(logs));
+};
+document.getElementById('export-logs-csv').onclick=function(){
+  if(!logs.length){alert('No follow-up logs to export.');return;}
+  exportToCSV('GRC_Followup_Log_'+getDateStr()+'.csv',logsToRows(logs));
+};
+
+document.getElementById('export-risks-xlsx').onclick=function(){
+  if(!risks.length){alert('No risks to export.');return;}
+  exportToXLSX('GRC_Risk_Register_'+getDateStr()+'.xlsx','Risk Register',risksToRows(risks));
+};
+document.getElementById('export-risks-csv').onclick=function(){
+  if(!risks.length){alert('No risks to export.');return;}
+  exportToCSV('GRC_Risk_Register_'+getDateStr()+'.csv',risksToRows(risks));
+};
+
+document.getElementById('export-highrisks-xlsx').onclick=function(){
+  var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
+  if(!hr.length){alert('No high risks to export.');return;}
+  exportToXLSX('GRC_High_Risks_'+getDateStr()+'.xlsx','High Risks',risksToRows(hr));
+};
+document.getElementById('export-highrisks-csv').onclick=function(){
+  var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
+  if(!hr.length){alert('No high risks to export.');return;}
+  exportToCSV('GRC_High_Risks_'+getDateStr()+'.csv',risksToRows(hr));
+};
+
+document.getElementById('export-full-report').onclick=function(){
+  if(typeof XLSX==='undefined'){alert('Excel library loading. Wait 3 seconds and try again.');return;}
+  if(!items.length&&!risks.length&&!logs.length){alert('No data to export yet.');return;}
+  var wb=XLSX.utils.book_new();
+  var d=getDateStr();
+
+  // Summary sheet
+  var done=items.filter(function(it){return getStatus(it)==='done';}).length;
+  var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length;
+  var pct=items.length?Math.round(done/items.length*100):0;
+  var highR=risks.filter(function(r){return r.likelihood*r.impact>=15;}).length;
+  var summaryRows=[
+    ['GRC Shield — Full Report'],
+    ['Generated on',d],
+    [''],
+    ['COMPLIANCE SUMMARY',''],
+    ['Total items',items.length],
+    ['Completed',done],
+    ['Overdue',ov],
+    ['Pending',items.length-done-ov],
+    ['Overall progress',pct+'%'],
+    [''],
+    ['RISK SUMMARY',''],
+    ['Total risks',risks.length],
+    ['High risks',highR],
+    ['Medium risks',risks.filter(function(r){var s=r.likelihood*r.impact;return s>=8&&s<15;}).length],
+    ['Low risks',risks.filter(function(r){return r.likelihood*r.impact<8;}).length],
+    [''],
+    ['FOLLOW-UP SUMMARY',''],
+    ['Total follow-ups sent',logs.length]
+  ];
+  var wsSummary=XLSX.utils.aoa_to_sheet(summaryRows);
+  wsSummary['!cols']=[{wch:28},{wch:20}];
+  XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
+
+  if(items.length){var ws1=XLSX.utils.aoa_to_sheet(itemsToRows(items));ws1['!cols']=itemsToRows(items)[0].map(function(){return{wch:20};});XLSX.utils.book_append_sheet(wb,ws1,'Compliance Items');}
+  if(risks.length){var ws2=XLSX.utils.aoa_to_sheet(risksToRows(risks));ws2['!cols']=risksToRows(risks)[0].map(function(){return{wch:18};});XLSX.utils.book_append_sheet(wb,ws2,'Risk Register');}
+  if(logs.length){var ws3=XLSX.utils.aoa_to_sheet(logsToRows(logs));ws3['!cols']=logsToRows(logs)[0].map(function(){return{wch:20};});XLSX.utils.book_append_sheet(wb,ws3,'Follow-up Log');}
+
+  XLSX.writeFile(wb,'GRC_Full_Report_'+d+'.xlsx');
+  alert('Full GRC report downloaded successfully!');
+};
+
+// ── BULK IMPORT ──
+var importData = [];
+
+document.getElementById('download-template-btn').onclick = function(){
+  if(typeof XLSX === 'undefined'){alert('Excel library still loading. Please wait 3 seconds and try again.');return;}
+  var wb = XLSX.utils.book_new();
+  var wsData = [
+    ['Task name','Stakeholder','Email','Department','Frequency','Due date (YYYY-MM-DD)','Category','Notes'],
+    ['Monthly server patch review','Rahul Sharma','rahul@company.com','IT','monthly','2026-04-30','Cybersecurity','Patch all production servers'],
+    ['Quarterly access review','Priya Patel','priya@company.com','IT','quarterly','2026-06-30','Cybersecurity','Review who has admin access'],
+    ['Annual policy sign-off','Amit Verma','amit@company.com','HR','yearly','2026-12-31','HR Compliance','All staff sign updated policies'],
+    ['','','','','','','',''],
+    ['FREQUENCY OPTIONS: daily, weekly, monthly, quarterly, halfyearly, yearly','','','','','','',''],
+    ['CATEGORY OPTIONS: Cybersecurity, Data Privacy, HR Compliance, Legal, Financial, Operational, Audit, Other','','','','','','','']
+  ];
+  var ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = [{wch:35},{wch:20},{wch:28},{wch:14},{wch:12},{wch:20},{wch:18},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, ws, 'GRC Items');
+  XLSX.writeFile(wb, 'GRC_Import_Template.xlsx');
+};
+
+var dropZone = document.getElementById('import-drop-zone');
+var fileInput = document.getElementById('import-file-input');
+
+dropZone.addEventListener('dragover', function(e){e.preventDefault();dropZone.style.borderColor='#4f52d9';dropZone.style.background='#eeeffe';});
+dropZone.addEventListener('dragleave', function(){dropZone.style.borderColor='#e2e5f0';dropZone.style.background='';});
+dropZone.addEventListener('drop', function(e){
+  e.preventDefault();dropZone.style.borderColor='#e2e5f0';dropZone.style.background='';
+  var file = e.dataTransfer.files[0];
+  if(file) processExcelFile(file);
+});
+fileInput.addEventListener('change', function(){
+  if(fileInput.files[0]) processExcelFile(fileInput.files[0]);
+});
+
+function processExcelFile(file){
+  if(typeof XLSX === 'undefined'){alert('Excel library still loading. Please wait 3 seconds and try again.');return;}
+  var reader = new FileReader();
+  reader.onload = function(e){
+    try{
+      var wb = XLSX.read(e.target.result, {type:'binary'});
+      var ws = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      importData = [];
+      var validFreqs = ['daily','weekly','monthly','quarterly','halfyearly','yearly'];
+      var validCats = ['Cybersecurity','Data Privacy','HR Compliance','Legal','Financial','Operational','Audit','Other'];
+      for(var i=1;i<rows.length;i++){
+        var r = rows[i];
+        if(!r[0]||String(r[0]).trim()===''||String(r[0]).indexOf('FREQUENCY')>-1||String(r[0]).indexOf('CATEGORY')>-1) continue;
+        var freq = String(r[4]||'monthly').toLowerCase().trim();
+        if(validFreqs.indexOf(freq)===-1) freq='monthly';
+        var cat = String(r[6]||'Other').trim();
+        if(validCats.indexOf(cat)===-1) cat='Other';
+        var dueDate = '';
+        if(r[5]){
+          var d = String(r[5]).trim();
+          if(d.match(/^\d{4}-\d{2}-\d{2}$/)) dueDate=d;
+          else if(typeof r[5]==='number'){
+            var jsDate = new Date(Math.round((r[5]-25569)*86400*1000));
+            dueDate = jsDate.toISOString().split('T')[0];
+          }
+        }
+        importData.push({
+          name:String(r[0]||'').trim(),
+          stakeholder:String(r[1]||'').trim(),
+          email:String(r[2]||'').trim(),
+          dept:String(r[3]||'').trim(),
+          freq:freq,
+          due_date:dueDate,
+          category:cat,
+          notes:String(r[7]||'').trim()
+        });
+      }
+      if(!importData.length){alert('No valid items found. Make sure row 1 is the header and data starts from row 2.');return;}
+      showImportPreview();
+    }catch(err){alert('Error reading file: '+err.message);}
+  };
+  reader.readAsBinaryString(file);
+}
+
+function showImportPreview(){
+  document.getElementById('import-preview').style.display='block';
+  document.getElementById('import-preview-title').textContent='Preview — '+importData.length+' items found — please check before importing';
+  var tb = document.getElementById('import-preview-body');
+  tb.innerHTML = importData.map(function(it,i){
+    var ok = it.name&&it.stakeholder;
+    return '<tr style="'+(ok?'':'opacity:.5')+'">' +
+      '<td title="'+it.name+'">'+it.name+'</td>' +
+      '<td>'+it.stakeholder+'</td>' +
+      '<td>'+it.dept+'</td>' +
+      '<td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td>' +
+      '<td>'+(it.due_date||'—')+'</td>' +
+      '<td>'+it.category+'</td>' +
+      '<td>'+(ok?'<span style="color:#0d9e7e;font-weight:600;font-size:12px">Ready</span>':'<span style="color:#d93f3f;font-size:12px">Missing name/stakeholder</span>')+'</td>' +
+    '</tr>';
+  }).join('');
+  dropZone.style.display='none';
+}
+
+document.getElementById('cancel-import-btn').onclick = function(){
+  importData=[];
+  document.getElementById('import-preview').style.display='none';
+  dropZone.style.display='block';
+  document.getElementById('import-status').textContent='';
+  document.getElementById('import-file-input').value='';
+};
+
+document.getElementById('confirm-import-btn').onclick = async function(){
+  if(!importData.length){alert('No data to import.');return;}
+  var validItems = importData.filter(function(it){return it.name&&it.stakeholder;});
+  if(!validItems.length){alert('No valid items to import. Task name and Stakeholder are required.');return;}
+  var btn = document.getElementById('confirm-import-btn');
+  var status = document.getElementById('import-status');
+  btn.disabled=true;btn.textContent='Importing...';status.textContent='';
+  var success=0,failed=0;
+  for(var i=0;i<validItems.length;i++){
+    status.textContent='Importing '+( i+1)+' of '+validItems.length+'...';
+    var it = validItems[i];
+    try{
+      var res = await api('grc_items',{method:'POST',body:{
+        id:Date.now()+i,name:it.name,stakeholder:it.stakeholder,
+        email:it.email,dept:it.dept,freq:it.freq,due_date:it.due_date,
+        category:it.category,notes:it.notes,done:false,followups:0,
+        stakeholder_email:it.email
+      },extra:{'Prefer':'return=minimal'}});
+      if(res.ok)success++;else failed++;
+    }catch(e){failed++;}
+    await new Promise(function(r){setTimeout(r,100);});
+  }
+  btn.disabled=false;btn.textContent='Import all items to GRC tool';
+  if(failed===0){
+    status.textContent='';
+    alert('Successfully imported '+success+' items!');
+    importData=[];
+    document.getElementById('import-preview').style.display='none';
+    dropZone.style.display='block';
+    document.getElementById('import-file-input').value='';
+    document.getElementById('nav-items').onclick();
+    await loadAll();
+  }else{
+    status.textContent=success+' imported, '+failed+' failed. Try again for failed ones.';
+  }
+};
+
 function renderUsers(){
   var tb=document.getElementById('user-body');
   if(!users.length){tb.innerHTML='<tr><td colspan="5" class="empty">No users.</td></tr>';return;}
