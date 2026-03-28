@@ -463,13 +463,82 @@ function renderItems(){
     var sb='<span class="badge b-'+s+'"'+(canT?' data-toggle="'+it.id+'" style="cursor:pointer"':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>';
     var acts=(can('email')?'<button class="btn btn-sm" data-email="'+it.id+'" style="margin-right:4px">Remind</button>':'')+
              (can('delete')?'<button class="btn btn-sm btn-danger" data-del="'+it.id+'">Del</button>':'');
-    return '<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td>'+(it.dept||'—')+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td>'+(it.due_date||'—')+'</td><td>'+sb+'</td><td style="text-align:center">'+fu+'</td><td>'+acts+'</td></tr>';
+    var scoreColor=s==='overdue'?'#d93f3f':s==='done'?'#0d9e7e':'#e07d1a';
+    return '<tr class="item-row" data-id="'+it.id+'" style="cursor:pointer">'+
+      '<td title="'+it.name+'"><span style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:#b0b6c8;transition:transform .2s" class="expand-arrow" id="arrow-'+it.id+'">▶</span>'+it.name+'</span></td>'+
+      '<td>'+it.stakeholder+'</td>'+
+      '<td>'+(it.dept||'—')+'</td>'+
+      '<td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td>'+
+      '<td>'+(it.due_date||'—')+'</td>'+
+      '<td>'+sb+'</td>'+
+      '<td style="text-align:center">'+fu+'</td>'+
+      '<td onclick="event.stopPropagation()">'+acts+'</td>'+
+    '</tr>'+
+    '<tr class="detail-row" id="detail-'+it.id+'" style="display:none">'+
+      '<td colspan="8" style="padding:0">'+
+        '<div style="background:#f5f6fa;border-left:3px solid '+scoreColor+';padding:16px 20px;margin:0">'+
+          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:12px">'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Full task name</div><div style="font-size:13px;color:#0f1117;font-weight:500">'+it.name+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Stakeholder</div><div style="font-size:13px;color:#0f1117">'+it.stakeholder+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Email</div><div style="font-size:13px;color:#4f52d9">'+(it.email||'—')+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Department</div><div style="font-size:13px;color:#0f1117">'+(it.dept||'—')+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Frequency</div><div style="font-size:13px;color:#0f1117">'+FL[it.freq]+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Due date</div><div style="font-size:13px;color:'+scoreColor+';font-weight:600">'+(it.due_date||'—')+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Category</div><div style="font-size:13px;color:#0f1117">'+(it.category||'—')+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Status</div><div style="font-size:13px;font-weight:600;color:'+scoreColor+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Follow-ups sent</div><div style="font-size:13px;color:#0f1117">'+(it.followups||0)+'</div></div>'+
+          '</div>'+
+          (it.notes?'<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes</div><div style="font-size:13px;color:#0f1117;background:#fff;padding:10px 12px;border-radius:6px;border:1px solid #e2e5f0">'+it.notes+'</div></div>':'')+
+          '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
+            (canT?'<button class="btn btn-sm" data-toggle="'+it.id+'" style="background:'+(it.done?'#fef3e2':'#e0f7f2')+';color:'+(it.done?'#92400e':'#065f46')+';border-color:'+(it.done?'#fcd9a0':'#9fe1cb')+'">'+(it.done?'Mark as pending':'Mark as done')+'</button>':'')+
+            (can('email')?'<button class="btn btn-sm btn-primary" data-email="'+it.id+'">Send follow-up email</button>':'')+
+            (can('delete')?'<button class="btn btn-sm btn-danger" data-del="'+it.id+'">Delete item</button>':'')+
+          '</div>'+
+        '</div>'+
+      '</td>'+
+    '</tr>';
   }).join('');
-  tb.querySelectorAll('[data-toggle]').forEach(function(el){el.onclick=async function(){var it=items.find(function(x){return x.id==el.getAttribute('data-toggle');});if(it){await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{done:!it.done},extra:{'Prefer':'return=minimal'}});await loadAll();}};});
-  tb.querySelectorAll('[data-del]').forEach(function(el){el.onclick=async function(){if(!confirm('Delete?'))return;await api('grc_items?id=eq.'+el.getAttribute('data-del'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};});
-  tb.querySelectorAll('[data-email]').forEach(function(el){el.onclick=function(){goEmail(el.getAttribute('data-email'));};});
-}
 
+  // Row click to expand
+  tb.querySelectorAll('.item-row').forEach(function(row){
+    row.addEventListener('click',function(){
+      var id=row.getAttribute('data-id');
+      var detail=document.getElementById('detail-'+id);
+      var arrow=document.getElementById('arrow-'+id);
+      var isOpen=detail.style.display!=='none';
+      // Close all others
+      tb.querySelectorAll('.detail-row').forEach(function(d){d.style.display='none';});
+      tb.querySelectorAll('.expand-arrow').forEach(function(a){a.style.transform='rotate(0deg)';a.style.color='#b0b6c8';});
+      if(!isOpen){
+        detail.style.display='table-row';
+        arrow.style.transform='rotate(90deg)';
+        arrow.style.color='#4f52d9';
+      }
+    });
+  });
+
+  tb.querySelectorAll('[data-toggle]').forEach(function(el){
+    el.addEventListener('click',async function(e){
+      e.stopPropagation();
+      var it=items.find(function(x){return x.id==el.getAttribute('data-toggle');});
+      if(it){await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{done:!it.done},extra:{'Prefer':'return=minimal'}});await loadAll();}
+    });
+  });
+  tb.querySelectorAll('[data-del]').forEach(function(el){
+    el.addEventListener('click',async function(e){
+      e.stopPropagation();
+      if(!confirm('Delete?'))return;
+      await api('grc_items?id=eq.'+el.getAttribute('data-del'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+      await loadAll();
+    });
+  });
+  tb.querySelectorAll('[data-email]').forEach(function(el){
+    el.addEventListener('click',function(e){
+      e.stopPropagation();
+      goEmail(el.getAttribute('data-email'));
+    });
+  });
+}
 function goEmail(id){document.getElementById('nav-email').onclick();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
 
 function renderDash(){
