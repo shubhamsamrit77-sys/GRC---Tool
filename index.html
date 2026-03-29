@@ -448,31 +448,73 @@ function getStatus(it){if(it.done)return'done';if(it.due_date&&it.due_date<today
 function can(a){if(!currentUser)return false;var r=currentUser.role;if(a==='view')return true;if(a==='add')return r==='admin'||r==='manager';if(a==='delete')return r==='admin';if(a==='toggle')return r==='admin'||r==='manager'||r==='stakeholder';if(a==='admin')return r==='admin';if(a==='email')return r==='admin'||r==='manager';return false;}
 
 function api(path,opts){
+  var method=(opts&&opts.method)||'GET';
   var h={
     'Content-Type':'application/json',
     'apikey':SUPA_KEY,
     'Authorization':'Bearer '+SUPA_KEY,
-    'Accept':'application/json'
+    'Accept':'application/json',
+    'Cache-Control':'no-cache'
   };
-  if(opts&&opts.extra)Object.assign(h,opts.extra);
-  var fetchOpts={
-    method:(opts&&opts.method)||'GET',
-    headers:h
-  };
+  if(opts&&opts.extra){
+    Object.keys(opts.extra).forEach(function(k){h[k]=opts.extra[k];});
+  }
+  var fetchOpts={method:method,headers:h,mode:'cors'};
   if(opts&&opts.body) fetchOpts.body=JSON.stringify(opts.body);
   return fetch(SUPA_URL+'/rest/v1/'+path,fetchOpts);
+}
+
+async function testConnection(){
+  try{
+    var res=await fetch(SUPA_URL+'/rest/v1/grc_users?select=count&limit=1',{
+      method:'GET',
+      headers:{
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY,
+        'Accept':'application/json'
+      },
+      mode:'cors'
+    });
+    if(res.ok) return true;
+    console.error('Connection test failed:',res.status,res.statusText);
+    return false;
+  }catch(e){
+    console.error('Connection test error:',e.message);
+    return false;
+  }
 }
 
 document.getElementById('login-btn').onclick=async function(){
   var email=document.getElementById('l-email').value.trim().toLowerCase();
   var pass=document.getElementById('l-pass').value.trim();
   var err=document.getElementById('login-err');
+  var btn=document.getElementById('login-btn');
   err.style.display='none';
   if(!email||!pass){err.textContent='Please enter email and password.';err.style.display='block';return;}
+  btn.textContent='Connecting...';btn.disabled=true;
   try{
-    var res=await api('grc_users?select=*&email=eq.'+encodeURIComponent(email)+'&password=eq.'+encodeURIComponent(pass));
+    var url=SUPA_URL+'/rest/v1/grc_users?select=*&email=eq.'+encodeURIComponent(email)+'&password=eq.'+encodeURIComponent(pass);
+    var res=await fetch(url,{
+      method:'GET',
+      headers:{
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY,
+        'Accept':'application/json',
+        'Content-Type':'application/json'
+      },
+      mode:'cors'
+    });
+    if(!res.ok){
+      var errData=await res.text();
+      throw new Error('Server error '+res.status+': '+errData.substring(0,100));
+    }
     var data=await res.json();
-    if(!Array.isArray(data)||!data.length){err.textContent='Invalid email or password. Please try again.';err.style.display='block';return;}
+    if(!Array.isArray(data)||!data.length){
+      err.textContent='Invalid email or password. Please try again.';
+      err.style.display='block';
+      btn.textContent='Sign in to GRC Shield';btn.disabled=false;
+      return;
+    }
     currentUser=data[0];
     document.getElementById('login-screen').style.display='none';
     document.getElementById('main-app').style.display='flex';
@@ -487,8 +529,14 @@ document.getElementById('login-btn').onclick=async function(){
     document.getElementById('add-item-card').style.display=can('add')?'block':'none';
     document.getElementById('add-risk-card').style.display=can('add')?'block':'none';
     if(!can('email'))document.getElementById('nav-email').style.display='none';
+    btn.textContent='Sign in to GRC Shield';btn.disabled=false;
     await loadAll();
-  }catch(e){err.textContent='Connection error. Check your internet and try again. Error: '+e.message;err.style.display='block';}
+  }catch(e){
+    console.error('Login error:',e);
+    err.textContent='Connection failed: '+e.message+'. Please check your internet connection.';
+    err.style.display='block';
+    btn.textContent='Sign in to GRC Shield';btn.disabled=false;
+  }
 };
 document.getElementById('l-pass').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
 document.getElementById('l-email').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
@@ -519,19 +567,25 @@ document.getElementById('sb-overlay').onclick=function(){document.getElementById
 
 async function loadAll(){
   try{
-    var r1=await api('grc_items?select=*&order=created_at.desc');
-    var r2=await api('grc_logs?select=*&order=created_at.desc');
-    var r3=await api('grc_risks?select=*&order=created_at.desc');
+    var headers={
+      'apikey':SUPA_KEY,
+      'Authorization':'Bearer '+SUPA_KEY,
+      'Accept':'application/json',
+      'Content-Type':'application/json'
+    };
+    var base=SUPA_URL+'/rest/v1/';
+    var r1=await fetch(base+'grc_items?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
+    var r2=await fetch(base+'grc_logs?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
+    var r3=await fetch(base+'grc_risks?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
     
     if(!r1.ok||!r2.ok||!r3.ok){
-      var errText=await (r1.ok?r2.ok?r3:r2:r1).text();
-      throw new Error('HTTP '+(!r1.ok?r1.status:!r2.ok?r2.status:r3.status)+': '+errText.substring(0,100));
+      throw new Error('HTTP error: '+(r1.ok?r2.ok?r3.status:r2.status:r1.status));
     }
     
     var d1=await r1.json(),d2=await r2.json(),d3=await r3.json();
     
     if(!Array.isArray(d1)||!Array.isArray(d2)||!Array.isArray(d3)){
-      throw new Error('Invalid data received from database');
+      throw new Error('Invalid data from database');
     }
     
     items=currentUser.role==='stakeholder'?d1.filter(function(it){return it.email===currentUser.email||it.stakeholder_email===currentUser.email;}):d1;
@@ -1193,6 +1247,78 @@ document.getElementById('confirm-import-btn').onclick = async function(){
   }
 };
 
+
+// ── RISKS ──
+document.getElementById('add-risk-btn').onclick=async function(){
+  if(!can('add')){alert('No permission.');return;}
+  var name=document.getElementById('r-name').value.trim();
+  if(!name){alert('Please enter a risk name.');return;}
+  var like=Math.min(5,Math.max(1,parseInt(document.getElementById('r-like').value)||1));
+  var impact=Math.min(5,Math.max(1,parseInt(document.getElementById('r-impact').value)||1));
+  var res=await api('grc_risks',{method:'POST',body:{id:Date.now(),name:name,category:document.getElementById('r-cat').value,likelihood:like,impact:impact,owner:document.getElementById('r-owner').value.trim(),status:'Open'},extra:{'Prefer':'return=minimal'}});
+  if(!res.ok){var e=await res.json();alert('Error: '+(e.message||res.status));return;}
+  ['r-name','r-like','r-impact','r-owner'].forEach(function(id){document.getElementById(id).value='';});
+  await loadAll();
+};
+
+function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
+
+function renderRisks(){
+  var tb=document.getElementById('risk-body');
+  if(!risks.length){tb.innerHTML='<tr><td colspan="7" class="empty">No risks yet.</td></tr>';return;}
+  var sorted=risks.slice().sort(function(a,b){return(b.likelihood*b.impact)-(a.likelihood*a.impact);});
+  tb.innerHTML=sorted.map(function(r){
+    var score=r.likelihood*r.impact,lv=riskLevel(score);
+    var lvBadge={high:'b-overdue',medium:'b-pending',low:'b-done'}[lv];
+    var del=can('delete')?'<button class="btn btn-sm btn-danger" data-dr="'+r.id+'">Delete</button>':'';
+    return '<tr>'+
+      '<td title="'+r.name+'">'+r.name+'</td>'+
+      '<td>'+r.category+'</td>'+
+      '<td style="font-weight:700">'+score+'/25</td>'+
+      '<td><span class="badge '+lvBadge+'">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span></td>'+
+      '<td>'+(r.owner||'—')+'</td>'+
+      '<td><span class="badge b-'+r.status.toLowerCase().replace(/ /g,'')+'" data-cycle="'+r.id+'" data-st="'+r.status+'" style="cursor:pointer">'+r.status+'</span></td>'+
+      '<td>'+del+'</td>'+
+    '</tr>';
+  }).join('');
+  tb.querySelectorAll('[data-cycle]').forEach(function(el){
+    el.onclick=async function(){
+      var s=['Open','In progress','Closed'],cur=el.getAttribute('data-st'),next=s[(s.indexOf(cur)+1)%s.length];
+      await api('grc_risks?id=eq.'+el.getAttribute('data-cycle'),{method:'PATCH',body:{status:next},extra:{'Prefer':'return=minimal'}});
+      await loadAll();
+    };
+  });
+  tb.querySelectorAll('[data-dr]').forEach(function(el){
+    el.onclick=async function(){
+      if(!can('delete')){alert('No permission.');return;}
+      if(!confirm('Delete this risk?'))return;
+      await api('grc_risks?id=eq.'+el.getAttribute('data-dr'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+      await loadAll();
+    };
+  });
+}
+
+// ── USERS ──
+async function loadUsers(){
+  var res=await api('grc_users?select=*&order=created_at.asc');
+  if(!res.ok) return;
+  var data=await res.json();
+  users=Array.isArray(data)?data:[];
+  renderUsers();
+}
+
+document.getElementById('add-user-btn').onclick=async function(){
+  var name=document.getElementById('u-name').value.trim();
+  var email=document.getElementById('u-email').value.trim().toLowerCase();
+  var pass=document.getElementById('u-pass').value.trim();
+  var role=document.getElementById('u-role').value;
+  if(!name||!email||!pass){alert('Please fill all fields.');return;}
+  var res=await api('grc_users',{method:'POST',body:{name:name,email:email,password:pass,role:role},extra:{'Prefer':'return=minimal'}});
+  if(!res.ok){var e=await res.json();alert('Error: '+(e.message||'Could not add user'));return;}
+  ['u-name','u-email','u-pass'].forEach(function(id){document.getElementById(id).value='';});
+  await loadUsers();
+  alert('User added successfully!');
+};
 function renderUsers(){
   var tb=document.getElementById('user-body');
   if(!users.length){tb.innerHTML='<tr><td colspan="5" class="empty">No users.</td></tr>';return;}
