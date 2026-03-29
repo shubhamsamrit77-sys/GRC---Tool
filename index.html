@@ -106,6 +106,15 @@ tbody tr:hover td{background:#f5f6fa}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
 @keyframes spin{to{transform:rotate(360deg)}}
+.ai-quick-btn{padding:4px 10px;border-radius:20px;border:1px solid #e2e5f0;background:#fff;cursor:pointer;font-size:11px;font-weight:500;color:#4f52d9;font-family:Segoe UI,sans-serif;transition:all .15s}
+.ai-quick-btn:hover{background:#eeeffe;border-color:#4f52d9}
+.ai-msg-user{background:#4f52d9;border-radius:12px 12px 0 12px;padding:10px 14px;font-size:13px;color:#fff;max-width:90%;align-self:flex-end;line-height:1.6;word-break:break-word}
+.ai-msg-bot{background:#eeeffe;border-radius:12px 12px 12px 0;padding:10px 14px;font-size:13px;color:#3538b0;max-width:92%;line-height:1.6;word-break:break-word}
+.ai-msg-loading{background:#f0f2f8;border-radius:12px;padding:10px 14px;font-size:13px;color:#7c8298;max-width:60%}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.ai-typing span{display:inline-block;width:6px;height:6px;background:#7c8298;border-radius:50%;margin:0 2px;animation:pulse .8s ease-in-out infinite}
+.ai-typing span:nth-child(2){animation-delay:.15s}
+.ai-typing span:nth-child(3){animation-delay:.3s}
 @media(max-width:900px){.login-left{display:none}.login-wrap{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.two-col{grid-template-columns:1fr}.form-row-3,.form-row-4{grid-template-columns:1fr 1fr}}
 @media(max-width:600px){.ham-btn{display:flex;align-items:center}.sidebar{position:fixed;left:-220px;top:0;height:100vh;z-index:100;transition:left .25s}.sidebar.open{left:0}.metrics{grid-template-columns:repeat(2,1fr)}.form-row,.form-row-3,.form-row-4{grid-template-columns:1fr}.content{padding:12px}.topbar{padding:10px 14px}.login-right{padding:28px 20px}th,td{padding:8px 6px;font-size:11px}}
 </style>
@@ -159,6 +168,13 @@ tbody tr:hover td{background:#f5f6fa}
       <button class="sb-btn" id="nav-risks">Risk register</button>
       <div class="sb-sec" id="admin-sec" style="display:none">Admin</div>
       <button class="sb-btn" id="nav-admin" style="display:none">Manage users</button>
+      <div class="sb-sec">Tools</div>
+      <button class="sb-btn" id="nav-scorecard">Stakeholder scorecard</button>
+      <button class="sb-btn" id="open-ai-chat" style="background:rgba(124,58,237,.25);color:rgba(200,180,255,.9)">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+        AI Assistant
+        <span style="font-size:9px;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:10px;margin-left:auto">AI</span>
+      </button>
     </div>
     <div class="sb-footer">
       <div class="user-card">
@@ -423,6 +439,13 @@ tbody tr:hover td{background:#f5f6fa}
           </table></div>
         </div>
       </div>
+<div id="s-scorecard" class="sec">
+        <div class="card">
+          <div class="card-title">Stakeholder compliance scorecard</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Ranked by compliance rate. See who completes tasks on time and who needs the most follow-ups. Use this to drive accountability.</p>
+          <div id="scorecard-content"><div class="empty">Loading...</div></div>
+        </div>
+      </div>
 <div id="s-risks" class="sec">
         <div class="card" id="add-risk-card"><div class="card-title">Add new risk</div><div class="form-row"><div class="field"><label>Risk name *</label><input id="r-name" placeholder="e.g. Data breach"></div><div class="field"><label>Category</label><select id="r-cat"><option>Cybersecurity</option><option>Operational</option><option>Financial</option><option>Legal/Compliance</option><option>HR</option><option>Other</option></select></div></div><div class="form-row-3"><div class="field"><label>Likelihood (1–5)</label><input id="r-like" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Impact (1–5)</label><input id="r-impact" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Owner</label><input id="r-owner" placeholder="Person responsible"></div></div><div class="actions"><button class="btn btn-primary" id="add-risk-btn">+ Add risk</button></div></div>
         <div class="card"><div class="card-title">Risk register</div><div class="table-wrap"><table><thead><tr><th style="width:22%">Risk</th><th style="width:16%">Category</th><th style="width:9%">Score</th><th style="width:10%">Level</th><th style="width:15%">Owner</th><th style="width:12%">Status</th><th style="width:16%">Actions</th></tr></thead><tbody id="risk-body"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody></table></div></div>
@@ -435,6 +458,49 @@ tbody tr:hover td{background:#f5f6fa}
   </div>
 </div>
 <div class="sb-overlay" id="sb-overlay"></div>
+
+<!-- AI CHAT PANEL -->
+<div id="ai-chat-panel" style="display:none;position:fixed;bottom:20px;right:20px;width:380px;max-height:580px;background:#fff;border:1px solid #e2e5f0;border-radius:16px;box-shadow:0 8px 32px rgba(15,17,23,.15);z-index:200;display:none;flex-direction:column;overflow:hidden">
+  <div style="background:#4f52d9;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
+    <div style="display:flex;align-items:center;gap:10px">
+      <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
+      </div>
+      <div>
+        <div style="font-size:14px;font-weight:600;color:#fff">GRC AI Assistant</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7)">Ask anything about your compliance data</div>
+      </div>
+    </div>
+    <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">×</button>
+  </div>
+  <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:300px;max-height:380px;background:#f9fafb">
+    <div style="background:#eeeffe;border-radius:12px 12px 12px 0;padding:10px 14px;font-size:13px;color:#3538b0;max-width:90%;line-height:1.6">
+      Hello! I am your GRC Assistant. I can answer questions about your compliance items, risks, overdue tasks and follow-up history.<br><br>
+      Try asking:<br>
+      • "How many items are overdue?"<br>
+      • "Who has the lowest compliance rate?"<br>
+      • "Show me all high risks"<br>
+      • "Which monthly tasks are pending?"
+    </div>
+  </div>
+  <div style="padding:12px;border-top:1px solid #e2e5f0;background:#fff">
+    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap" id="ai-quick-btns">
+      <button class="ai-quick-btn" onclick="askAI('How many items are overdue?')">Overdue items</button>
+      <button class="ai-quick-btn" onclick="askAI('Who has the lowest compliance rate?')">Worst stakeholder</button>
+      <button class="ai-quick-btn" onclick="askAI('Show all high risks')">High risks</button>
+      <button class="ai-quick-btn" onclick="askAI('What is my overall compliance percentage?')">Overall %</button>
+    </div>
+    <div style="display:flex;gap:8px">
+      <input id="ai-chat-input" placeholder="Ask anything about your GRC data..." style="flex:1;border:1px solid #e2e5f0;border-radius:8px;padding:9px 12px;font-size:13px;font-family:Segoe UI,sans-serif;color:#0f1117;background:#f5f6fa" onkeydown="if(event.key==='Enter')sendAIMessage()">
+      <button onclick="sendAIMessage()" style="background:#4f52d9;color:#fff;border:none;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;font-weight:600;font-family:Segoe UI,sans-serif">Send</button>
+    </div>
+  </div>
+</div>
+
+<!-- AI CHAT FLOATING BUTTON -->
+<button id="ai-float-btn" onclick="toggleAIChat()" style="display:none;position:fixed;bottom:20px;right:20px;width:52px;height:52px;background:#4f52d9;border:none;border-radius:50%;cursor:pointer;box-shadow:0 4px 16px rgba(79,82,217,.4);z-index:199;align-items:center;justify-content:center">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+</button>
 
 <script>
 var SUPA_URL='https://kqvvqriyaundzefmrqzk.supabase.co';
@@ -530,6 +596,7 @@ document.getElementById('login-btn').onclick=async function(){
     document.getElementById('add-risk-card').style.display=can('add')?'block':'none';
     if(!can('email'))document.getElementById('nav-email').style.display='none';
     btn.textContent='Sign in to GRC Shield';btn.disabled=false;
+    document.getElementById('ai-float-btn').style.display='flex';
     await loadAll();
   }catch(e){
     console.error('Login error:',e);
@@ -548,7 +615,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -558,7 +625,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();
     if(window.innerWidth<=600){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -1377,6 +1444,256 @@ function renderUsers(){
   tb.innerHTML=users.map(function(u){var ini=u.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase(),col=RC[u.role]||'#4f52d9',date=u.created_at?u.created_at.split('T')[0]:'';return'<tr><td><span style="display:inline-flex;align-items:center;gap:8px"><span style="width:26px;height:26px;border-radius:50%;background:'+col+';display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+ini+'</span>'+u.name+'</span></td><td>'+u.email+'</td><td><span class="badge r-'+u.role+'">'+u.role+'</span></td><td>'+date+'</td><td>'+(u.id!==currentUser.id?'<button class="btn btn-sm btn-danger" data-du="'+u.id+'">Remove</button>':'<span style="font-size:12px;color:#b0b6c8">You</span>')+'</td></tr>';}).join('');
   tb.querySelectorAll('[data-du]').forEach(function(el){el.onclick=async function(){if(!confirm('Remove user?'))return;await api('grc_users?id=eq.'+el.getAttribute('data-du'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadUsers();};});
 }
+
+// ── SHOW AI FLOAT BTN AFTER LOGIN ──
+function showAIBtn(){
+  var btn=document.getElementById('ai-float-btn');
+  if(btn) btn.style.display='flex';
+}
+
+// ── AI CHAT ──
+var aiChatOpen=false;
+
+document.getElementById('open-ai-chat').onclick=function(){
+  toggleAIChat();
+};
+
+function toggleAIChat(){
+  var panel=document.getElementById('ai-chat-panel');
+  var floatBtn=document.getElementById('ai-float-btn');
+  aiChatOpen=!aiChatOpen;
+  if(aiChatOpen){
+    panel.style.display='flex';
+    floatBtn.style.display='none';
+    document.getElementById('ai-chat-input').focus();
+  } else {
+    panel.style.display='none';
+    floatBtn.style.display='flex';
+  }
+}
+
+function sendAIMessage(){
+  var input=document.getElementById('ai-chat-input');
+  var q=input.value.trim();
+  if(!q) return;
+  input.value='';
+  askAI(q);
+}
+
+function askAI(question){
+  addMsg(question,'user');
+  var typing=addMsg('<span class="ai-typing"><span></span><span></span><span></span></span>','loading');
+  setTimeout(function(){
+    var answer=processAIQuestion(question);
+    typing.remove();
+    addMsg(answer,'bot');
+    var msgs=document.getElementById('ai-chat-messages');
+    msgs.scrollTop=msgs.scrollHeight;
+  },600);
+}
+
+function addMsg(text,type){
+  var msgs=document.getElementById('ai-chat-messages');
+  var div=document.createElement('div');
+  if(type==='user') div.className='ai-msg-user';
+  else if(type==='bot') div.className='ai-msg-bot';
+  else div.className='ai-msg-loading';
+  div.innerHTML=text;
+  msgs.appendChild(div);
+  msgs.scrollTop=msgs.scrollHeight;
+  return div;
+}
+
+function processAIQuestion(q){
+  var ql=q.toLowerCase().trim();
+  var NL='<br>';
+  var total=items.length;
+  var done=items.filter(function(it){return getStatus(it)==='done';});
+  var overdue=items.filter(function(it){return getStatus(it)==='overdue';});
+  var pending=items.filter(function(it){return getStatus(it)==='pending';});
+  var pct=total?Math.round(done.length/total*100):0;
+
+  // Overdue questions
+  if(ql.indexOf('overdue')>-1&&ql.indexOf('how many')>-1||ql.indexOf('count overdue')>-1){
+    if(!overdue.length) return 'Good news! You have no overdue items currently.';
+    return 'You have <strong>'+overdue.length+' overdue items</strong> out of '+total+' total.'+NL+NL+overdue.slice(0,5).map(function(it){return '• '+it.name+' ('+it.stakeholder+') — due '+it.due_date;}).join(NL)+(overdue.length>5?NL+'...and '+(overdue.length-5)+' more.':'');
+  }
+
+  if((ql.indexOf('overdue')>-1||ql.indexOf('show overdue')>-1||ql.indexOf('list overdue')>-1)&&ql.indexOf('how many')===-1){
+    if(!overdue.length) return 'No overdue items currently. All on track!';
+    return '<strong>'+overdue.length+' overdue items:</strong>'+NL+NL+overdue.map(function(it){return '• '+it.name+NL+'  Stakeholder: '+it.stakeholder+' | Due: '+it.due_date;}).join(NL+NL);
+  }
+
+  // Compliance % questions
+  if(ql.indexOf('overall')>-1||ql.indexOf('compliance percent')>-1||ql.indexOf('completion rate')>-1||ql.indexOf('overall %')>-1||ql.indexOf('progress')>-1){
+    return 'Your overall compliance is <strong>'+pct+'%</strong>'+NL+NL+'• Total items: '+total+NL+'• Completed: '+done.length+NL+'• Overdue: '+overdue.length+NL+'• Pending: '+pending.length;
+  }
+
+  // Pending questions
+  if(ql.indexOf('pending')>-1){
+    if(!pending.length) return 'No pending items! Everything is either completed or overdue.';
+    return '<strong>'+pending.length+' pending items:</strong>'+NL+NL+pending.slice(0,6).map(function(it){return '• '+it.name+' ('+it.stakeholder+') — due '+it.due_date;}).join(NL)+(pending.length>6?NL+'...and '+(pending.length-6)+' more.':'');
+  }
+
+  // Worst stakeholder / lowest compliance
+  if(ql.indexOf('worst')>-1||ql.indexOf('lowest')>-1||ql.indexOf('bad')>-1){
+    var sc=buildScorecardData();
+    if(!sc.length) return 'No stakeholder data yet. Add compliance items first.';
+    var worst=sc[sc.length-1];
+    return '<strong>'+worst.name+'</strong> has the lowest compliance rate at <strong>'+worst.pct+'%</strong>'+NL+'('+worst.done+' done out of '+worst.total+' tasks, '+worst.followups+' follow-ups sent)';
+  }
+
+  // Best stakeholder
+  if(ql.indexOf('best')>-1||ql.indexOf('top')>-1||ql.indexOf('highest')>-1){
+    var sc=buildScorecardData();
+    if(!sc.length) return 'No stakeholder data yet.';
+    var best=sc[0];
+    return '<strong>'+best.name+'</strong> has the best compliance rate at <strong>'+best.pct+'%</strong>'+NL+'('+best.done+' done out of '+best.total+' tasks)';
+  }
+
+  // High risks
+  if(ql.indexOf('high risk')>-1||ql.indexOf('high risks')>-1){
+    var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
+    if(!hr.length) return 'No high risks currently. All risks are medium or low.';
+    return '<strong>'+hr.length+' high risk(s):</strong>'+NL+NL+hr.map(function(r){return '• '+r.name+' — Score: '+(r.likelihood*r.impact)+'/25 | Owner: '+(r.owner||'Unassigned');}).join(NL);
+  }
+
+  // All risks
+  if(ql.indexOf('risk')>-1&&(ql.indexOf('show')>-1||ql.indexOf('list')>-1||ql.indexOf('all')>-1)){
+    if(!risks.length) return 'No risks added yet. Go to Risk Register to add risks.';
+    return '<strong>'+risks.length+' risk(s) total:</strong>'+NL+NL+risks.slice(0,6).map(function(r){var s=r.likelihood*r.impact;var lv=s>=15?'High':s>=8?'Medium':'Low';return '• '+r.name+' — '+lv+' ('+s+'/25)';}).join(NL);
+  }
+
+  // Frequency based questions
+  var freqMap={daily:'daily',weekly:'weekly',monthly:'monthly',quarterly:'quarterly',halfyearly:'half-yearly',yearly:'yearly'};
+  for(var f in freqMap){
+    if(ql.indexOf(f)>-1||ql.indexOf(freqMap[f])>-1){
+      var grp=items.filter(function(it){return it.freq===f;});
+      if(!grp.length) return 'No '+freqMap[f]+' items found.';
+      var gdone=grp.filter(function(it){return getStatus(it)==='done';}).length;
+      var govd=grp.filter(function(it){return getStatus(it)==='overdue';}).length;
+      return '<strong>'+freqMap[f].charAt(0).toUpperCase()+freqMap[f].slice(1)+' items ('+grp.length+' total):</strong>'+NL+'Completed: '+gdone+' | Overdue: '+govd+' | Pending: '+(grp.length-gdone-govd)+NL+NL+grp.slice(0,5).map(function(it){return '• '+it.name+' ('+getStatus(it)+')';}).join(NL);
+    }
+  }
+
+  // Department questions
+  if(ql.indexOf('department')>-1||ql.indexOf('dept')>-1){
+    var depts={};
+    items.forEach(function(it){var d=it.dept||'Unknown';if(!depts[d])depts[d]={total:0,done:0};depts[d].total++;if(getStatus(it)==='done')depts[d].done++;});
+    var keys=Object.keys(depts);
+    if(!keys.length) return 'No department data found.';
+    return '<strong>Compliance by department:</strong>'+NL+NL+keys.map(function(d){var p=Math.round(depts[d].done/depts[d].total*100);return '• '+d+': '+p+'% ('+depts[d].done+'/'+depts[d].total+')';}).join(NL);
+  }
+
+  // Follow-up questions
+  if(ql.indexOf('follow')>-1){
+    var totalFU=logs.length;
+    var mostFU=items.slice().sort(function(a,b){return(b.followups||0)-(a.followups||0);}).slice(0,3);
+    return '<strong>Follow-up summary:</strong>'+NL+'Total follow-ups sent: '+totalFU+NL+NL+'Items with most follow-ups:'+NL+mostFU.map(function(it){return '• '+it.name+' ('+it.stakeholder+'): '+(it.followups||0)+' follow-ups';}).join(NL);
+  }
+
+  // Summary / report
+  if(ql.indexOf('summary')>-1||ql.indexOf('report')>-1||ql.indexOf('status')>-1){
+    var hr2=risks.filter(function(r){return r.likelihood*r.impact>=15;}).length;
+    return '<strong>GRC Status Summary</strong>'+NL+NL+'Compliance: <strong>'+pct+'%</strong> overall'+NL+'• '+done.length+' tasks completed'+NL+'• '+overdue.length+' tasks overdue'+NL+'• '+pending.length+' tasks pending'+NL+NL+'Risks: '+risks.length+' total | <strong>'+hr2+' high risk</strong>'+NL+NL+'Follow-ups: '+logs.length+' sent in total';
+  }
+
+  // Stakeholder specific
+  var stakeMatch=null;
+  items.forEach(function(it){if(it.stakeholder&&ql.indexOf(it.stakeholder.toLowerCase())>-1) stakeMatch=it.stakeholder;});
+  if(stakeMatch){
+    var stItems=items.filter(function(it){return it.stakeholder===stakeMatch;});
+    var stDone=stItems.filter(function(it){return getStatus(it)==='done';}).length;
+    var stOvd=stItems.filter(function(it){return getStatus(it)==='overdue';}).length;
+    var stPct=stItems.length?Math.round(stDone/stItems.length*100):0;
+    return '<strong>'+stakeMatch+'</strong> has '+stItems.length+' task(s):'+NL+'Compliance rate: <strong>'+stPct+'%</strong>'+NL+'Completed: '+stDone+' | Overdue: '+stOvd+' | Pending: '+(stItems.length-stDone-stOvd)+NL+NL+stItems.map(function(it){return '• '+it.name+' → '+getStatus(it);}).join(NL);
+  }
+
+  // Help
+  if(ql.indexOf('help')>-1||ql.indexOf('what can')>-1){
+    return 'I can answer questions like:'+NL+NL+'• "How many items are overdue?"'+NL+'• "What is my overall compliance %?"'+NL+'• "Show all high risks"'+NL+'• "Who has the lowest compliance rate?"'+NL+'• "Show monthly items"'+NL+'• "Show IT department compliance"'+NL+'• "Give me a full summary"'+NL+'• "How many follow-ups sent?"'+NL+NL+'Just type your question!';
+  }
+
+  return 'I am not sure about that specific question. Try asking about overdue items, compliance %, risks, a specific stakeholder name, or type "help" to see what I can answer.';
+}
+
+// ── STAKEHOLDER SCORECARD ──
+function buildScorecardData(){
+  var map={};
+  items.forEach(function(it){
+    var s=it.stakeholder||'Unknown';
+    if(!map[s]) map[s]={name:s,total:0,done:0,overdue:0,pending:0,followups:0,dept:it.dept||''};
+    map[s].total++;
+    var st=getStatus(it);
+    if(st==='done') map[s].done++;
+    else if(st==='overdue') map[s].overdue++;
+    else map[s].pending++;
+    map[s].followups+=(it.followups||0);
+  });
+  return Object.values(map).map(function(s){
+    s.pct=s.total?Math.round(s.done/s.total*100):0;
+    return s;
+  }).sort(function(a,b){return b.pct-a.pct;});
+}
+
+function renderScorecard(){
+  var data=buildScorecardData();
+  var el=document.getElementById('scorecard-content');
+  if(!data.length){el.innerHTML='<div class="empty">No data yet. Add compliance items first.</div>';return;}
+  var html='<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px">';
+  var totalItems=items.length;
+  var avgPct=data.length?Math.round(data.reduce(function(s,d){return s+d.pct;},0)/data.length):0;
+  var totalFU=data.reduce(function(s,d){return s+d.followups;},0);
+  html+='<div class="metric m-total"><div class="metric-label">Stakeholders</div><div class="metric-value">'+data.length+'</div></div>';
+  html+='<div class="metric m-done"><div class="metric-label">Avg compliance</div><div class="metric-value" style="color:#0d9e7e">'+avgPct+'%</div></div>';
+  html+='<div class="metric m-over"><div class="metric-label">Total follow-ups</div><div class="metric-value" style="color:#d93f3f">'+totalFU+'</div></div>';
+  html+='</div>';
+
+  html+='<div class="table-wrap"><table><thead><tr>';
+  html+='<th style="width:5%">Rank</th>';
+  html+='<th style="width:20%">Stakeholder</th>';
+  html+='<th style="width:12%">Department</th>';
+  html+='<th style="width:22%">Compliance rate</th>';
+  html+='<th style="width:8%">Done</th>';
+  html+='<th style="width:8%">Overdue</th>';
+  html+='<th style="width:8%">Pending</th>';
+  html+='<th style="width:9%">Follow-ups</th>';
+  html+='<th style="width:8%">Grade</th>';
+  html+='</tr></thead><tbody>';
+
+  data.forEach(function(s,i){
+    var barColor=s.pct>=80?'#0d9e7e':s.pct>=50?'#e07d1a':'#d93f3f';
+    var grade=s.pct>=90?'A':s.pct>=75?'B':s.pct>=50?'C':s.pct>=25?'D':'F';
+    var gradeColor=s.pct>=90?'#065f46':s.pct>=75?'#0369a1':s.pct>=50?'#92400e':s.pct>=25?'#a32d2d':'#d93f3f';
+    var gradeStyle='background:'+(s.pct>=90?'#e0f7f2':s.pct>=75?'#e0f2fe':s.pct>=50?'#fef3e2':'#fdeaea')+';color:'+gradeColor;
+    var rankEmoji=i===0?'🥇':i===1?'🥈':i===2?'🥉':'';
+    html+='<tr>';
+    html+='<td style="text-align:center;font-weight:700;color:#7c8298">'+(i+1)+(rankEmoji?' <span style="font-size:14px">'+rankEmoji+'</span>':'')+'</td>';
+    html+='<td style="font-weight:600">'+s.name+'</td>';
+    html+='<td style="color:#7c8298">'+(s.dept||'—')+'</td>';
+    html+='<td><div style="display:flex;align-items:center;gap:8px"><div style="flex:1;height:8px;background:#e2e5f0;border-radius:4px;overflow:hidden"><div style="width:'+s.pct+'%;height:100%;background:'+barColor+';border-radius:4px;transition:width .5s"></div></div><span style="font-size:12px;font-weight:700;color:'+barColor+';min-width:35px">'+s.pct+'%</span></div></td>';
+    html+='<td style="text-align:center;font-weight:600;color:#0d9e7e">'+s.done+'</td>';
+    html+='<td style="text-align:center;font-weight:600;color:'+(s.overdue>0?'#d93f3f':'#7c8298')+'">'+s.overdue+'</td>';
+    html+='<td style="text-align:center;color:#7c8298">'+s.pending+'</td>';
+    html+='<td style="text-align:center"><span class="fu-count">'+s.followups+'</span></td>';
+    html+='<td style="text-align:center"><span class="badge" style="'+gradeStyle+';cursor:default;font-size:13px;font-weight:700">'+grade+'</span></td>';
+    html+='</tr>';
+  });
+  html+='</tbody></table></div>';
+
+  html+='<div style="margin-top:14px;padding:12px 14px;background:#f5f6fa;border-radius:8px;font-size:12px;color:#7c8298">';
+  html+='<strong>Grade key:</strong> A = 90%+ excellent &nbsp;|&nbsp; B = 75%+ good &nbsp;|&nbsp; C = 50%+ average &nbsp;|&nbsp; D = 25%+ poor &nbsp;|&nbsp; F = below 25% critical';
+  html+='</div>';
+  el.innerHTML=html;
+}
+
+// ── SETUP AI AFTER LOGIN ──
+var origSetupUI=window.setupUI;
+function setupUIWithAI(){
+  if(typeof origSetupUI==='function') origSetupUI();
+  showAIBtn();
+}
+
 </script>
 </body>
 </html>
