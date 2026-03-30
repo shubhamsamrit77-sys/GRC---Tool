@@ -83,7 +83,7 @@ body{font-family:'Segoe UI',sans-serif;background:#f5f6fa;color:#0f1117;font-siz
 .table-wrap{overflow-x:auto;border-radius:8px;border:1px solid #e2e5f0;-webkit-overflow-scrolling:touch}
 table{width:100%;border-collapse:collapse;font-size:13px;table-layout:fixed}
 th{font-size:11px;font-weight:600;color:#7c8298;padding:10px;text-align:left;border-bottom:1px solid #e2e5f0;text-transform:uppercase;letter-spacing:.4px;background:#f5f6fa}
-td{padding:10px;border-bottom:1px solid #e2e5f0;color:#0f1117;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+td{padding:10px;border-bottom:1px solid #e2e5f0;color:#0f1117;vertical-align:middle;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0}
 tr:last-child td{border-bottom:none}
 tbody tr:hover td{background:#f5f6fa}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer}
@@ -105,6 +105,8 @@ tbody tr:hover td{background:#f5f6fa}
 .filter-tag.active{background:#4f52d9;color:#fff;border-color:#4f52d9}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
+.detail-row td,.log-detail-row td{white-space:normal;overflow:visible;max-width:none}
+.item-row td:first-child,.log-row td:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @keyframes spin{to{transform:rotate(360deg)}}
 .ai-quick-btn{padding:4px 10px;border-radius:20px;border:1px solid #e2e5f0;background:#fff;cursor:pointer;font-size:11px;font-weight:500;color:#4f52d9;font-family:Segoe UI,sans-serif;transition:all .15s}
 .ai-quick-btn:hover{background:#eeeffe;border-color:#4f52d9}
@@ -722,12 +724,15 @@ function renderItems(){
       '<td onclick="event.stopPropagation()">'+acts+'</td>'+
     '</tr>'+
     '<tr class="detail-row" id="detail-'+it.id+'" style="display:none">'+
-      '<td colspan="8" style="padding:0">'+
+      '<td colspan="8" style="padding:0;white-space:normal;overflow:visible">'+
         '<div style="background:#f5f6fa;border-left:3px solid '+scoreColor+';padding:16px 20px;margin:0">'+
-          '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin-bottom:12px">'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Full task name</div><div style="font-size:13px;color:#0f1117;font-weight:500">'+it.name+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Stakeholder</div><div style="font-size:13px;color:#0f1117">'+it.stakeholder+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Email</div><div style="font-size:13px;color:#4f52d9">'+(it.email||'—')+'</div></div>'+
+          '<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e2e5f0">'+
+            '<div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Full task name</div>'+
+            '<div style="font-size:14px;color:#0f1117;font-weight:600;word-break:break-word;white-space:normal;line-height:1.5">'+it.name+'</div>'+
+          '</div>'+
+          '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:12px">'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Stakeholder</div><div style="font-size:13px;color:#0f1117;word-break:break-word">'+it.stakeholder+'</div></div>'+
+            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Email</div><div style="font-size:13px;color:#4f52d9;word-break:break-all">'+(it.email||'—')+'</div></div>'+
             '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Department</div><div style="font-size:13px;color:#0f1117">'+(it.dept||'—')+'</div></div>'+
             '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Frequency</div><div style="font-size:13px;color:#0f1117">'+FL[it.freq]+'</div></div>'+
             '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Due date</div><div style="font-size:13px;color:'+scoreColor+';font-weight:600">'+(it.due_date||'—')+'</div></div>'+
@@ -735,7 +740,7 @@ function renderItems(){
             '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Status</div><div style="font-size:13px;font-weight:600;color:'+scoreColor+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</div></div>'+
             '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Follow-ups sent</div><div style="font-size:13px;color:#0f1117">'+(it.followups||0)+'</div></div>'+
           '</div>'+
-          (it.notes?'<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes</div><div style="font-size:13px;color:#0f1117;background:#fff;padding:10px 12px;border-radius:6px;border:1px solid #e2e5f0">'+it.notes+'</div></div>':'')+
+          (it.notes?'<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes</div><div style="font-size:13px;color:#0f1117;background:#fff;padding:10px 12px;border-radius:6px;border:1px solid #e2e5f0;word-break:break-word;white-space:normal;line-height:1.6">'+it.notes+'</div></div>':'')+
           '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
             (canT?'<button class="btn btn-sm" data-toggle="'+it.id+'" style="background:'+(it.done?'#fef3e2':'#e0f7f2')+';color:'+(it.done?'#92400e':'#065f46')+';border-color:'+(it.done?'#fcd9a0':'#9fe1cb')+'">'+(it.done?'Mark as pending':'Mark as done')+'</button>':'')+
             (can('email')?'<button class="btn btn-sm btn-primary" data-email="'+it.id+'">Send follow-up email</button>':'')+
