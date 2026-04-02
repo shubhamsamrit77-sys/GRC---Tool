@@ -1135,6 +1135,8 @@ function exportToCSV(filename, rows){
 }
 
 
+function getDateStr(){return new Date().toISOString().split('T')[0];}
+
 document.getElementById('export-items-xlsx').onclick=function(){
   if(!items.length){alert('No compliance items to export.');return;}
   exportToXLSX('GRC_All_Items_'+getDateStr()+'.xlsx','Compliance Items',itemsToRows(items));
