@@ -105,6 +105,11 @@ tbody tr:hover td{background:#f5f6fa}
 .filter-tag.active{background:#4f52d9;color:#fff;border-color:#4f52d9}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f1117;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
+.toast.show{opacity:1}
+.portal-link-box{background:#eeeffe;border:1px solid #c7c9f9;border-radius:8px;padding:10px 14px;font-size:12px;color:#4f52d9;margin-top:8px;word-break:break-all;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.copy-link-btn{padding:4px 10px;background:#4f52d9;color:#fff;border:none;border-radius:6px;font-size:11px;cursor:pointer;font-family:Segoe UI,sans-serif;white-space:nowrap}
+.copy-link-btn:hover{background:#3538b0}
 .detail-row td,.log-detail-row td{white-space:normal;overflow:visible;max-width:none}
 .item-row td:first-child,.log-row td:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -172,6 +177,7 @@ tbody tr:hover td{background:#f5f6fa}
       <button class="sb-btn" id="nav-admin" style="display:none">Manage users</button>
       <div class="sb-sec">Tools</div>
       <button class="sb-btn" id="nav-scorecard">Stakeholder scorecard</button>
+      <button class="sb-btn" id="nav-portal">Stakeholder portal</button>
       <button class="sb-btn" id="open-ai-chat" style="background:rgba(124,58,237,.25);color:rgba(200,180,255,.9)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         AI Assistant
@@ -278,6 +284,51 @@ tbody tr:hover td{background:#f5f6fa}
           <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download everything in one Excel file with multiple sheets — compliance items, risks, follow-up log and summary. Perfect for audits and management presentations.</p>
           <div class="actions" style="justify-content:flex-start">
             <button class="btn btn-primary" id="export-full-report">Download full GRC report (Excel)</button>
+          </div>
+        </div>
+      </div>
+<div id="s-portal" class="sec">
+        <div class="card">
+          <div class="card-title">Stakeholder self-update portal</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Generate a personal link for each stakeholder. They open the link, see only their own tasks, and mark them as done — no login needed. This eliminates most of your follow-up work!</p>
+          <div class="form-row">
+            <div class="field">
+              <label>Select stakeholder</label>
+              <select id="portal-stake-select">
+                <option value="">-- select stakeholder --</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Or type stakeholder name</label>
+              <input id="portal-stake-input" placeholder="e.g. Rahul Sharma">
+            </div>
+          </div>
+          <div class="actions" style="justify-content:flex-start">
+            <button class="btn btn-primary" id="gen-portal-btn">Generate portal link</button>
+          </div>
+          <div id="portal-link-output" style="display:none;margin-top:14px">
+            <div style="font-size:12px;font-weight:600;color:#7c8298;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Portal link for <span id="portal-stake-name"></span></div>
+            <div class="portal-link-box">
+              <span id="portal-link-text" style="flex:1"></span>
+              <button class="copy-link-btn" onclick="copyPortalLink()">Copy link</button>
+            </div>
+            <div style="font-size:12px;color:#7c8298;margin-top:8px">Share this link with the stakeholder via WhatsApp or email. They can open it and update their task status without any login.</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">All stakeholder portal links</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th style="width:25%">Stakeholder</th>
+                <th style="width:20%">Department</th>
+                <th style="width:10%">Total tasks</th>
+                <th style="width:10%">Done</th>
+                <th style="width:10%">Pending</th>
+                <th style="width:25%">Portal link</th>
+              </tr></thead>
+              <tbody id="portal-table-body"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -617,7 +668,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -627,7 +678,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();
     if(window.innerWidth<=600){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -773,7 +824,19 @@ function renderItems(){
     el.addEventListener('click',async function(e){
       e.stopPropagation();
       var it=items.find(function(x){return x.id==el.getAttribute('data-toggle');});
-      if(it){await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{done:!it.done},extra:{'Prefer':'return=minimal'}});await loadAll();}
+      if(it){
+        var updateBody={done:!it.done};
+        // Auto calculate next due date when marking as done
+        if(!it.done && it.due_date){
+          var nextDate=calcNextDueDate(it.freq, it.due_date);
+          if(nextDate) updateBody.due_date=nextDate;
+        }
+        await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
+        if(!it.done){
+          showDueDateToast(it.freq, updateBody.due_date||it.due_date);
+        }
+        await loadAll();
+      }
     });
   });
   tb.querySelectorAll('[data-del]').forEach(function(el){
@@ -1699,6 +1762,225 @@ var origSetupUI=window.setupUI;
 function setupUIWithAI(){
   if(typeof origSetupUI==='function') origSetupUI();
   showAIBtn();
+}
+
+// ── DUE DATE AUTO-CALCULATOR ──
+function calcNextDueDate(freq, currentDue){
+  try{
+    var d = currentDue ? new Date(currentDue) : new Date();
+    if(isNaN(d.getTime())) d = new Date();
+    var freqDays = {daily:1,weekly:7,monthly:30,quarterly:91,halfyearly:182,yearly:365};
+    var days = freqDays[freq];
+    if(!days) return null;
+    d.setDate(d.getDate() + days);
+    return d.toISOString().split('T')[0];
+  }catch(e){ return null; }
+}
+
+function showDueDateToast(freq, nextDate){
+  var freqLabels={daily:'tomorrow',weekly:'in 7 days',monthly:'next month',quarterly:'in 3 months',halfyearly:'in 6 months',yearly:'next year'};
+  var msg = 'Task marked done! Next due date set to ' + nextDate + ' (' + (freqLabels[freq]||freq) + ')';
+  var toast = document.getElementById('grc-toast');
+  if(!toast){
+    toast = document.createElement('div');
+    toast.id = 'grc-toast';
+    toast.className = 'toast';
+    document.body.appendChild(toast);
+  }
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(function(){ toast.classList.remove('show'); }, 3500);
+}
+
+// ── STAKEHOLDER PORTAL ──
+function getPortalBase(){
+  var loc = window.location.href;
+  var base = loc.split('?')[0].split('#')[0];
+  return base;
+}
+
+function encodeStake(name){
+  return btoa(unescape(encodeURIComponent(name))).replace(/=/g,'');
+}
+
+function decodeStake(encoded){
+  try{
+    var padded = encoded + '=='.slice(0,(4-encoded.length%4)%4);
+    return decodeURIComponent(escape(atob(padded)));
+  }catch(e){ return null; }
+}
+
+function genPortalLink(stakeholder){
+  var code = encodeStake(stakeholder);
+  return getPortalBase() + '?portal=' + code;
+}
+
+function copyPortalLink(){
+  var link = document.getElementById('portal-link-text').textContent;
+  navigator.clipboard.writeText(link).then(function(){
+    alert('Link copied! Share it with the stakeholder via WhatsApp or email.');
+  }).catch(function(){
+    alert('Please manually copy this link: ' + link);
+  });
+}
+
+document.getElementById('gen-portal-btn').onclick = function(){
+  var sel = document.getElementById('portal-stake-select').value;
+  var inp = document.getElementById('portal-stake-input').value.trim();
+  var name = inp || sel;
+  if(!name){ alert('Please select or type a stakeholder name.'); return; }
+  var link = genPortalLink(name);
+  document.getElementById('portal-stake-name').textContent = name;
+  document.getElementById('portal-link-text').textContent = link;
+  document.getElementById('portal-link-output').style.display = 'block';
+};
+
+function renderPortal(){
+  var sel = document.getElementById('portal-stake-select');
+  var prev = sel.value;
+  sel.innerHTML = '<option value="">-- select stakeholder --</option>';
+  var stakes = {};
+  items.forEach(function(it){
+    if(it.stakeholder){
+      if(!stakes[it.stakeholder]) stakes[it.stakeholder] = {total:0,done:0,pending:0,dept:it.dept||''};
+      stakes[it.stakeholder].total++;
+      if(getStatus(it)==='done') stakes[it.stakeholder].done++;
+      else stakes[it.stakeholder].pending++;
+    }
+  });
+  var names = Object.keys(stakes).sort();
+  names.forEach(function(n){
+    sel.innerHTML += '<option value="'+n+'">'+n+'</option>';
+  });
+  if(prev) sel.value = prev;
+
+  var tb = document.getElementById('portal-table-body');
+  if(!names.length){ tb.innerHTML='<tr><td colspan="6" class="empty">No stakeholders found. Add compliance items first.</td></tr>'; return; }
+  tb.innerHTML = names.map(function(n){
+    var s = stakes[n];
+    var link = genPortalLink(n);
+    var shortLink = link.length > 45 ? link.substring(0,45)+'...' : link;
+    return '<tr>'+
+      '<td style="font-weight:600">'+n+'</td>'+
+      '<td>'+s.dept+'</td>'+
+      '<td style="text-align:center">'+s.total+'</td>'+
+      '<td style="text-align:center;color:#0d9e7e;font-weight:600">'+s.done+'</td>'+
+      '<td style="text-align:center;color:#e07d1a">'+s.pending+'</td>'+
+      '<td>'+
+        '<div style="display:flex;align-items:center;gap:6px">'+
+          '<span style="font-size:11px;color:#7c8298;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+link+'">'+shortLink+'</span>'+
+          '<button class="copy-link-btn" onclick="(function(){navigator.clipboard.writeText(''+link+'').then(function(){alert('Link for '+n+' copied!');}).catch(function(){alert(''+link+'');})})()">Copy</button>'+
+        '</div>'+
+      '</td>'+
+    '</tr>';
+  }).join('');
+}
+
+// ── PORTAL PAGE (runs when ?portal= is in URL) ──
+function checkPortalMode(){
+  var params = new URLSearchParams(window.location.search);
+  var portalCode = params.get('portal');
+  if(!portalCode) return false;
+  var stakeName = decodeStake(portalCode);
+  if(!stakeName){ document.body.innerHTML='<div style="font-family:Segoe UI,sans-serif;text-align:center;padding:60px;color:#d93f3f;font-size:16px">Invalid portal link. Please contact your GRC team.</div>'; return true; }
+  showPortalPage(stakeName);
+  return true;
+}
+
+async function showPortalPage(stakeName){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='none';
+  document.body.style.background='#f5f6fa';
+  var page=document.createElement('div');
+  page.style.cssText='max-width:800px;margin:0 auto;padding:24px 16px;font-family:Segoe UI,sans-serif';
+  var initials=stakeName.charAt(0).toUpperCase();
+  var headerHtml=[
+    '<div style="background:#4f52d9;border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px">',
+    '<div style="width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff">'+initials+'</div>',
+    '<div>',
+    '<div style="font-size:18px;font-weight:700;color:#fff">Hello, '+stakeName+'</div>',
+    '<div style="font-size:13px;color:rgba(255,255,255,.8)">Your compliance tasks — GRC Shield</div>',
+    '</div></div>',
+    '<div id="portal-tasks-area"><div style="text-align:center;padding:40px;color:#7c8298">Loading your tasks...</div></div>'
+  ].join('');
+  page.innerHTML=headerHtml;
+  document.body.appendChild(page);
+  try{
+    var headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'};
+    var res=await fetch(SUPA_URL+'/rest/v1/grc_items?select=*&order=due_date.asc',{method:'GET',headers:headers,mode:'cors'});
+    var allItems=await res.json();
+    var myItems=(allItems||[]).filter(function(it){return it.stakeholder===stakeName||it.email===stakeName;});
+    var area=document.getElementById('portal-tasks-area');
+    if(!myItems.length){
+      area.innerHTML='<div style="background:#fff;border-radius:12px;border:1px solid #e2e5f0;padding:40px;text-align:center;color:#7c8298">No tasks assigned to you currently. Contact your GRC team.</div>';
+      return;
+    }
+    var done=myItems.filter(function(it){return it.done;}).length;
+    var pct=Math.round(done/myItems.length*100);
+    var barColor=pct>=80?'#0d9e7e':pct>=50?'#e07d1a':'#d93f3f';
+    var freqMap={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
+    var html=[];
+    html.push('<div style="background:#fff;border-radius:12px;border:1px solid #e2e5f0;padding:16px 20px;margin-bottom:16px">');
+    html.push('<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">');
+    html.push('<span style="font-weight:600">Your compliance progress</span>');
+    html.push('<span style="font-weight:700;color:'+barColor+'">'+pct+'% complete</span></div>');
+    html.push('<div style="height:10px;background:#e2e5f0;border-radius:5px;overflow:hidden">');
+    html.push('<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:5px;transition:width .5s"></div></div>');
+    html.push('<div style="font-size:12px;color:#7c8298;margin-top:6px">'+done+' completed out of '+myItems.length+' total tasks</div></div>');
+    myItems.forEach(function(it){
+      var todayStr=new Date().toISOString().split('T')[0];
+      var s=it.done?'done':(it.due_date&&it.due_date<todayStr?'overdue':'pending');
+      var sColor=s==='done'?'#0d9e7e':s==='overdue'?'#d93f3f':'#e07d1a';
+      var sBg=s==='done'?'#e0f7f2':s==='overdue'?'#fdeaea':'#fef3e2';
+      html.push('<div style="background:#fff;border-radius:12px;border:1px solid #e2e5f0;border-left:4px solid '+sColor+';padding:16px 20px;margin-bottom:12px">');
+      html.push('<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">');
+      html.push('<div style="flex:1">');
+      html.push('<div style="font-size:14px;font-weight:600;color:#0f1117;margin-bottom:6px;word-break:break-word">'+it.name+'</div>');
+      html.push('<div style="font-size:12px;color:#7c8298">');
+      html.push('Frequency: '+(freqMap[it.freq]||it.freq));
+      html.push(' &nbsp;|&nbsp; Due: '+(it.due_date||'Not set'));
+      html.push(' &nbsp;|&nbsp; Dept: '+(it.dept||'—')+'</div>');
+      if(it.notes) html.push('<div style="font-size:12px;color:#7c8298;margin-top:4px;font-style:italic">Note: '+it.notes+'</div>');
+      html.push('</div>');
+      html.push('<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">');
+      html.push('<span style="background:'+sBg+';color:'+sColor+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>');
+      if(!it.done){
+        html.push('<button onclick="portalMarkDone('+it.id+',this)" style="background:#4f52d9;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:Segoe UI,sans-serif">Mark as done</button>');
+      } else {
+        html.push('<span style="font-size:12px;color:#0d9e7e;font-weight:600">Completed!</span>');
+      }
+      html.push('</div></div></div>');
+    });
+    html.push('<div style="text-align:center;padding:20px;font-size:12px;color:#b0b6c8">GRC Shield — Powered by your compliance team</div>');
+    area.innerHTML=html.join('');
+  }catch(e){
+    var area2=document.getElementById('portal-tasks-area');
+    if(area2) area2.innerHTML='<div style="background:#fdeaea;border-radius:12px;padding:20px;color:#d93f3f;font-size:13px">Error loading tasks: '+e.message+'</div>';
+  }
+}
+
+
+async function portalMarkDone(itemId, btn){
+  btn.textContent='Saving...';
+  btn.disabled=true;
+  try{
+    var headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
+    await fetch(SUPA_URL+'/rest/v1/grc_items?id=eq.'+itemId,{method:'PATCH',headers:headers,body:JSON.stringify({done:true}),mode:'cors'});
+    var card=btn.closest('div[style*="border-left"]');
+    if(card){
+      card.style.borderLeftColor='#0d9e7e';
+      btn.parentElement.innerHTML='<span style="font-size:12px;color:#0d9e7e;font-weight:600">Completed!</span>';
+      var badge=card.querySelector('span[style*="border-radius:20px"]');
+      if(badge){badge.textContent='Done';badge.style.background='#e0f7f2';badge.style.color='#0d9e7e';}
+    }
+  }catch(e){ btn.textContent='Mark as done'; btn.disabled=false; alert('Error: '+e.message); }
+}
+
+// Run portal check on page load
+if(checkPortalMode()){
+  // Portal mode - hide everything else
+} else {
+  // Normal mode - already handled
 }
 
 </script>
