@@ -1836,44 +1836,103 @@ document.getElementById('gen-portal-btn').onclick = function(){
 };
 
 function renderPortal(){
-  var sel = document.getElementById('portal-stake-select');
-  var prev = sel.value;
-  sel.innerHTML = '<option value="">-- select stakeholder --</option>';
-  var stakes = {};
-  items.forEach(function(it){
-    if(it.stakeholder){
-      if(!stakes[it.stakeholder]) stakes[it.stakeholder] = {total:0,done:0,pending:0,dept:it.dept||''};
-      stakes[it.stakeholder].total++;
-      if(getStatus(it)==='done') stakes[it.stakeholder].done++;
-      else stakes[it.stakeholder].pending++;
-    }
-  });
-  var names = Object.keys(stakes).sort();
-  names.forEach(function(n){
-    sel.innerHTML += '<option value="'+n+'">'+n+'</option>';
-  });
-  if(prev) sel.value = prev;
+  var sel=document.getElementById('portal-stake-select');
+  var prev=sel.value;
+  while(sel.options.length>1) sel.remove(1);
 
-  var tb = document.getElementById('portal-table-body');
-  if(!names.length){ tb.innerHTML='<tr><td colspan="6" class="empty">No stakeholders found. Add compliance items first.</td></tr>'; return; }
-  tb.innerHTML = names.map(function(n){
-    var s = stakes[n];
-    var link = genPortalLink(n);
-    var shortLink = link.length > 45 ? link.substring(0,45)+'...' : link;
-    return '<tr>'+
-      '<td style="font-weight:600">'+n+'</td>'+
-      '<td>'+s.dept+'</td>'+
-      '<td style="text-align:center">'+s.total+'</td>'+
-      '<td style="text-align:center;color:#0d9e7e;font-weight:600">'+s.done+'</td>'+
-      '<td style="text-align:center;color:#e07d1a">'+s.pending+'</td>'+
-      '<td>'+
-        '<div style="display:flex;align-items:center;gap:6px">'+
-          '<span style="font-size:11px;color:#7c8298;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+link+'">'+shortLink+'</span>'+
-          '<button class="copy-link-btn" onclick="(function(){navigator.clipboard.writeText(''+link+'').then(function(){alert('Link for '+n+' copied!');}).catch(function(){alert(''+link+'');})})()">Copy</button>'+
-        '</div>'+
-      '</td>'+
-    '</tr>';
-  }).join('');
+  var stakes={};
+  items.forEach(function(it){
+    if(!it.stakeholder) return;
+    var k=it.stakeholder;
+    if(!stakes[k]) stakes[k]={total:0,done:0,pending:0,dept:it.dept||''};
+    stakes[k].total++;
+    if(getStatus(it)==='done') stakes[k].done++;
+    else stakes[k].pending++;
+  });
+
+  var names=Object.keys(stakes).sort();
+  names.forEach(function(n){
+    var opt=document.createElement('option');
+    opt.value=n; opt.textContent=n;
+    sel.appendChild(opt);
+  });
+  if(prev) sel.value=prev;
+
+  var tb=document.getElementById('portal-table-body');
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+
+  if(!names.length){
+    var tr=document.createElement('tr');
+    var td=document.createElement('td');
+    td.colSpan=6; td.className='empty';
+    td.textContent='No stakeholders found. Add compliance items first.';
+    tr.appendChild(td); tb.appendChild(tr);
+    return;
+  }
+
+  names.forEach(function(n){
+    var s=stakes[n];
+    var link=genPortalLink(n);
+    var shortLink=link.length>45?link.substring(0,45)+'...':link;
+
+    var tr=document.createElement('tr');
+
+    function makeTd(html,styles){
+      var td=document.createElement('td');
+      if(html!==undefined) td.innerHTML=html;
+      if(styles) td.style.cssText=styles;
+      return td;
+    }
+
+    var td1=document.createElement('td');
+    td1.textContent=n; td1.style.fontWeight='600';
+
+    var td2=document.createElement('td');
+    td2.textContent=s.dept;
+
+    var td3=document.createElement('td');
+    td3.textContent=s.total; td3.style.textAlign='center';
+
+    var td4=document.createElement('td');
+    td4.textContent=s.done; td4.style.cssText='text-align:center;color:#0d9e7e;font-weight:600';
+
+    var td5=document.createElement('td');
+    td5.textContent=s.pending; td5.style.cssText='text-align:center;color:#e07d1a';
+
+    var td6=document.createElement('td');
+    var wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;align-items:center;gap:6px';
+
+    var span=document.createElement('span');
+    span.title=link;
+    span.textContent=shortLink;
+    span.style.cssText='font-size:11px;color:#7c8298;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+
+    var btn=document.createElement('button');
+    btn.className='copy-link-btn';
+    btn.textContent='Copy';
+    (function(l){
+      btn.onclick=function(){
+        navigator.clipboard.writeText(l).then(function(){
+          alert('Link copied! Share with the stakeholder via WhatsApp or email.');
+        }).catch(function(){
+          prompt('Copy this link:',l);
+        });
+      };
+    })(link);
+
+    wrap.appendChild(span);
+    wrap.appendChild(btn);
+    td6.appendChild(wrap);
+
+    tr.appendChild(td1);
+    tr.appendChild(td2);
+    tr.appendChild(td3);
+    tr.appendChild(td4);
+    tr.appendChild(td5);
+    tr.appendChild(td6);
+    tb.appendChild(tr);
+  });
 }
 
 // ── PORTAL PAGE (runs when ?portal= is in URL) ──
