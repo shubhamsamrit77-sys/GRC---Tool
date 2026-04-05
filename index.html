@@ -2130,164 +2130,168 @@ function updateResponseBadge(){
 function renderResponseMonitor(){
   var alertsEl=document.getElementById('response-alerts-content');
   var tbEl=document.getElementById('response-tbody');
+  if(!alertsEl||!tbEl) return;
 
-  var overdue=[];
-  var dueSoon=[];
-  var waiting=[];
-  var received=[];
-
+  var overdue=[],dueSoon=[],waiting=[],received=[];
   logs.forEach(function(l,idx){
     if(!l.response_deadline) return;
     var diff=daysDiff(l.response_deadline);
-    if(l.response_received){
-      received.push({log:l,idx:idx,diff:diff});
-    } else if(diff<0){
-      overdue.push({log:l,idx:idx,diff:diff});
-    } else if(diff<=2){
-      dueSoon.push({log:l,idx:idx,diff:diff});
-    } else {
-      waiting.push({log:l,idx:idx,diff:diff});
-    }
+    var obj={log:l,idx:idx,diff:diff};
+    if(l.response_received) received.push(obj);
+    else if(diff<0) overdue.push(obj);
+    else if(diff<=1) dueSoon.push(obj);
+    else waiting.push(obj);
   });
 
-  // Render alert cards
-  var alertHtml=[];
+  // ── Alert cards (DOM only) ──
+  while(alertsEl.firstChild) alertsEl.removeChild(alertsEl.firstChild);
 
-  if(overdue.length===0&&dueSoon.length===0){
-    alertHtml.push('<div class="empty">No pending response alerts. All stakeholders have responded or no deadlines set.</div>');
+  if(!overdue.length&&!dueSoon.length){
+    var emp=document.createElement('div');
+    emp.className='empty';
+    emp.textContent='No pending response alerts. All stakeholders have responded or no deadlines set.';
+    alertsEl.appendChild(emp);
   }
 
-  overdue.forEach(function(item){
+  function makeAlertCard(item, type){
     var l=item.log;
-    var daysOverdue=Math.abs(item.diff);
-    alertHtml.push(
-      '<div class="alert-card">'+
-        '<div class="alert-info">'+
-          '<div class="alert-title">'+l.stakeholder+' has not responded — '+daysOverdue+' day'+(daysOverdue===1?'':'s')+' overdue!</div>'+
-          '<div class="alert-sub">Task: '+l.item_name+' &nbsp;|&nbsp; Follow-up #'+l.followup_num+' sent on '+l.log_date+'<br>Response was expected by: <strong>'+l.response_deadline+'</strong>'+
-          (l.subject_used?'<br>Subject: '+l.subject_used:'')+
-          (l.note?'<br>Note: '+l.note:'')+'</div>'+
-        '</div>'+
-        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
-          '<span class="alert-badge badge-overdue-resp">No response — '+daysOverdue+'d overdue</span>'+
-          '<button class="btn btn-sm btn-primary" onclick="markResponseReceived('+item.idx+')">Mark response received</button>'+
-          '<button class="btn btn-sm" onclick="goEmail(''+l.item_name+'')">Send another follow-up</button>'+
-        '</div>'+
-      '</div>'
-    );
-  });
+    var card=document.createElement('div');
+    card.className='alert-card'+(type==='warn'?' warn':type==='ok'?' ok':'');
 
-  dueSoon.forEach(function(item){
-    var l=item.log;
-    var daysLeft=item.diff;
-    alertHtml.push(
-      '<div class="alert-card warn">'+
-        '<div class="alert-info">'+
-          '<div class="alert-title">'+l.stakeholder+' — response due in '+daysLeft+' day'+(daysLeft===1?'':'s')+' ('+l.response_deadline+')</div>'+
-          '<div class="alert-sub">Task: '+l.item_name+' &nbsp;|&nbsp; Follow-up #'+l.followup_num+' sent on '+l.log_date+
-          (l.note?'<br>Note: '+l.note:'')+'</div>'+
-        '</div>'+
-        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
-          '<span class="alert-badge badge-due-soon-resp">Response due soon</span>'+
-          '<button class="btn btn-sm btn-primary" onclick="markResponseReceived('+item.idx+')">Mark response received</button>'+
-        '</div>'+
-      '</div>'
-    );
-  });
+    var info=document.createElement('div');
+    info.className='alert-info';
 
-  alertsEl.innerHTML=alertHtml.join('');
+    var title=document.createElement('div');
+    title.className='alert-title';
+    if(type==='overdue'){
+      var daysO=Math.abs(item.diff);
+      title.textContent=l.stakeholder+' has NOT responded — '+daysO+' day'+(daysO===1?'':'s')+' overdue!';
+    } else {
+      title.textContent=l.stakeholder+' — response due in '+item.diff+' day'+(item.diff===1?'':'s')+' (by '+l.response_deadline+')';
+    }
 
-  // Render full table
+    var sub=document.createElement('div');
+    sub.className='alert-sub';
+    var subText='Task: '+l.item_name+' | Follow-up #'+l.followup_num+' sent on '+l.log_date;
+    if(type==='overdue') subText+=' | Expected by: '+l.response_deadline;
+    if(l.subject_used) subText+='\nSubject: '+l.subject_used;
+    if(l.note) subText+='\nNote: '+l.note;
+    sub.textContent=subText;
+
+    info.appendChild(title);
+    info.appendChild(sub);
+
+    var actions=document.createElement('div');
+    actions.style.cssText='display:flex;flex-direction:column;gap:6px;align-items:flex-end';
+
+    var badge=document.createElement('span');
+    badge.className='alert-badge '+(type==='overdue'?'badge-overdue-resp':'badge-due-soon-resp');
+    badge.textContent=type==='overdue'?'No response — '+Math.abs(item.diff)+'d overdue':'Response due today/tomorrow';
+    actions.appendChild(badge);
+
+    var markBtn=document.createElement('button');
+    markBtn.className='btn btn-sm btn-primary';
+    markBtn.textContent='Mark response received';
+    (function(i){markBtn.onclick=function(){markResponseReceived(i);};})(item.idx);
+    actions.appendChild(markBtn);
+
+    if(type==='overdue'){
+      var fuBtn=document.createElement('button');
+      fuBtn.className='btn btn-sm';
+      fuBtn.textContent='Send another follow-up';
+      (function(l2){fuBtn.onclick=function(){
+        var it=items.find(function(x){return x.name===l2.item_name;});
+        if(it) goEmail(it.id);
+      };})(l);
+      actions.appendChild(fuBtn);
+    }
+
+    card.appendChild(info);
+    card.appendChild(actions);
+    return card;
+  }
+
+  overdue.forEach(function(item){alertsEl.appendChild(makeAlertCard(item,'overdue'));});
+  dueSoon.forEach(function(item){alertsEl.appendChild(makeAlertCard(item,'warn'));});
+
+  // ── Full table (DOM only) ──
+  while(tbEl.firstChild) tbEl.removeChild(tbEl.firstChild);
+
   var allLogs=overdue.concat(dueSoon).concat(waiting).concat(received);
   if(!allLogs.length){
-    tbEl.innerHTML='<tr><td colspan="8" class="empty">No follow-up logs yet. Send follow-up emails and mark them as sent to start tracking.</td></tr>';
+    var tr0=document.createElement('tr');
+    var td0=document.createElement('td');
+    td0.colSpan=8; td0.className='empty';
+    td0.textContent='No follow-up logs yet. Send follow-up emails to start tracking responses.';
+    tr0.appendChild(td0); tbEl.appendChild(tr0);
     return;
   }
 
-  while(tbEl.firstChild) tbEl.removeChild(tbEl.firstChild);
-
   allLogs.forEach(function(item){
     var l=item.log;
-    var diff=item.diff;
     var isReceived=l.response_received;
-    var isOverdue=!isReceived&&diff!==null&&diff<0;
-    var isDueSoon=!isReceived&&!isOverdue&&diff!==null&&diff<=2;
-
-    var statusBadge='';
-    var statusText='';
-    if(isReceived){
-      statusBadge='badge-received';
-      statusText='Response received';
-    } else if(isOverdue){
-      statusBadge='badge-overdue-resp';
-      statusText='Overdue by '+Math.abs(diff)+'d';
-    } else if(isDueSoon){
-      statusBadge='badge-due-soon-resp';
-      statusText='Due in '+diff+'d';
-    } else {
-      statusBadge='badge-waiting';
-      statusText=diff!==null?'Waiting ('+diff+'d left)':'Waiting';
-    }
+    var isOverdue=!isReceived&&item.diff!==null&&item.diff<0;
+    var isDueSoon=!isReceived&&!isOverdue&&item.diff!==null&&item.diff<=1;
 
     var tr=document.createElement('tr');
 
-    var td1=document.createElement('td');
-    td1.title=l.item_name; td1.textContent=l.item_name;
-
-    var td2=document.createElement('td');
-    td2.textContent=l.stakeholder;
-
-    var td3=document.createElement('td');
-    td3.textContent='#'+l.followup_num;
-    td3.style.cssText='text-align:center;font-weight:700;color:#4f52d9';
-
-    var td4=document.createElement('td');
-    td4.textContent=l.log_date;
-
-    var td5=document.createElement('td');
-    td5.textContent=l.response_deadline||'—';
-    if(isOverdue) td5.style.color='#d93f3f';
-    else if(isDueSoon) td5.style.color='#e07d1a';
-
-    var td6=document.createElement('td');
-    var span=document.createElement('span');
-    span.className='badge '+statusBadge;
-    span.style.cursor='default';
-    span.textContent=statusText;
-    td6.appendChild(span);
-
-    var td7=document.createElement('td');
-    if(isReceived){
-      var recSpan=document.createElement('span');
-      recSpan.style.cssText='font-size:12px;color:#0d9e7e;font-weight:600';
-      recSpan.textContent='Replied';
-      td7.appendChild(recSpan);
-    } else {
-      var recSpan=document.createElement('span');
-      recSpan.style.cssText='font-size:12px;color:#b0b6c8';
-      recSpan.textContent='No reply yet';
-      td7.appendChild(recSpan);
+    function cell(text,css){
+      var td=document.createElement('td');
+      td.textContent=text||'—';
+      if(css) td.style.cssText=css;
+      return td;
     }
 
-    var td8=document.createElement('td');
+    tr.appendChild(cell(l.item_name,'overflow:hidden;text-overflow:ellipsis;max-width:0'));
+    tr.appendChild(cell(l.stakeholder));
+
+    var tdNum=document.createElement('td');
+    tdNum.textContent='#'+l.followup_num;
+    tdNum.style.cssText='text-align:center;font-weight:700;color:#4f52d9';
+    tr.appendChild(tdNum);
+
+    tr.appendChild(cell(l.log_date));
+
+    var tdDead=document.createElement('td');
+    tdDead.textContent=l.response_deadline||'—';
+    if(isOverdue) tdDead.style.color='#d93f3f';
+    else if(isDueSoon) tdDead.style.color='#e07d1a';
+    tr.appendChild(tdDead);
+
+    var tdStatus=document.createElement('td');
+    var statusSpan=document.createElement('span');
+    statusSpan.className='badge';
+    statusSpan.style.cursor='default';
+    if(isReceived){statusSpan.className+=' badge-received';statusSpan.textContent='Replied';}
+    else if(isOverdue){statusSpan.className+=' badge-overdue-resp';statusSpan.textContent='Overdue '+Math.abs(item.diff)+'d';}
+    else if(isDueSoon){statusSpan.className+=' badge-due-soon-resp';statusSpan.textContent='Due today/tomorrow';}
+    else{statusSpan.className+=' badge-waiting';statusSpan.textContent=item.diff!==null?'Waiting ('+item.diff+'d)':'Waiting';}
+    tdStatus.appendChild(statusSpan);
+    tr.appendChild(tdStatus);
+
+    var tdResp=document.createElement('td');
+    var respSpan=document.createElement('span');
+    respSpan.style.cssText='font-size:12px;font-weight:600;color:'+(isReceived?'#0d9e7e':'#b0b6c8');
+    respSpan.textContent=isReceived?'Replied':'No reply yet';
+    tdResp.appendChild(respSpan);
+    tr.appendChild(tdResp);
+
+    var tdAction=document.createElement('td');
     if(!isReceived){
       var btn=document.createElement('button');
       btn.className='btn btn-sm btn-primary';
       btn.textContent='Mark replied';
-      btn.style.marginBottom='4px';
-      (function(idx){ btn.onclick=function(){markResponseReceived(idx);}; })(item.idx);
-      td8.appendChild(btn);
+      (function(i){btn.onclick=function(){markResponseReceived(i);};})(item.idx);
+      tdAction.appendChild(btn);
     } else {
-      var revertBtn=document.createElement('button');
-      revertBtn.className='btn btn-sm';
-      revertBtn.textContent='Undo';
-      revertBtn.style.fontSize='11px';
-      (function(idx){ revertBtn.onclick=function(){markResponseReceived(idx,true);}; })(item.idx);
-      td8.appendChild(revertBtn);
+      var undoBtn=document.createElement('button');
+      undoBtn.className='btn btn-sm';
+      undoBtn.textContent='Undo';
+      undoBtn.style.fontSize='11px';
+      (function(i){undoBtn.onclick=function(){markResponseReceived(i,true);};})(item.idx);
+      tdAction.appendChild(undoBtn);
     }
-
-    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
-    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);
+    tr.appendChild(tdAction);
     tbEl.appendChild(tr);
   });
 
@@ -2318,16 +2322,17 @@ function renderDashResponseAlert(){
     return !l.response_received&&l.response_deadline&&l.response_deadline<today();
   });
   var dueSoon=logs.filter(function(l){
-    return !l.response_received&&l.response_deadline&&l.response_deadline>=today()&&daysDiff(l.response_deadline)<=1;
+    if(l.response_received||!l.response_deadline) return false;
+    var diff=daysDiff(l.response_deadline);
+    return diff!==null&&diff<=1&&diff>=0;
   });
 
   var existing=document.getElementById('dash-response-alerts');
   if(existing) existing.remove();
-
   if(!overdue.length&&!dueSoon.length) return;
 
-  var dashEl=document.querySelector('.content .sec.active');
-  if(!dashEl||dashEl.id!=='s-dash') return;
+  var dashEl=document.getElementById('s-dash');
+  if(!dashEl||!dashEl.classList.contains('active')) return;
 
   var alertDiv=document.createElement('div');
   alertDiv.id='dash-response-alerts';
@@ -2337,10 +2342,12 @@ function renderDashResponseAlert(){
     var box=document.createElement('div');
     box.style.cssText='background:#fdeaea;border:1px solid #f5c0c0;border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px';
     var txt=document.createElement('div');
-    txt.innerHTML='<strong style="color:#d93f3f">'+overdue.length+' stakeholder'+(overdue.length>1?'s have':' has')+' not responded to your follow-up!</strong><br>'+
-      '<span style="font-size:12px;color:#a32d2d">'+overdue.map(function(l){return l.stakeholder+' ('+l.item_name+')';}).join(', ')+'</span>';
+    var names=overdue.map(function(l){return l.stakeholder+' ('+l.item_name+')';}).join(', ');
+    txt.innerHTML='<strong style="color:#d93f3f;display:block;margin-bottom:4px">'+overdue.length+' stakeholder'+(overdue.length>1?'s have':' has')+' NOT responded to your follow-up!</strong>'+
+      '<span style="font-size:12px;color:#a32d2d">'+names+'</span>';
     var btn=document.createElement('button');
     btn.className='btn btn-sm btn-primary';
+    btn.style.marginTop='6px';
     btn.textContent='View response monitor';
     btn.onclick=function(){document.getElementById('nav-response').click();};
     box.appendChild(txt);
@@ -2352,13 +2359,19 @@ function renderDashResponseAlert(){
     var box2=document.createElement('div');
     box2.style.cssText='background:#fef3e2;border:1px solid #fcd9a0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px';
     var txt2=document.createElement('div');
-    txt2.innerHTML='<strong style="color:#e07d1a">Response deadline today for: '+dueSoon.map(function(l){return l.stakeholder;}).join(', ')+'</strong>';
+    var names2=dueSoon.map(function(l){return l.stakeholder;}).join(', ');
+    txt2.innerHTML='<strong style="color:#e07d1a">Reminder: Response deadline today/tomorrow for '+names2+'</strong>';
+    var btn2=document.createElement('button');
+    btn2.className='btn btn-sm';
+    btn2.textContent='View details';
+    btn2.onclick=function(){document.getElementById('nav-response').click();};
     box2.appendChild(txt2);
+    box2.appendChild(btn2);
     alertDiv.appendChild(box2);
   }
 
   var metrics=document.getElementById('dash-metrics');
-  if(metrics) metrics.parentNode.insertBefore(alertDiv, metrics);
+  if(metrics) metrics.parentNode.insertBefore(alertDiv,metrics);
 }
 
 </script>
