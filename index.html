@@ -105,6 +105,17 @@ tbody tr:hover td{background:#f5f6fa}
 .filter-tag.active{background:#4f52d9;color:#fff;border-color:#4f52d9}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
+.alert-card{background:#fff;border:1px solid #e2e5f0;border-left:4px solid #d93f3f;border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.alert-card.warn{border-left-color:#e07d1a}
+.alert-card.ok{border-left-color:#0d9e7e}
+.alert-info{flex:1}
+.alert-title{font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px}
+.alert-sub{font-size:12px;color:#7c8298;line-height:1.6}
+.alert-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.badge-overdue-resp{background:#fdeaea;color:#d93f3f}
+.badge-due-soon-resp{background:#fef3e2;color:#e07d1a}
+.badge-received{background:#e0f7f2;color:#0d9e7e}
+.badge-waiting{background:#eeeffe;color:#4f52d9}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f1117;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 .portal-link-box{background:#eeeffe;border:1px solid #c7c9f9;border-radius:8px;padding:10px 14px;font-size:12px;color:#4f52d9;margin-top:8px;word-break:break-all;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -178,6 +189,10 @@ tbody tr:hover td{background:#f5f6fa}
       <div class="sb-sec">Tools</div>
       <button class="sb-btn" id="nav-scorecard">Stakeholder scorecard</button>
       <button class="sb-btn" id="nav-portal">Stakeholder portal</button>
+      <button class="sb-btn" id="nav-response" style="position:relative">
+        Response monitor
+        <span class="ov-badge" id="response-badge" style="display:none">0</span>
+      </button>
       <button class="sb-btn" id="open-ai-chat" style="background:rgba(124,58,237,.25);color:rgba(200,180,255,.9)">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
         AI Assistant
@@ -284,6 +299,31 @@ tbody tr:hover td{background:#f5f6fa}
           <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download everything in one Excel file with multiple sheets — compliance items, risks, follow-up log and summary. Perfect for audits and management presentations.</p>
           <div class="actions" style="justify-content:flex-start">
             <button class="btn btn-primary" id="export-full-report">Download full GRC report (Excel)</button>
+          </div>
+        </div>
+      </div>
+<div id="s-response" class="sec">
+        <div class="card" id="response-alerts-card">
+          <div class="card-title">Pending responses — needs follow-up</div>
+          <div id="response-alerts-content"><div class="empty">Loading...</div></div>
+        </div>
+        <div class="card">
+          <div class="card-title">All follow-up response tracking</div>
+          <p style="font-size:13px;color:#7c8298;margin-bottom:14px;line-height:1.7">Track whether stakeholders responded to your follow-up emails. Mark response as received when they reply.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr>
+                <th style="width:20%">Task</th>
+                <th style="width:14%">Stakeholder</th>
+                <th style="width:8%">FU #</th>
+                <th style="width:10%">Sent on</th>
+                <th style="width:10%">Deadline</th>
+                <th style="width:10%">Status</th>
+                <th style="width:14%">Response</th>
+                <th style="width:14%">Action</th>
+              </tr></thead>
+              <tbody id="response-tbody"></tbody>
+            </table>
           </div>
         </div>
       </div>
@@ -438,6 +478,23 @@ tbody tr:hover td{background:#f5f6fa}
           <div class="field" style="margin-bottom:12px">
             <label>Additional instructions for AI (optional)</label>
             <textarea id="fu-ai-instructions" placeholder="e.g. Make it more formal. Add that audit is next week. Mention GDPR compliance deadline. Mention penalty if not done..." style="width:100%;border:1.5px solid #e2e5f0;border-radius:6px;padding:9px 11px;font-family:Segoe UI,sans-serif;font-size:13px;background:#f5f6fa;color:#0f1117;resize:vertical;min-height:64px"></textarea>
+          </div>
+          <div class="form-row" style="margin-bottom:10px">
+            <div class="field">
+              <label>Expect response within (days)</label>
+              <select id="fu-response-days" style="min-height:40px">
+                <option value="1">1 day</option>
+                <option value="2" selected>2 days</option>
+                <option value="3">3 days</option>
+                <option value="5">5 days</option>
+                <option value="7">7 days</option>
+                <option value="14">14 days</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Note (optional)</label>
+              <input id="fu-note" placeholder="e.g. called on phone, discussed verbally...">
+            </div>
           </div>
           <div class="actions">
             <button class="btn" id="gen-standard-btn">Use standard template</button>
@@ -668,7 +725,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -678,7 +735,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();
     if(window.innerWidth<=600){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -721,6 +778,8 @@ async function loadAll(){
     
     renderDash();renderFreqFilters();renderItems();renderLog();renderRisks();
     if(can('admin'))loadUsers();
+    updateResponseBadge();
+    renderDashResponseAlert();
     
   }catch(e){
     console.error('loadAll error:',e.message);
@@ -1059,7 +1118,7 @@ document.getElementById('mark-sent-btn').onclick=async function(){
   var savedNum=currentEmail.num;
   var it=items.find(function(x){return x.id==currentEmail.itemId;});
   if(it)await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:{followups:(it.followups||0)+1},extra:{'Prefer':'return=minimal'}});
-  await api('grc_logs',{method:'POST',body:{item_name:currentEmail.itemName,stakeholder:currentEmail.stakeholder,followup_num:currentEmail.num,followup_type:toneLabels[tone],log_date:today(),subject_used:subj},extra:{'Prefer':'return=minimal'}});
+  await api('grc_logs',{method:'POST',body:{item_name:currentEmail.itemName,stakeholder:currentEmail.stakeholder,followup_num:currentEmail.num,followup_type:toneLabels[tone],log_date:today(),subject_used:subj,response_deadline:calcDeadline(document.getElementById('fu-response-days').value),response_received:false,note:document.getElementById('fu-note').value.trim()},extra:{'Prefer':'return=minimal'}});
   document.getElementById('email-result').style.display='none';
   currentEmail=null;fuNum=1;updateFuNum();
   await loadAll();
@@ -2040,6 +2099,266 @@ if(checkPortalMode()){
   // Portal mode - hide everything else
 } else {
   // Normal mode - already handled
+}
+
+// ── RESPONSE MONITOR ──
+function calcDeadline(days){
+  var d=new Date();
+  d.setDate(d.getDate()+parseInt(days||2));
+  return d.toISOString().split('T')[0];
+}
+
+function daysDiff(dateStr){
+  if(!dateStr) return null;
+  var diff=(new Date(dateStr)-new Date(today()))/86400000;
+  return Math.round(diff);
+}
+
+function updateResponseBadge(){
+  var pending=logs.filter(function(l){
+    if(l.response_received) return false;
+    if(!l.response_deadline) return false;
+    return l.response_deadline<=today();
+  });
+  var badge=document.getElementById('response-badge');
+  if(badge){
+    badge.textContent=pending.length;
+    badge.style.display=pending.length>0?'inline-block':'none';
+  }
+}
+
+function renderResponseMonitor(){
+  var alertsEl=document.getElementById('response-alerts-content');
+  var tbEl=document.getElementById('response-tbody');
+
+  var overdue=[];
+  var dueSoon=[];
+  var waiting=[];
+  var received=[];
+
+  logs.forEach(function(l,idx){
+    if(!l.response_deadline) return;
+    var diff=daysDiff(l.response_deadline);
+    if(l.response_received){
+      received.push({log:l,idx:idx,diff:diff});
+    } else if(diff<0){
+      overdue.push({log:l,idx:idx,diff:diff});
+    } else if(diff<=2){
+      dueSoon.push({log:l,idx:idx,diff:diff});
+    } else {
+      waiting.push({log:l,idx:idx,diff:diff});
+    }
+  });
+
+  // Render alert cards
+  var alertHtml=[];
+
+  if(overdue.length===0&&dueSoon.length===0){
+    alertHtml.push('<div class="empty">No pending response alerts. All stakeholders have responded or no deadlines set.</div>');
+  }
+
+  overdue.forEach(function(item){
+    var l=item.log;
+    var daysOverdue=Math.abs(item.diff);
+    alertHtml.push(
+      '<div class="alert-card">'+
+        '<div class="alert-info">'+
+          '<div class="alert-title">'+l.stakeholder+' has not responded — '+daysOverdue+' day'+(daysOverdue===1?'':'s')+' overdue!</div>'+
+          '<div class="alert-sub">Task: '+l.item_name+' &nbsp;|&nbsp; Follow-up #'+l.followup_num+' sent on '+l.log_date+'<br>Response was expected by: <strong>'+l.response_deadline+'</strong>'+
+          (l.subject_used?'<br>Subject: '+l.subject_used:'')+
+          (l.note?'<br>Note: '+l.note:'')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
+          '<span class="alert-badge badge-overdue-resp">No response — '+daysOverdue+'d overdue</span>'+
+          '<button class="btn btn-sm btn-primary" onclick="markResponseReceived('+item.idx+')">Mark response received</button>'+
+          '<button class="btn btn-sm" onclick="goEmail(''+l.item_name+'')">Send another follow-up</button>'+
+        '</div>'+
+      '</div>'
+    );
+  });
+
+  dueSoon.forEach(function(item){
+    var l=item.log;
+    var daysLeft=item.diff;
+    alertHtml.push(
+      '<div class="alert-card warn">'+
+        '<div class="alert-info">'+
+          '<div class="alert-title">'+l.stakeholder+' — response due in '+daysLeft+' day'+(daysLeft===1?'':'s')+' ('+l.response_deadline+')</div>'+
+          '<div class="alert-sub">Task: '+l.item_name+' &nbsp;|&nbsp; Follow-up #'+l.followup_num+' sent on '+l.log_date+
+          (l.note?'<br>Note: '+l.note:'')+'</div>'+
+        '</div>'+
+        '<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'+
+          '<span class="alert-badge badge-due-soon-resp">Response due soon</span>'+
+          '<button class="btn btn-sm btn-primary" onclick="markResponseReceived('+item.idx+')">Mark response received</button>'+
+        '</div>'+
+      '</div>'
+    );
+  });
+
+  alertsEl.innerHTML=alertHtml.join('');
+
+  // Render full table
+  var allLogs=overdue.concat(dueSoon).concat(waiting).concat(received);
+  if(!allLogs.length){
+    tbEl.innerHTML='<tr><td colspan="8" class="empty">No follow-up logs yet. Send follow-up emails and mark them as sent to start tracking.</td></tr>';
+    return;
+  }
+
+  while(tbEl.firstChild) tbEl.removeChild(tbEl.firstChild);
+
+  allLogs.forEach(function(item){
+    var l=item.log;
+    var diff=item.diff;
+    var isReceived=l.response_received;
+    var isOverdue=!isReceived&&diff!==null&&diff<0;
+    var isDueSoon=!isReceived&&!isOverdue&&diff!==null&&diff<=2;
+
+    var statusBadge='';
+    var statusText='';
+    if(isReceived){
+      statusBadge='badge-received';
+      statusText='Response received';
+    } else if(isOverdue){
+      statusBadge='badge-overdue-resp';
+      statusText='Overdue by '+Math.abs(diff)+'d';
+    } else if(isDueSoon){
+      statusBadge='badge-due-soon-resp';
+      statusText='Due in '+diff+'d';
+    } else {
+      statusBadge='badge-waiting';
+      statusText=diff!==null?'Waiting ('+diff+'d left)':'Waiting';
+    }
+
+    var tr=document.createElement('tr');
+
+    var td1=document.createElement('td');
+    td1.title=l.item_name; td1.textContent=l.item_name;
+
+    var td2=document.createElement('td');
+    td2.textContent=l.stakeholder;
+
+    var td3=document.createElement('td');
+    td3.textContent='#'+l.followup_num;
+    td3.style.cssText='text-align:center;font-weight:700;color:#4f52d9';
+
+    var td4=document.createElement('td');
+    td4.textContent=l.log_date;
+
+    var td5=document.createElement('td');
+    td5.textContent=l.response_deadline||'—';
+    if(isOverdue) td5.style.color='#d93f3f';
+    else if(isDueSoon) td5.style.color='#e07d1a';
+
+    var td6=document.createElement('td');
+    var span=document.createElement('span');
+    span.className='badge '+statusBadge;
+    span.style.cursor='default';
+    span.textContent=statusText;
+    td6.appendChild(span);
+
+    var td7=document.createElement('td');
+    if(isReceived){
+      var recSpan=document.createElement('span');
+      recSpan.style.cssText='font-size:12px;color:#0d9e7e;font-weight:600';
+      recSpan.textContent='Replied';
+      td7.appendChild(recSpan);
+    } else {
+      var recSpan=document.createElement('span');
+      recSpan.style.cssText='font-size:12px;color:#b0b6c8';
+      recSpan.textContent='No reply yet';
+      td7.appendChild(recSpan);
+    }
+
+    var td8=document.createElement('td');
+    if(!isReceived){
+      var btn=document.createElement('button');
+      btn.className='btn btn-sm btn-primary';
+      btn.textContent='Mark replied';
+      btn.style.marginBottom='4px';
+      (function(idx){ btn.onclick=function(){markResponseReceived(idx);}; })(item.idx);
+      td8.appendChild(btn);
+    } else {
+      var revertBtn=document.createElement('button');
+      revertBtn.className='btn btn-sm';
+      revertBtn.textContent='Undo';
+      revertBtn.style.fontSize='11px';
+      (function(idx){ revertBtn.onclick=function(){markResponseReceived(idx,true);}; })(item.idx);
+      td8.appendChild(revertBtn);
+    }
+
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);
+    tbEl.appendChild(tr);
+  });
+
+  updateResponseBadge();
+}
+
+async function markResponseReceived(logIdx, undo){
+  var l=logs[logIdx];
+  if(!l) return;
+  var newVal=undo?false:true;
+  var res=await api('grc_logs?id=eq.'+l.id,{method:'PATCH',body:{response_received:newVal},extra:{'Prefer':'return=minimal'}});
+  if(res.ok){
+    await loadAll();
+    renderResponseMonitor();
+    if(newVal){
+      showDueDateToast('', l.stakeholder+' response marked as received!');
+    }
+  }
+}
+
+function goEmailByName(itemName){
+  var it=items.find(function(x){return x.name===itemName;});
+  if(it) goEmail(it.id);
+}
+
+function renderDashResponseAlert(){
+  var overdue=logs.filter(function(l){
+    return !l.response_received&&l.response_deadline&&l.response_deadline<today();
+  });
+  var dueSoon=logs.filter(function(l){
+    return !l.response_received&&l.response_deadline&&l.response_deadline>=today()&&daysDiff(l.response_deadline)<=1;
+  });
+
+  var existing=document.getElementById('dash-response-alerts');
+  if(existing) existing.remove();
+
+  if(!overdue.length&&!dueSoon.length) return;
+
+  var dashEl=document.querySelector('.content .sec.active');
+  if(!dashEl||dashEl.id!=='s-dash') return;
+
+  var alertDiv=document.createElement('div');
+  alertDiv.id='dash-response-alerts';
+  alertDiv.style.marginBottom='16px';
+
+  if(overdue.length){
+    var box=document.createElement('div');
+    box.style.cssText='background:#fdeaea;border:1px solid #f5c0c0;border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px';
+    var txt=document.createElement('div');
+    txt.innerHTML='<strong style="color:#d93f3f">'+overdue.length+' stakeholder'+(overdue.length>1?'s have':' has')+' not responded to your follow-up!</strong><br>'+
+      '<span style="font-size:12px;color:#a32d2d">'+overdue.map(function(l){return l.stakeholder+' ('+l.item_name+')';}).join(', ')+'</span>';
+    var btn=document.createElement('button');
+    btn.className='btn btn-sm btn-primary';
+    btn.textContent='View response monitor';
+    btn.onclick=function(){document.getElementById('nav-response').click();};
+    box.appendChild(txt);
+    box.appendChild(btn);
+    alertDiv.appendChild(box);
+  }
+
+  if(dueSoon.length){
+    var box2=document.createElement('div');
+    box2.style.cssText='background:#fef3e2;border:1px solid #fcd9a0;border-radius:10px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px';
+    var txt2=document.createElement('div');
+    txt2.innerHTML='<strong style="color:#e07d1a">Response deadline today for: '+dueSoon.map(function(l){return l.stakeholder;}).join(', ')+'</strong>';
+    box2.appendChild(txt2);
+    alertDiv.appendChild(box2);
+  }
+
+  var metrics=document.getElementById('dash-metrics');
+  if(metrics) metrics.parentNode.insertBefore(alertDiv, metrics);
 }
 
 </script>
