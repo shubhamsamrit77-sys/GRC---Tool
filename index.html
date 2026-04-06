@@ -116,6 +116,7 @@ tbody tr:hover td{background:#f5f6fa}
 .badge-due-soon-resp{background:#fef3e2;color:#e07d1a}
 .badge-received{background:#e0f7f2;color:#0d9e7e}
 .badge-waiting{background:#eeeffe;color:#4f52d9}
+.compose-modal-open{overflow:hidden}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f1117;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 .portal-link-box{background:#eeeffe;border:1px solid #c7c9f9;border-radius:8px;padding:10px 14px;font-size:12px;color:#4f52d9;margin-top:8px;word-break:break-all;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -189,6 +190,11 @@ tbody tr:hover td{background:#f5f6fa}
       <div class="sb-sec">Tools</div>
       <button class="sb-btn" id="nav-scorecard">Stakeholder scorecard</button>
       <button class="sb-btn" id="nav-portal">Stakeholder portal</button>
+      <button class="sb-btn" id="nav-emailtracker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        Email tracker
+        <span class="ov-badge" id="emailtracker-badge" style="display:none">0</span>
+      </button>
       <button class="sb-btn" id="nav-response" style="position:relative">
         Response monitor
         <span class="ov-badge" id="response-badge" style="display:none">0</span>
@@ -302,6 +308,99 @@ tbody tr:hover td{background:#f5f6fa}
           </div>
         </div>
       </div>
+<div id="s-emailtracker" class="sec">
+
+  <!-- COMPOSE EMAIL MODAL -->
+  <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center">
+    <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:560px;margin:20px;box-shadow:0 16px 48px rgba(0,0,0,.2)">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
+        <div style="font-size:16px;font-weight:700;color:#0f1117">Compose &amp; Track Email</div>
+        <button onclick="closeCompose()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#7c8298;line-height:1">×</button>
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>To — Stakeholder name *</label>
+        <input id="et-stakeholder" placeholder="e.g. Deepak Sharma">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Stakeholder email *</label>
+        <input id="et-email" type="email" placeholder="deepak@company.com">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Email subject *</label>
+        <input id="et-subject" placeholder="e.g. Action required: Monthly patch review">
+      </div>
+      <div class="field" style="margin-bottom:12px">
+        <label>Email body (optional — for your reference)</label>
+        <textarea id="et-body" placeholder="Write your email body here..." style="width:100%;min-height:100px;border:1.5px solid #e2e5f0;border-radius:6px;padding:9px 11px;font-family:Segoe UI,sans-serif;font-size:13px;resize:vertical;background:#f5f6fa;color:#0f1117"></textarea>
+      </div>
+      <div class="form-row" style="margin-bottom:12px">
+        <div class="field">
+          <label>Date sent</label>
+          <input id="et-date" type="date">
+        </div>
+        <div class="field">
+          <label>Expect response within</label>
+          <select id="et-days" style="min-height:40px">
+            <option value="1">1 day</option>
+            <option value="2" selected>2 days</option>
+            <option value="3">3 days</option>
+            <option value="5">5 days</option>
+            <option value="7">7 days</option>
+            <option value="14">14 days</option>
+          </select>
+        </div>
+      </div>
+      <div class="field" style="margin-bottom:16px">
+        <label>Category / purpose</label>
+        <select id="et-category" style="min-height:40px">
+          <option>General follow-up</option>
+          <option>Action required</option>
+          <option>Information request</option>
+          <option>Approval needed</option>
+          <option>Meeting request</option>
+          <option>Document request</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
+        <button class="btn" onclick="closeCompose()">Cancel</button>
+        <button class="btn" id="open-gmail-btn" onclick="openGmail()">Open in Gmail</button>
+        <button class="btn btn-primary" id="save-email-btn" onclick="saveTrackedEmail()">Save &amp; Track</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e2e5f0;flex-wrap:wrap;gap:8px">
+      <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">Email tracker</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <select id="et-filter-status" onchange="renderEmailTracker()" style="font-size:13px;padding:6px 10px;border:1px solid #e2e5f0;border-radius:6px;background:#fff;color:#0f1117">
+          <option value="">All emails</option>
+          <option value="waiting">Waiting for reply</option>
+          <option value="overdue">Overdue — no reply</option>
+          <option value="replied">Replied</option>
+        </select>
+        <button class="btn btn-primary" onclick="openCompose()">+ Compose &amp; Track</button>
+      </div>
+    </div>
+    <div id="et-summary" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px"></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th style="width:22%">Subject</th>
+          <th style="width:15%">Stakeholder</th>
+          <th style="width:16%">Email</th>
+          <th style="width:9%">Sent</th>
+          <th style="width:9%">Deadline</th>
+          <th style="width:10%">Status</th>
+          <th style="width:19%">Actions</th>
+        </tr></thead>
+        <tbody id="et-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <div id="s-response" class="sec">
         <div class="card" id="response-alerts-card">
           <div class="card-title">Pending responses — needs follow-up</div>
@@ -725,7 +824,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -735,7 +834,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
     if(window.innerWidth<=600){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -780,6 +879,8 @@ async function loadAll(){
     if(can('admin'))loadUsers();
     updateResponseBadge();
     renderDashResponseAlert();
+    await loadTrackedEmails();
+    renderDashEmailAlert();
     
   }catch(e){
     console.error('loadAll error:',e.message);
@@ -2367,6 +2468,223 @@ function renderDashResponseAlert(){
     btn2.onclick=function(){document.getElementById('nav-response').click();};
     box2.appendChild(txt2);
     box2.appendChild(btn2);
+    alertDiv.appendChild(box2);
+  }
+
+  var metrics=document.getElementById('dash-metrics');
+  if(metrics) metrics.parentNode.insertBefore(alertDiv,metrics);
+}
+
+// ── EMAIL TRACKER ──
+var trackedEmails=[];
+
+function openCompose(){
+  var modal=document.getElementById('compose-modal');
+  modal.style.display='flex';
+  document.body.classList.add('compose-modal-open');
+  document.getElementById('et-date').value=today();
+  setTimeout(function(){document.getElementById('et-stakeholder').focus();},100);
+}
+
+function closeCompose(){
+  var modal=document.getElementById('compose-modal');
+  modal.style.display='none';
+  document.body.classList.remove('compose-modal-open');
+  ['et-stakeholder','et-email','et-subject','et-body'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el) el.value='';
+  });
+  document.getElementById('et-date').value=today();
+}
+
+function openGmail(){
+  var subject=document.getElementById('et-subject').value.trim();
+  var toEmail=document.getElementById('et-email').value.trim();
+  var body=document.getElementById('et-body').value.trim();
+  if(!toEmail){alert('Please enter the stakeholder email first.');return;}
+  var url='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(toEmail)+
+    (subject?'&su='+encodeURIComponent(subject):'')+
+    (body?'&body='+encodeURIComponent(body):'');
+  window.open(url,'_blank');
+}
+
+async function saveTrackedEmail(){
+  var stakeholder=document.getElementById('et-stakeholder').value.trim();
+  var email=document.getElementById('et-email').value.trim();
+  var subject=document.getElementById('et-subject').value.trim();
+  var body=document.getElementById('et-body').value.trim();
+  var dateSent=document.getElementById('et-date').value||today();
+  var days=parseInt(document.getElementById('et-days').value)||2;
+  var category=document.getElementById('et-category').value;
+  if(!stakeholder){alert('Please enter stakeholder name.');return;}
+  if(!email){alert('Please enter stakeholder email.');return;}
+  if(!subject){alert('Please enter email subject.');return;}
+  var deadline=new Date(dateSent);
+  deadline.setDate(deadline.getDate()+days);
+  var deadlineStr=deadline.toISOString().split('T')[0];
+  var record={id:Date.now(),stakeholder:stakeholder,email:email,subject:subject,body:body,date_sent:dateSent,response_deadline:deadlineStr,response_days:days,category:category,replied:false,reply_date:null};
+  var btn=document.getElementById('save-email-btn');
+  btn.textContent='Saving...';btn.disabled=true;
+  var res=await api('grc_email_tracker',{method:'POST',body:record,extra:{'Prefer':'return=minimal'}});
+  btn.textContent='Save & Track';btn.disabled=false;
+  if(!res.ok){var err=await res.json().catch(function(){return{};});alert('Error: '+(err.message||res.status));return;}
+  closeCompose();
+  await loadTrackedEmails();
+  renderEmailTracker();
+  showDueDateToast('','Email tracked! Watching for reply from '+stakeholder);
+}
+
+async function loadTrackedEmails(){
+  try{
+    var res=await api('grc_email_tracker?select=*&order=created_at.desc');
+    if(!res.ok) return;
+    var data=await res.json();
+    trackedEmails=Array.isArray(data)?data:[];
+    updateEmailTrackerBadge();
+  }catch(e){trackedEmails=[];}
+}
+
+function updateEmailTrackerBadge(){
+  var overdue=trackedEmails.filter(function(e){return !e.replied&&e.response_deadline&&e.response_deadline<today();});
+  var badge=document.getElementById('emailtracker-badge');
+  if(badge){badge.textContent=overdue.length;badge.style.display=overdue.length>0?'inline-block':'none';}
+}
+
+async function markEmailReplied(id,undo){
+  var newVal=undo?false:true;
+  var updateBody={replied:newVal,reply_date:newVal?today():null};
+  var res=await api('grc_email_tracker?id=eq.'+id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
+  if(res.ok){await loadTrackedEmails();renderEmailTracker();if(newVal)showDueDateToast('','Reply received! Email marked as replied.');}
+}
+
+async function deleteTrackedEmail(id){
+  if(!confirm('Delete this tracked email?')) return;
+  var res=await api('grc_email_tracker?id=eq.'+id,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+  if(res.ok){await loadTrackedEmails();renderEmailTracker();}
+}
+
+function renderEmailTracker(){
+  var filterEl=document.getElementById('et-filter-status');
+  var filter=filterEl?filterEl.value:'';
+  var total=trackedEmails.length;
+  var replied=trackedEmails.filter(function(e){return e.replied;}).length;
+  var overdue=trackedEmails.filter(function(e){return !e.replied&&e.response_deadline&&e.response_deadline<today();}).length;
+  var waiting=total-replied-overdue;
+
+  var sumEl=document.getElementById('et-summary');
+  if(sumEl){
+    sumEl.innerHTML='';
+    [{label:'Total emails',val:total,color:'#0f1117'},{label:'Waiting reply',val:waiting,color:'#4f52d9'},{label:'Overdue no reply',val:overdue,color:'#d93f3f'},{label:'Replied',val:replied,color:'#0d9e7e'}].forEach(function(m){
+      var div=document.createElement('div');div.className='metric';
+      div.innerHTML='<div class="metric-label">'+m.label+'</div><div class="metric-value" style="color:'+m.color+'">'+m.val+'</div>';
+      sumEl.appendChild(div);
+    });
+  }
+
+  var filtered=trackedEmails.filter(function(e){
+    if(!filter) return true;
+    var ov=!e.replied&&e.response_deadline&&e.response_deadline<today();
+    if(filter==='replied') return e.replied;
+    if(filter==='overdue') return ov;
+    if(filter==='waiting') return !e.replied&&!ov;
+    return true;
+  });
+
+  var tb=document.getElementById('et-tbody');
+  if(!tb) return;
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+
+  if(!filtered.length){
+    var tr0=document.createElement('tr');
+    var td0=document.createElement('td');
+    td0.colSpan=7;td0.className='empty';
+    td0.textContent=total===0?'No emails tracked yet. Click Compose & Track to start.':'No emails match this filter.';
+    tr0.appendChild(td0);tb.appendChild(tr0);
+    return;
+  }
+
+  filtered.forEach(function(e){
+    var isOverdue=!e.replied&&e.response_deadline&&e.response_deadline<today();
+    var isDueSoon=!e.replied&&e.response_deadline&&!isOverdue&&daysDiff(e.response_deadline)<=1;
+    var diff=e.response_deadline?daysDiff(e.response_deadline):null;
+
+    var tr=document.createElement('tr');
+    if(isOverdue) tr.style.background='#fffafa';
+
+    function cell(text,css){var td=document.createElement('td');td.textContent=text||'—';if(css)td.style.cssText=css;return td;}
+
+    var td1=document.createElement('td');td1.title=e.subject;
+    var subDiv=document.createElement('div');subDiv.style.cssText='font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';subDiv.textContent=e.subject;
+    var catDiv=document.createElement('div');catDiv.style.cssText='font-size:11px;color:#7c8298;margin-top:2px';catDiv.textContent=e.category||'';
+    td1.appendChild(subDiv);td1.appendChild(catDiv);
+
+    var td2=cell(e.stakeholder,'font-weight:600');
+    var td3=document.createElement('td');td3.style.cssText='font-size:12px;color:#4f52d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';td3.title=e.email||'';td3.textContent=e.email||'—';
+    var td4=cell(e.date_sent,'font-size:12px');
+
+    var td5=document.createElement('td');td5.style.fontSize='12px';
+    if(isOverdue)td5.style.color='#d93f3f';else if(isDueSoon)td5.style.color='#e07d1a';
+    td5.textContent=e.response_deadline||'—';
+    if(isOverdue&&diff!==null){var db=document.createElement('div');db.style.cssText='font-size:10px;color:#d93f3f;font-weight:600';db.textContent=Math.abs(diff)+'d overdue';td5.appendChild(db);}
+
+    var td6=document.createElement('td');
+    var badge=document.createElement('span');badge.className='badge';badge.style.cursor='default';
+    if(e.replied){badge.style.cssText='background:#e0f7f2;color:#065f46;cursor:default';badge.textContent='Replied';
+      td6.appendChild(badge);
+      if(e.reply_date){var rd=document.createElement('div');rd.style.cssText='font-size:10px;color:#0d9e7e;margin-top:2px;font-weight:500';rd.textContent=e.reply_date;td6.appendChild(rd);}
+    }else if(isOverdue){badge.style.cssText='background:#fdeaea;color:#d93f3f;cursor:default';badge.textContent='No reply';td6.appendChild(badge);
+    }else if(isDueSoon){badge.style.cssText='background:#fef3e2;color:#e07d1a;cursor:default';badge.textContent='Due soon';td6.appendChild(badge);
+    }else{badge.style.cssText='background:#eeeffe;color:#4f52d9;cursor:default';badge.textContent='Waiting';td6.appendChild(badge);}
+
+    var td7=document.createElement('td');
+    var actWrap=document.createElement('div');actWrap.style.cssText='display:flex;gap:4px;flex-wrap:wrap';
+
+    if(!e.replied){
+      var rBtn=document.createElement('button');rBtn.className='btn btn-sm btn-primary';rBtn.textContent='Replied';rBtn.style.fontSize='11px';
+      (function(id){rBtn.onclick=function(){markEmailReplied(id,false);};})(e.id);actWrap.appendChild(rBtn);
+      var gBtn=document.createElement('button');gBtn.className='btn btn-sm';gBtn.textContent='Gmail';gBtn.style.fontSize='11px';
+      (function(em,sub){gBtn.onclick=function(){window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(em)+'&su='+encodeURIComponent('Re: '+sub),'_blank');};})(e.email||'',e.subject||'');
+      actWrap.appendChild(gBtn);
+    }else{
+      var uBtn=document.createElement('button');uBtn.className='btn btn-sm';uBtn.textContent='Undo';uBtn.style.fontSize='11px';
+      (function(id){uBtn.onclick=function(){markEmailReplied(id,true);};})(e.id);actWrap.appendChild(uBtn);
+    }
+    var dBtn=document.createElement('button');dBtn.className='btn btn-sm btn-danger';dBtn.textContent='Del';dBtn.style.fontSize='11px';
+    (function(id){dBtn.onclick=function(){deleteTrackedEmail(id);};})(e.id);actWrap.appendChild(dBtn);
+    td7.appendChild(actWrap);
+
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);
+    tb.appendChild(tr);
+  });
+  updateEmailTrackerBadge();
+}
+
+function renderDashEmailAlert(){
+  var overdueEmails=trackedEmails.filter(function(e){return !e.replied&&e.response_deadline&&e.response_deadline<today();});
+  var dueSoonEmails=trackedEmails.filter(function(e){if(e.replied||!e.response_deadline)return false;var d=daysDiff(e.response_deadline);return d!==null&&d<=1&&d>=0;});
+  var existing=document.getElementById('dash-email-alerts');
+  if(existing) existing.remove();
+  if(!overdueEmails.length&&!dueSoonEmails.length) return;
+  var dashEl=document.getElementById('s-dash');
+  if(!dashEl||!dashEl.classList.contains('active')) return;
+  var alertDiv=document.createElement('div');alertDiv.id='dash-email-alerts';alertDiv.style.marginBottom='16px';
+
+  if(overdueEmails.length){
+    var box=document.createElement('div');
+    box.style.cssText='background:#fff8e1;border:1px solid #ffd54f;border-radius:10px;padding:12px 16px;margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:8px';
+    var txt=document.createElement('div');
+    var names=overdueEmails.slice(0,3).map(function(e){return e.stakeholder+' ('+e.subject.substring(0,25)+'...)';}).join(', ');
+    txt.innerHTML='<strong style="color:#f57f17;display:block;margin-bottom:4px">'+overdueEmails.length+' email'+(overdueEmails.length>1?'s have':' has')+' no reply yet!</strong><span style="font-size:12px;color:#e65100">'+names+'</span>';
+    var btn=document.createElement('button');btn.className='btn btn-sm';btn.style.cssText='background:#f57f17;color:#fff;border-color:#f57f17';
+    btn.textContent='View Email Tracker';btn.onclick=function(){document.getElementById('nav-emailtracker').click();};
+    box.appendChild(txt);box.appendChild(btn);alertDiv.appendChild(box);
+  }
+
+  if(dueSoonEmails.length){
+    var box2=document.createElement('div');
+    box2.style.cssText='background:#e8f5e9;border:1px solid #a5d6a7;border-radius:10px;padding:10px 14px;font-size:13px;color:#2e7d32';
+    var names2=dueSoonEmails.map(function(e){return e.stakeholder;}).join(', ');
+    box2.textContent='Reminder: Response expected today/tomorrow from '+names2;
     alertDiv.appendChild(box2);
   }
 
