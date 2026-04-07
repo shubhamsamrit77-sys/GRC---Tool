@@ -105,6 +105,16 @@ tbody tr:hover td{background:#f5f6fa}
 .filter-tag.active{background:#4f52d9;color:#fff;border-color:#4f52d9}
 .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}
 .sb-overlay.open{display:block}
+.sb-group-btn{width:100%;display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;border:none;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:rgba(255,255,255,.5);text-align:left;font-family:Segoe UI,sans-serif;text-transform:uppercase;letter-spacing:.6px;margin-top:6px;transition:all .15s}
+.sb-group-btn:hover{color:rgba(255,255,255,.8);background:rgba(255,255,255,.05)}
+.sb-group-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center;flex-shrink:0;opacity:.7}
+.sb-chevron{margin-left:auto;transition:transform .2s;flex-shrink:0;opacity:.6}
+.sb-group{overflow:hidden;max-height:0;transition:max-height .25s cubic-bezier(.4,0,.2,1)}
+.sb-group.open{max-height:300px}
+.sb-chevron.open{transform:rotate(180deg)}
+.sb-child{padding-left:20px!important}
+.sb-dot{width:5px;height:5px;border-radius:50%;background:rgba(255,255,255,.25);flex-shrink:0;margin-right:2px}
+.sb-btn.active .sb-dot{background:#fff}
 .alert-card{background:#fff;border:1px solid #e2e5f0;border-left:4px solid #d93f3f;border-radius:10px;padding:14px 18px;margin-bottom:10px;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
 .alert-card.warn{border-left-color:#e07d1a}
 .alert-card.ok{border-left-color:#0d9e7e}
@@ -175,36 +185,114 @@ tbody tr:hover td{background:#f5f6fa}
       </div>
     </div>
     <div class="sb-nav">
-      <div class="sb-sec">Overview</div>
-      <button class="sb-btn active" id="nav-dash">Dashboard</button>
-      <div class="sb-sec">Compliance</div>
-      <button class="sb-btn" id="nav-items">All items</button>
-      <button class="sb-btn" id="nav-import">Bulk import Excel</button>
-      <button class="sb-btn" id="nav-export">Export reports</button>
-      <button class="sb-btn" id="nav-overdue">Overdue / due soon <span class="ov-badge" id="ov-badge" style="display:none">0</span></button>
-      <button class="sb-btn" id="nav-email">Follow-up emails</button>
-      <div class="sb-sec">Risk</div>
-      <button class="sb-btn" id="nav-risks">Risk register</button>
-      <div class="sb-sec" id="admin-sec" style="display:none">Admin</div>
-      <button class="sb-btn" id="nav-admin" style="display:none">Manage users</button>
-      <div class="sb-sec">Tools</div>
-      <button class="sb-btn" id="nav-scorecard">Stakeholder scorecard</button>
-      <button class="sb-btn" id="nav-portal">Stakeholder portal</button>
-      <button class="sb-btn" id="nav-emailtracker">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-        Email tracker
-        <span class="ov-badge" id="emailtracker-badge" style="display:none">0</span>
-      </button>
-      <button class="sb-btn" id="nav-response" style="position:relative">
-        Response monitor
-        <span class="ov-badge" id="response-badge" style="display:none">0</span>
-      </button>
-      <button class="sb-btn" id="open-ai-chat" style="background:rgba(124,58,237,.25);color:rgba(200,180,255,.9)">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-        AI Assistant
-        <span style="font-size:9px;background:#7c3aed;color:#fff;padding:1px 5px;border-radius:10px;margin-left:auto">AI</span>
+
+  <!-- OVERVIEW -->
+  <button class="sb-btn active" id="nav-dash">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </button>
+
+  <!-- COMPLIANCE GROUP -->
+  <button class="sb-group-btn" onclick="toggleGroup('grp-compliance')">
+    <span class="sb-group-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    </span>
+    Compliance
+    <svg class="sb-chevron" id="chev-compliance" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="sb-group open" id="grp-compliance">
+    <button class="sb-btn sb-child" id="nav-items">
+      <span class="sb-dot"></span>All items
+    </button>
+    <button class="sb-btn sb-child" id="nav-overdue">
+      <span class="sb-dot"></span>Overdue / due soon
+      <span class="ov-badge" id="ov-badge" style="display:none">0</span>
+    </button>
+    <button class="sb-btn sb-child" id="nav-import">
+      <span class="sb-dot"></span>Bulk import
+    </button>
+    <button class="sb-btn sb-child" id="nav-export">
+      <span class="sb-dot"></span>Export reports
+    </button>
+  </div>
+
+  <!-- COMMUNICATION GROUP -->
+  <button class="sb-group-btn" onclick="toggleGroup('grp-comm')">
+    <span class="sb-group-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+    </span>
+    Communication
+    <svg class="sb-chevron" id="chev-comm" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="sb-group open" id="grp-comm">
+    <button class="sb-btn sb-child" id="nav-email">
+      <span class="sb-dot"></span>Follow-up emails
+    </button>
+    <button class="sb-btn sb-child" id="nav-emailtracker">
+      <span class="sb-dot"></span>Email tracker
+      <span class="ov-badge" id="emailtracker-badge" style="display:none">0</span>
+    </button>
+    <button class="sb-btn sb-child" id="nav-response">
+      <span class="sb-dot"></span>Response monitor
+      <span class="ov-badge" id="response-badge" style="display:none">0</span>
+    </button>
+  </div>
+
+  <!-- RISK GROUP -->
+  <button class="sb-group-btn" onclick="toggleGroup('grp-risk')">
+    <span class="sb-group-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </span>
+    Risk
+    <svg class="sb-chevron" id="chev-risk" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="sb-group open" id="grp-risk">
+    <button class="sb-btn sb-child" id="nav-risks">
+      <span class="sb-dot"></span>Risk register
+    </button>
+  </div>
+
+  <!-- STAKEHOLDERS GROUP -->
+  <button class="sb-group-btn" onclick="toggleGroup('grp-stake')">
+    <span class="sb-group-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+    </span>
+    Stakeholders
+    <svg class="sb-chevron" id="chev-stake" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+  </button>
+  <div class="sb-group open" id="grp-stake">
+    <button class="sb-btn sb-child" id="nav-scorecard">
+      <span class="sb-dot"></span>Scorecard
+    </button>
+    <button class="sb-btn sb-child" id="nav-portal">
+      <span class="sb-dot"></span>Self-update portal
+    </button>
+  </div>
+
+  <!-- AI ASSISTANT -->
+  <button class="sb-btn" id="open-ai-chat" style="margin-top:8px;background:rgba(124,58,237,.2);color:rgba(200,185,255,.95);border-radius:8px">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
+    AI Assistant
+    <span style="font-size:9px;background:#7c3aed;color:#fff;padding:1px 6px;border-radius:10px;margin-left:auto;font-weight:700">AI</span>
+  </button>
+
+  <!-- ADMIN -->
+  <div id="admin-sec" style="display:none;margin-top:8px">
+    <button class="sb-group-btn" onclick="toggleGroup('grp-admin')">
+      <span class="sb-group-icon">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/></svg>
+      </span>
+      Admin
+      <svg class="sb-chevron" id="chev-admin" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+    </button>
+    <div class="sb-group open" id="grp-admin">
+      <button class="sb-btn sb-child" id="nav-admin">
+        <span class="sb-dot"></span>Manage users
       </button>
     </div>
+  </div>
+
+</div>
     <div class="sb-footer">
       <div class="user-card">
         <div class="user-av" id="user-av" style="background:#4f52d9">A</div>
@@ -2691,6 +2779,30 @@ function renderDashEmailAlert(){
   var metrics=document.getElementById('dash-metrics');
   if(metrics) metrics.parentNode.insertBefore(alertDiv,metrics);
 }
+
+// ── SIDEBAR GROUP TOGGLE ──
+function toggleGroup(id){
+  var grp=document.getElementById(id);
+  var chevId='chev-'+id.replace('grp-','');
+  var chev=document.getElementById(chevId);
+  if(!grp) return;
+  var isOpen=grp.classList.contains('open');
+  if(isOpen){
+    grp.classList.remove('open');
+    if(chev) chev.classList.remove('open');
+  } else {
+    grp.classList.add('open');
+    if(chev) chev.classList.add('open');
+  }
+}
+
+// Set all chevrons to open state on load
+document.addEventListener('DOMContentLoaded',function(){
+  ['compliance','comm','risk','stake','admin'].forEach(function(g){
+    var chev=document.getElementById('chev-'+g);
+    if(chev) chev.classList.add('open');
+  });
+});
 
 </script>
 </body>
