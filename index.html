@@ -127,6 +127,35 @@ tbody tr:hover td{background:#f5f6fa}
 .badge-received{background:#e0f7f2;color:#0d9e7e}
 .badge-waiting{background:#eeeffe;color:#4f52d9}
 .compose-modal-open{overflow:hidden}
+#global-search:focus{outline:none;border-color:#4f52d9;background:#fff;box-shadow:0 0 0 3px rgba(79,82,217,.1)}
+.search-section-title{font-size:10px;font-weight:700;color:#7c8298;text-transform:uppercase;letter-spacing:.6px;padding:10px 14px 4px;background:#f5f6fa;border-bottom:1px solid #e2e5f0;position:sticky;top:0}
+.search-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;transition:background .1s;border-bottom:0.5px solid #f0f2f8}
+.search-item:hover{background:#f5f6fa}
+.search-item:last-child{border-bottom:none}
+.search-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;flex-shrink:0;margin-top:1px}
+.search-item-title{font-size:13px;font-weight:500;color:#0f1117;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+.search-item-sub{font-size:11px;color:#7c8298;margin-top:2px}
+.search-highlight{background:#fef3e2;color:#92400e;border-radius:3px;padding:0 2px;font-weight:600}
+.search-empty{padding:24px;text-align:center;color:#b0b6c8;font-size:13px}
+.search-kbd{background:#f0f2f8;color:#7c8298;font-size:10px;padding:2px 6px;border-radius:4px;font-family:monospace}
+@media(max-width:700px){#global-search{max-width:100%}}
+.search-wrap{position:relative;display:flex;align-items:center;background:#f5f6fa;border:1.5px solid #e2e5f0;border-radius:10px;padding:0 12px;gap:8px;transition:all .2s;flex:1;max-width:460px}
+.search-wrap:focus-within{background:#fff;border-color:#4f52d9;box-shadow:0 0 0 3px rgba(79,82,217,.1)}
+.search-icon{color:#7c8298;flex-shrink:0}
+.search-input{border:none;background:transparent;font-size:13px;font-family:Segoe UI,sans-serif;color:#0f1117;outline:none;width:100%;padding:9px 0;min-width:0}
+.search-input::placeholder{color:#b0b6c8}
+.search-clear{background:none;border:none;cursor:pointer;color:#7c8298;font-size:18px;line-height:1;padding:0;flex-shrink:0}
+.search-clear:hover{color:#0f1117}
+.search-result-group{padding:6px 0}
+.search-group-label{font-size:10px;font-weight:700;color:#7c8298;text-transform:uppercase;letter-spacing:.7px;padding:4px 16px 2px}
+.search-result-item{display:flex;align-items:flex-start;gap:10px;padding:9px 16px;cursor:pointer;transition:background .1s;border-bottom:0.5px solid #f0f2f8}
+.search-result-item:hover{background:#f5f6fa}
+.search-result-item:last-child{border-bottom:none}
+.sri-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:13px}
+.sri-title{font-size:13px;font-weight:500;color:#0f1117;margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.sri-sub{font-size:11px;color:#7c8298;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:320px}
+.search-empty{text-align:center;padding:32px;color:#b0b6c8;font-size:13px}
+.search-highlight{background:#fff3cd;border-radius:2px;padding:0 2px;font-weight:600;color:#0f1117}
 .toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#0f1117;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:500;z-index:9999;opacity:0;transition:opacity .3s;pointer-events:none;white-space:nowrap}
 .toast.show{opacity:1}
 .portal-link-box{background:#eeeffe;border:1px solid #c7c9f9;border-radius:8px;padding:10px 14px;font-size:12px;color:#4f52d9;margin-top:8px;word-break:break-all;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -310,14 +339,32 @@ tbody tr:hover td{background:#f5f6fa}
         <button class="ham-btn" id="ham-btn">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
+        <div class="search-wrap" id="search-wrap">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input id="global-search" class="search-input" placeholder="Search tasks, risks, emails, stakeholders..." autocomplete="off" oninput="onSearchInput(this.value)" onkeydown="onSearchKey(event)">
+          <button class="search-clear" id="search-clear" onclick="clearSearch()" style="display:none">×</button>
+        </div>
         <div><div class="page-title" id="page-title">Dashboard</div><div class="page-sub" id="page-sub">Your compliance overview</div></div>
+      </div>
+      <div style="flex:1;max-width:400px;position:relative;margin:0 16px">
+        <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);color:#7c8298;pointer-events:none" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input id="global-search" placeholder="Search tasks, stakeholders, risks, emails..." style="width:100%;padding:8px 12px 8px 34px;border:1.5px solid #e2e5f0;border-radius:8px;font-size:13px;font-family:Segoe UI,sans-serif;background:#f5f6fa;color:#0f1117;transition:all .2s" oninput="onGlobalSearch(this.value)" onfocus="showSearchResults()" onblur="hideSearchResultsDelay()">
+        <div id="search-results-panel" style="display:none;position:absolute;top:calc(100% + 6px);left:0;right:0;background:#fff;border:1px solid #e2e5f0;border-radius:10px;box-shadow:0 8px 24px rgba(15,17,23,.12);z-index:500;max-height:420px;overflow-y:auto"></div>
       </div>
       <div class="conn-wrap">
         <div class="conn-dot" id="conn-dot" style="background:#e07d1a"></div>
         <span class="conn-lbl" id="conn-lbl" style="color:#e07d1a">Connecting...</span>
       </div>
     </div>
-    <div class="content">
+    <div class="content" style="position:relative">
+      <!-- SEARCH RESULTS DROPDOWN -->
+      <div id="search-results" style="display:none;position:absolute;top:0;left:0;right:0;background:#fff;border:1px solid #e2e5f0;border-radius:12px;box-shadow:0 8px 32px rgba(15,17,23,.12);z-index:150;max-height:480px;overflow-y:auto;margin:0 0 16px">
+        <div style="padding:12px 16px;border-bottom:1px solid #e2e5f0;display:flex;align-items:center;justify-content:space-between">
+          <span style="font-size:13px;font-weight:600;color:#0f1117" id="search-result-title">Search results</span>
+          <button onclick="clearSearch()" style="background:none;border:none;cursor:pointer;color:#7c8298;font-size:18px;line-height:1">×</button>
+        </div>
+        <div id="search-result-body" style="padding:8px 0"></div>
+      </div>
       <div id="s-dash" class="sec active">
         <div class="metrics" id="dash-metrics">
           <div class="metric m-total"><div class="metric-label">Total items</div><div class="metric-value">—</div></div>
@@ -2802,6 +2849,493 @@ document.addEventListener('DOMContentLoaded',function(){
     var chev=document.getElementById('chev-'+g);
     if(chev) chev.classList.add('open');
   });
+});
+
+// ── GLOBAL SEARCH ──
+var searchTimer = null;
+
+function onSearchInput(val){
+  var clearBtn = document.getElementById('search-clear');
+  if(clearBtn) clearBtn.style.display = val ? 'block' : 'none';
+  clearTimeout(searchTimer);
+  if(!val || val.trim().length < 2){
+    hideSearchResults();
+    return;
+  }
+  searchTimer = setTimeout(function(){ doSearch(val.trim()); }, 200);
+}
+
+function onSearchKey(e){
+  if(e.key === 'Escape') clearSearch();
+}
+
+function clearSearch(){
+  var inp = document.getElementById('global-search');
+  if(inp) inp.value = '';
+  var clearBtn = document.getElementById('search-clear');
+  if(clearBtn) clearBtn.style.display = 'none';
+  hideSearchResults();
+}
+
+function hideSearchResults(){
+  var el = document.getElementById('search-results');
+  if(el) el.style.display = 'none';
+}
+
+function highlight(text, query){
+  if(!text || !query) return String(text || '');
+  var safe = String(text);
+  var ql = query.toLowerCase();
+  var idx = safe.toLowerCase().indexOf(ql);
+  if(idx === -1) return safe;
+  return safe.substring(0, idx) +
+    '<span class="search-highlight">' + safe.substring(idx, idx + query.length) + '</span>' +
+    safe.substring(idx + query.length);
+}
+
+function doSearch(q){
+  var ql = q.toLowerCase();
+  var results = [];
+
+  // Search compliance items
+  var matchItems = items.filter(function(it){
+    return (it.name && it.name.toLowerCase().indexOf(ql) > -1) ||
+           (it.stakeholder && it.stakeholder.toLowerCase().indexOf(ql) > -1) ||
+           (it.dept && it.dept.toLowerCase().indexOf(ql) > -1) ||
+           (it.email && it.email.toLowerCase().indexOf(ql) > -1) ||
+           (it.notes && it.notes.toLowerCase().indexOf(ql) > -1) ||
+           (it.category && it.category.toLowerCase().indexOf(ql) > -1);
+  });
+
+  // Search risks
+  var matchRisks = risks.filter(function(r){
+    return (r.name && r.name.toLowerCase().indexOf(ql) > -1) ||
+           (r.category && r.category.toLowerCase().indexOf(ql) > -1) ||
+           (r.owner && r.owner.toLowerCase().indexOf(ql) > -1);
+  });
+
+  // Search follow-up logs
+  var matchLogs = logs.filter(function(l){
+    return (l.item_name && l.item_name.toLowerCase().indexOf(ql) > -1) ||
+           (l.stakeholder && l.stakeholder.toLowerCase().indexOf(ql) > -1) ||
+           (l.subject_used && l.subject_used.toLowerCase().indexOf(ql) > -1);
+  });
+
+  // Search tracked emails
+  var matchEmails = trackedEmails.filter(function(e){
+    return (e.subject && e.subject.toLowerCase().indexOf(ql) > -1) ||
+           (e.stakeholder && e.stakeholder.toLowerCase().indexOf(ql) > -1) ||
+           (e.email && e.email.toLowerCase().indexOf(ql) > -1) ||
+           (e.category && e.category.toLowerCase().indexOf(ql) > -1);
+  });
+
+  var total = matchItems.length + matchRisks.length + matchLogs.length + matchEmails.length;
+  var resultEl = document.getElementById('search-results');
+  var bodyEl = document.getElementById('search-result-body');
+  var titleEl = document.getElementById('search-result-title');
+  if(!resultEl || !bodyEl) return;
+
+  titleEl.textContent = total + ' result' + (total !== 1 ? 's' : '') + ' for "' + q + '"';
+  while(bodyEl.firstChild) bodyEl.removeChild(bodyEl.firstChild);
+
+  if(!total){
+    var emp = document.createElement('div');
+    emp.className = 'search-empty';
+    emp.textContent = 'No results found for "' + q + '"';
+    bodyEl.appendChild(emp);
+    resultEl.style.display = 'block';
+    return;
+  }
+
+  function makeGroup(label, icon, iconBg, items2, makeItem){
+    if(!items2.length) return;
+    var grp = document.createElement('div');
+    grp.className = 'search-result-group';
+    var lbl = document.createElement('div');
+    lbl.className = 'search-group-label';
+    lbl.textContent = label + ' (' + items2.length + ')';
+    grp.appendChild(lbl);
+    items2.slice(0, 5).forEach(function(item){
+      var row = document.createElement('div');
+      row.className = 'search-result-item';
+      var ico = document.createElement('div');
+      ico.className = 'sri-icon';
+      ico.style.background = iconBg;
+      ico.innerHTML = icon;
+      var info = document.createElement('div');
+      info.style.flex = '1';
+      info.style.minWidth = '0';
+      var res = makeItem(item, q);
+      var title = document.createElement('div');
+      title.className = 'sri-title';
+      title.innerHTML = res.title;
+      var sub = document.createElement('div');
+      sub.className = 'sri-sub';
+      sub.textContent = res.sub;
+      var badge = document.createElement('span');
+      badge.className = 'badge';
+      badge.style.cssText = res.badgeStyle + ';cursor:default;font-size:10px;float:right;margin-top:2px';
+      badge.textContent = res.badge;
+      info.appendChild(title);
+      info.appendChild(sub);
+      row.appendChild(ico);
+      row.appendChild(info);
+      row.appendChild(badge);
+      row.onclick = res.onclick;
+      grp.appendChild(row);
+    });
+    if(items2.length > 5){
+      var more = document.createElement('div');
+      more.style.cssText = 'font-size:11px;color:#7c8298;padding:6px 16px;text-align:center';
+      more.textContent = '+ ' + (items2.length - 5) + ' more results';
+      grp.appendChild(more);
+    }
+    bodyEl.appendChild(grp);
+  }
+
+  // Compliance items
+  makeGroup('Compliance items',
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/></svg>',
+    '#4f52d9', matchItems,
+    function(it, q){
+      var s = getStatus(it);
+      var sColor = s==='done'?'#065f46':s==='overdue'?'#d93f3f':'#92400e';
+      var sBg = s==='done'?'#e0f7f2':s==='overdue'?'#fdeaea':'#fef3e2';
+      return {
+        title: highlight(it.name, q),
+        sub: (it.stakeholder||'') + (it.dept?' · '+it.dept:'') + (it.due_date?' · Due: '+it.due_date:''),
+        badge: s.charAt(0).toUpperCase()+s.slice(1),
+        badgeStyle: 'background:'+sBg+';color:'+sColor,
+        onclick: function(){
+          clearSearch();
+          document.getElementById('nav-items').click();
+          setTimeout(function(){
+            var rows = document.querySelectorAll('#items-body .item-row');
+            rows.forEach(function(row){
+              if(row.getAttribute('data-id') == it.id) row.click();
+            });
+          }, 500);
+        }
+      };
+    }
+  );
+
+  // Risks
+  makeGroup('Risk register',
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>',
+    '#d93f3f', matchRisks,
+    function(r, q){
+      var score = r.likelihood * r.impact;
+      var lv = score>=15?'High':score>=8?'Medium':'Low';
+      var lvColor = score>=15?'#d93f3f':score>=8?'#e07d1a':'#0d9e7e';
+      var lvBg = score>=15?'#fdeaea':score>=8?'#fef3e2':'#e0f7f2';
+      return {
+        title: highlight(r.name, q),
+        sub: r.category + (r.owner?' · Owner: '+r.owner:'') + ' · Score: '+score+'/25',
+        badge: lv,
+        badgeStyle: 'background:'+lvBg+';color:'+lvColor,
+        onclick: function(){
+          clearSearch();
+          document.getElementById('nav-risks').click();
+        }
+      };
+    }
+  );
+
+  // Follow-up logs
+  makeGroup('Follow-up logs',
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/></svg>',
+    '#0d9e7e', matchLogs,
+    function(l, q){
+      return {
+        title: highlight(l.item_name, q),
+        sub: 'To: ' + l.stakeholder + ' · Follow-up #' + l.followup_num + ' · ' + l.log_date + (l.subject_used?' · '+l.subject_used:''),
+        badge: l.followup_type || 'Follow-up',
+        badgeStyle: 'background:#eeeffe;color:#4f52d9',
+        onclick: function(){
+          clearSearch();
+          document.getElementById('nav-email').click();
+        }
+      };
+    }
+  );
+
+  // Tracked emails
+  makeGroup('Email tracker',
+    '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,6 12,13 2,6"/></svg>',
+    '#e07d1a', matchEmails,
+    function(e, q){
+      var isOverdue = !e.replied && e.response_deadline && e.response_deadline < today();
+      var status = e.replied ? 'Replied' : isOverdue ? 'No reply' : 'Waiting';
+      var sColor = e.replied?'#065f46':isOverdue?'#d93f3f':'#4f52d9';
+      var sBg = e.replied?'#e0f7f2':isOverdue?'#fdeaea':'#eeeffe';
+      return {
+        title: highlight(e.subject, q),
+        sub: 'To: ' + e.stakeholder + ' (' + (e.email||'') + ') · Sent: ' + e.date_sent,
+        badge: status,
+        badgeStyle: 'background:'+sBg+';color:'+sColor,
+        onclick: function(){
+          clearSearch();
+          document.getElementById('nav-emailtracker').click();
+        }
+      };
+    }
+  );
+
+  resultEl.style.display = 'block';
+}
+
+// Close search when clicking outside
+document.addEventListener('click', function(e){
+  var wrap = document.getElementById('search-wrap');
+  var results = document.getElementById('search-results');
+  if(wrap && results && !wrap.contains(e.target) && !results.contains(e.target)){
+    hideSearchResults();
+  }
+});
+
+// ── GLOBAL SEARCH ──
+var searchTimeout = null;
+var searchVisible = false;
+
+function onGlobalSearch(val){
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(function(){ runSearch(val.trim()); }, 180);
+}
+
+function showSearchResults(){
+  var q = document.getElementById('global-search').value.trim();
+  if(q.length >= 1){
+    document.getElementById('search-results-panel').style.display = 'block';
+    searchVisible = true;
+  }
+}
+
+function hideSearchResultsDelay(){
+  setTimeout(function(){
+    document.getElementById('search-results-panel').style.display = 'none';
+    searchVisible = false;
+  }, 200);
+}
+
+function highlightText(text, query){
+  if(!query || !text) return text || '';
+  var safe = text.toString();
+  var idx = safe.toLowerCase().indexOf(query.toLowerCase());
+  if(idx === -1) return safe;
+  return safe.substring(0, idx) +
+    '<span class="search-highlight">' + safe.substring(idx, idx + query.length) + '</span>' +
+    safe.substring(idx + query.length);
+}
+
+function runSearch(q){
+  var panel = document.getElementById('search-results-panel');
+  panel.style.display = 'block';
+  searchVisible = true;
+
+  if(!q || q.length < 1){
+    panel.innerHTML = '<div class="search-empty">Start typing to search across all sections...</div>';
+    return;
+  }
+
+  var ql = q.toLowerCase();
+  var results = [];
+
+  // Search compliance items
+  items.forEach(function(it){
+    var match = (it.name && it.name.toLowerCase().indexOf(ql) > -1) ||
+      (it.stakeholder && it.stakeholder.toLowerCase().indexOf(ql) > -1) ||
+      (it.dept && it.dept.toLowerCase().indexOf(ql) > -1) ||
+      (it.category && it.category.toLowerCase().indexOf(ql) > -1) ||
+      (it.notes && it.notes.toLowerCase().indexOf(ql) > -1) ||
+      (it.email && it.email.toLowerCase().indexOf(ql) > -1);
+    if(match){
+      var s = getStatus(it);
+      results.push({
+        type: 'item',
+        title: it.name,
+        sub: it.stakeholder + (it.dept ? ' · ' + it.dept : '') + ' · ' + s.charAt(0).toUpperCase() + s.slice(1),
+        color: s === 'done' ? '#0d9e7e' : s === 'overdue' ? '#d93f3f' : '#e07d1a',
+        bg: s === 'done' ? '#e0f7f2' : s === 'overdue' ? '#fdeaea' : '#fef3e2',
+        icon: s === 'done' ? '✓' : s === 'overdue' ? '!' : '·',
+        action: 'nav-items',
+        label: 'Compliance'
+      });
+    }
+  });
+
+  // Search risks
+  risks.forEach(function(r){
+    var match = (r.name && r.name.toLowerCase().indexOf(ql) > -1) ||
+      (r.category && r.category.toLowerCase().indexOf(ql) > -1) ||
+      (r.owner && r.owner.toLowerCase().indexOf(ql) > -1);
+    if(match){
+      var score = r.likelihood * r.impact;
+      var lv = score >= 15 ? 'High' : score >= 8 ? 'Medium' : 'Low';
+      var lc = score >= 15 ? '#d93f3f' : score >= 8 ? '#e07d1a' : '#0d9e7e';
+      results.push({
+        type: 'risk',
+        title: r.name,
+        sub: r.category + ' · Score: ' + score + '/25 · ' + lv + ' risk' + (r.owner ? ' · Owner: ' + r.owner : ''),
+        color: lc,
+        bg: score >= 15 ? '#fdeaea' : score >= 8 ? '#fef3e2' : '#e0f7f2',
+        icon: '⚠',
+        action: 'nav-risks',
+        label: 'Risk'
+      });
+    }
+  });
+
+  // Search follow-up logs
+  logs.forEach(function(l){
+    var match = (l.item_name && l.item_name.toLowerCase().indexOf(ql) > -1) ||
+      (l.stakeholder && l.stakeholder.toLowerCase().indexOf(ql) > -1) ||
+      (l.subject_used && l.subject_used.toLowerCase().indexOf(ql) > -1) ||
+      (l.followup_type && l.followup_type.toLowerCase().indexOf(ql) > -1);
+    if(match){
+      results.push({
+        type: 'log',
+        title: l.subject_used || ('Follow-up #' + l.followup_num + ' — ' + l.item_name),
+        sub: 'To: ' + l.stakeholder + ' · FU #' + l.followup_num + ' · ' + l.log_date + (l.response_received ? ' · Replied' : ' · No reply yet'),
+        color: '#4f52d9',
+        bg: '#eeeffe',
+        icon: '✉',
+        action: 'nav-email',
+        label: 'Follow-up'
+      });
+    }
+  });
+
+  // Search tracked emails
+  trackedEmails.forEach(function(e){
+    var match = (e.subject && e.subject.toLowerCase().indexOf(ql) > -1) ||
+      (e.stakeholder && e.stakeholder.toLowerCase().indexOf(ql) > -1) ||
+      (e.email && e.email.toLowerCase().indexOf(ql) > -1) ||
+      (e.category && e.category.toLowerCase().indexOf(ql) > -1) ||
+      (e.body && e.body.toLowerCase().indexOf(ql) > -1);
+    if(match){
+      var st = e.replied ? 'Replied' : (e.response_deadline && e.response_deadline < today() ? 'No reply — overdue' : 'Waiting');
+      var sc = e.replied ? '#0d9e7e' : (e.response_deadline && e.response_deadline < today() ? '#d93f3f' : '#4f52d9');
+      results.push({
+        type: 'email',
+        title: e.subject,
+        sub: 'To: ' + e.stakeholder + ' · ' + e.date_sent + ' · ' + st,
+        color: sc,
+        bg: e.replied ? '#e0f7f2' : (e.response_deadline && e.response_deadline < today() ? '#fdeaea' : '#eeeffe'),
+        icon: '@',
+        action: 'nav-emailtracker',
+        label: 'Email'
+      });
+    }
+  });
+
+  // Search users
+  users.forEach(function(u){
+    var match = (u.name && u.name.toLowerCase().indexOf(ql) > -1) ||
+      (u.email && u.email.toLowerCase().indexOf(ql) > -1) ||
+      (u.role && u.role.toLowerCase().indexOf(ql) > -1);
+    if(match && can('admin')){
+      results.push({
+        type: 'user',
+        title: u.name,
+        sub: u.email + ' · Role: ' + u.role.charAt(0).toUpperCase() + u.role.slice(1),
+        color: '#7c8298',
+        bg: '#f0f2f8',
+        icon: 'U',
+        action: 'nav-admin',
+        label: 'User'
+      });
+    }
+  });
+
+  // Render results
+  panel.innerHTML = '';
+
+  if(!results.length){
+    var emp = document.createElement('div');
+    emp.className = 'search-empty';
+    emp.innerHTML = 'No results found for <strong>"' + q + '"</strong>';
+    panel.appendChild(emp);
+    return;
+  }
+
+  // Group by type
+  var typeOrder = ['item','risk','log','email','user'];
+  var typeLabels = {item:'Compliance Items',risk:'Risks',log:'Follow-up Logs',email:'Tracked Emails',user:'Users'};
+
+  typeOrder.forEach(function(type){
+    var group = results.filter(function(r){ return r.type === type; });
+    if(!group.length) return;
+
+    var header = document.createElement('div');
+    header.className = 'search-section-title';
+    header.textContent = typeLabels[type] + ' (' + group.length + ')';
+    panel.appendChild(header);
+
+    group.slice(0, 5).forEach(function(r){
+      var item = document.createElement('div');
+      item.className = 'search-item';
+
+      var iconDiv = document.createElement('div');
+      iconDiv.className = 'search-icon';
+      iconDiv.style.cssText = 'background:' + r.bg + ';color:' + r.color + ';font-weight:700';
+      iconDiv.textContent = r.icon;
+
+      var textDiv = document.createElement('div');
+      textDiv.style.minWidth = '0';
+
+      var titleDiv = document.createElement('div');
+      titleDiv.className = 'search-item-title';
+      titleDiv.innerHTML = highlightText(r.title, q);
+
+      var subDiv = document.createElement('div');
+      subDiv.className = 'search-item-sub';
+      subDiv.textContent = r.sub;
+
+      textDiv.appendChild(titleDiv);
+      textDiv.appendChild(subDiv);
+      item.appendChild(iconDiv);
+      item.appendChild(textDiv);
+
+      (function(action){
+        item.onclick = function(){
+          document.getElementById('global-search').value = '';
+          panel.style.display = 'none';
+          var navBtn = document.getElementById(action);
+          if(navBtn) navBtn.click();
+        };
+      })(r.action);
+
+      panel.appendChild(item);
+    });
+
+    if(group.length > 5){
+      var more = document.createElement('div');
+      more.style.cssText = 'padding:8px 14px;font-size:11px;color:#7c8298;text-align:center;border-bottom:0.5px solid #f0f2f8';
+      more.textContent = '+ ' + (group.length - 5) + ' more results in ' + typeLabels[type];
+      panel.appendChild(more);
+    }
+  });
+
+  // Total count footer
+  var footer = document.createElement('div');
+  footer.style.cssText = 'padding:8px 14px;font-size:11px;color:#b0b6c8;text-align:center;background:#f9fafb;border-top:1px solid #e2e5f0;border-radius:0 0 10px 10px';
+  footer.textContent = results.length + ' result' + (results.length === 1 ? '' : 's') + ' found';
+  panel.appendChild(footer);
+}
+
+// Close search on Escape key
+document.addEventListener('keydown', function(e){
+  if(e.key === 'Escape'){
+    document.getElementById('global-search').value = '';
+    document.getElementById('search-results-panel').style.display = 'none';
+  }
+  // Ctrl+K or Cmd+K to focus search
+  if((e.ctrlKey || e.metaKey) && e.key === 'k'){
+    e.preventDefault();
+    var el = document.getElementById('global-search');
+    if(el){ el.focus(); el.select(); }
+  }
 });
 
 </script>
