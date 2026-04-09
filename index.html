@@ -127,6 +127,24 @@ tbody tr:hover td{background:#f5f6fa}
 .badge-received{background:#e0f7f2;color:#0d9e7e}
 .badge-waiting{background:#eeeffe;color:#4f52d9}
 .compose-modal-open{overflow:hidden}
+.slide-panel{position:fixed;top:0;right:-480px;width:460px;height:100vh;background:#fff;z-index:500;box-shadow:-8px 0 40px rgba(15,17,23,.15);display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1)}
+.slide-panel.open{right:0}
+.panel-header{padding:22px 24px;border-bottom:1px solid #e2e5f0;display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.panel-title{font-size:16px;font-weight:700;color:#0f1117;margin-bottom:3px}
+.panel-sub{font-size:12px;color:#7c8298}
+.panel-close{width:32px;height:32px;border:none;background:#f5f6fa;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#7c8298;flex-shrink:0}
+.panel-close:hover{background:#e2e5f0;color:#0f1117}
+.panel-body{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:14px}
+.panel-footer{padding:16px 24px;border-top:1px solid #e2e5f0;display:flex;gap:10px;justify-content:flex-end}
+.pf{display:flex;flex-direction:column;gap:5px}
+.pf label{font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.5px}
+.pf input,.pf select,.pf textarea{border:1.5px solid #e2e5f0;border-radius:8px;padding:10px 12px;font-size:13px;font-family:Segoe UI,sans-serif;background:#f9fafb;color:#0f1117;width:100%;transition:border .15s}
+.pf input:focus,.pf select:focus,.pf textarea:focus{outline:none;border-color:#4f52d9;background:#fff;box-shadow:0 0 0 3px rgba(79,82,217,.08)}
+.p2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#panel-overlay{display:none;position:fixed;inset:0;background:rgba(15,17,23,.4);z-index:499;backdrop-filter:blur(2px)}
+.sec-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-topbar-title{font-size:16px;font-weight:700;color:#0f1117}
+@media(max-width:600px){.slide-panel{width:100%;right:-100%}}
 #global-search:focus{outline:none;border-color:#4f52d9;background:#fff;box-shadow:0 0 0 3px rgba(79,82,217,.1)}
 .search-section-title{font-size:10px;font-weight:700;color:#7c8298;text-transform:uppercase;letter-spacing:.6px;padding:10px 14px 4px;background:#f5f6fa;border-bottom:1px solid #e2e5f0;position:sticky;top:0}
 .search-item{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;cursor:pointer;transition:background .1s;border-bottom:0.5px solid #f0f2f8}
@@ -378,474 +396,14 @@ tbody tr:hover td{background:#f5f6fa}
         </div>
       </div>
       <div id="s-items" class="sec">
-        <div class="card" id="add-item-card">
-          <div class="card-title">Add compliance item</div>
-          <div class="form-row"><div class="field"><label>Task name *</label><input id="i-name" placeholder="e.g. Monthly server patch review"></div><div class="field"><label>Stakeholder name *</label><input id="i-stake" placeholder="e.g. Rahul Sharma"></div></div>
-          <div class="form-row-4"><div class="field"><label>Email</label><input id="i-email" type="email" placeholder="rahul@company.com"></div><div class="field"><label>Department</label><input id="i-dept" placeholder="e.g. IT"></div><div class="field"><label>Frequency</label><select id="i-freq"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="halfyearly">Half-yearly</option><option value="yearly">Yearly</option></select></div><div class="field"><label>Due date</label><input id="i-due" type="date"></div></div>
-          <div class="form-row"><div class="field"><label>Category</label><select id="i-cat"><option>Cybersecurity</option><option>Data Privacy</option><option>HR Compliance</option><option>Legal</option><option>Financial</option><option>Operational</option><option>Audit</option><option>Other</option></select></div><div class="field"><label>Notes</label><input id="i-notes" placeholder="Any extra details..."></div></div>
-          <div class="actions"><button class="btn btn-primary" id="add-item-btn">+ Add item</button></div>
+        <div class="sec-topbar">
+          <div class="sec-topbar-title">All compliance items</div>
+          <button class="btn btn-primary" onclick="openPanel('item-panel')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Add item
+          </button>
         </div>
-        <div class="card"><div class="card-title">All compliance items</div><div class="tag-row" id="freq-filters"></div><div class="table-wrap"><table><thead><tr><th style="width:21%">Task</th><th style="width:14%">Stakeholder</th><th style="width:9%">Dept</th><th style="width:10%">Frequency</th><th style="width:9%">Due</th><th style="width:8%">Status</th><th style="width:7%">FU</th><th style="width:22%">Actions</th></tr></thead><tbody id="items-body"><tr><td colspan="8" class="empty">Loading...</td></tr></tbody></table></div></div>
-      </div>
-      <div id="s-export" class="sec">
-        <div class="card">
-          <div class="card-title">Export compliance items</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download your compliance data in Excel or CSV format. Perfect for sharing with management or for audit purposes.</p>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;margin-bottom:8px">📊</div>
-              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">All items</div>
-              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Export complete compliance register</div>
-              <button class="btn btn-primary" style="width:100%" id="export-items-xlsx">Download Excel</button>
-              <button class="btn" style="width:100%;margin-top:6px" id="export-items-csv">Download CSV</button>
-            </div>
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;margin-bottom:8px">⚠️</div>
-              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">Overdue items only</div>
-              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Export only items that are overdue</div>
-              <button class="btn btn-primary" style="width:100%" id="export-overdue-xlsx">Download Excel</button>
-              <button class="btn" style="width:100%;margin-top:6px" id="export-overdue-csv">Download CSV</button>
-            </div>
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;margin-bottom:8px">📋</div>
-              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">Follow-up log</div>
-              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Export all follow-up history</div>
-              <button class="btn btn-primary" style="width:100%" id="export-logs-xlsx">Download Excel</button>
-              <button class="btn" style="width:100%;margin-top:6px" id="export-logs-csv">Download CSV</button>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Export risk register</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download your complete risk register with scores and status.</p>
-          <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px">
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;margin-bottom:8px">🛡️</div>
-              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">All risks</div>
-              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Complete risk register with scores</div>
-              <button class="btn btn-primary" style="width:100%" id="export-risks-xlsx">Download Excel</button>
-              <button class="btn" style="width:100%;margin-top:6px" id="export-risks-csv">Download CSV</button>
-            </div>
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:28px;margin-bottom:8px">📈</div>
-              <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:4px">High risks only</div>
-              <div style="font-size:12px;color:#7c8298;margin-bottom:12px">Only risks with score 15 or above</div>
-              <button class="btn btn-primary" style="width:100%" id="export-highrisks-xlsx">Download Excel</button>
-              <button class="btn" style="width:100%;margin-top:6px" id="export-highrisks-csv">Download CSV</button>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">Full GRC report</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Download everything in one Excel file with multiple sheets — compliance items, risks, follow-up log and summary. Perfect for audits and management presentations.</p>
-          <div class="actions" style="justify-content:flex-start">
-            <button class="btn btn-primary" id="export-full-report">Download full GRC report (Excel)</button>
-          </div>
-        </div>
-      </div>
-<div id="s-emailtracker" class="sec">
-
-  <!-- COMPOSE EMAIL MODAL -->
-  <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;display:none;align-items:center;justify-content:center">
-    <div style="background:#fff;border-radius:16px;padding:24px;width:100%;max-width:560px;margin:20px;box-shadow:0 16px 48px rgba(0,0,0,.2)">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px">
-        <div style="font-size:16px;font-weight:700;color:#0f1117">Compose &amp; Track Email</div>
-        <button onclick="closeCompose()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#7c8298;line-height:1">×</button>
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>To — Stakeholder name *</label>
-        <input id="et-stakeholder" placeholder="e.g. Deepak Sharma">
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Stakeholder email *</label>
-        <input id="et-email" type="email" placeholder="deepak@company.com">
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Email subject *</label>
-        <input id="et-subject" placeholder="e.g. Action required: Monthly patch review">
-      </div>
-      <div class="field" style="margin-bottom:12px">
-        <label>Email body (optional — for your reference)</label>
-        <textarea id="et-body" placeholder="Write your email body here..." style="width:100%;min-height:100px;border:1.5px solid #e2e5f0;border-radius:6px;padding:9px 11px;font-family:Segoe UI,sans-serif;font-size:13px;resize:vertical;background:#f5f6fa;color:#0f1117"></textarea>
-      </div>
-      <div class="form-row" style="margin-bottom:12px">
-        <div class="field">
-          <label>Date sent</label>
-          <input id="et-date" type="date">
-        </div>
-        <div class="field">
-          <label>Expect response within</label>
-          <select id="et-days" style="min-height:40px">
-            <option value="1">1 day</option>
-            <option value="2" selected>2 days</option>
-            <option value="3">3 days</option>
-            <option value="5">5 days</option>
-            <option value="7">7 days</option>
-            <option value="14">14 days</option>
-          </select>
-        </div>
-      </div>
-      <div class="field" style="margin-bottom:16px">
-        <label>Category / purpose</label>
-        <select id="et-category" style="min-height:40px">
-          <option>General follow-up</option>
-          <option>Action required</option>
-          <option>Information request</option>
-          <option>Approval needed</option>
-          <option>Meeting request</option>
-          <option>Document request</option>
-          <option>Other</option>
-        </select>
-      </div>
-      <div style="display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap">
-        <button class="btn" onclick="closeCompose()">Cancel</button>
-        <button class="btn" id="open-gmail-btn" onclick="openGmail()">Open in Gmail</button>
-        <button class="btn btn-primary" id="save-email-btn" onclick="saveTrackedEmail()">Save &amp; Track</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="card">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e2e5f0;flex-wrap:wrap;gap:8px">
-      <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">Email tracker</div>
-      <div style="display:flex;gap:8px;flex-wrap:wrap">
-        <select id="et-filter-status" onchange="renderEmailTracker()" style="font-size:13px;padding:6px 10px;border:1px solid #e2e5f0;border-radius:6px;background:#fff;color:#0f1117">
-          <option value="">All emails</option>
-          <option value="waiting">Waiting for reply</option>
-          <option value="overdue">Overdue — no reply</option>
-          <option value="replied">Replied</option>
-        </select>
-        <button class="btn btn-primary" onclick="openCompose()">+ Compose &amp; Track</button>
-      </div>
-    </div>
-    <div id="et-summary" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px"></div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr>
-          <th style="width:22%">Subject</th>
-          <th style="width:15%">Stakeholder</th>
-          <th style="width:16%">Email</th>
-          <th style="width:9%">Sent</th>
-          <th style="width:9%">Deadline</th>
-          <th style="width:10%">Status</th>
-          <th style="width:19%">Actions</th>
-        </tr></thead>
-        <tbody id="et-tbody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<div id="s-response" class="sec">
-        <div class="card" id="response-alerts-card">
-          <div class="card-title">Pending responses — needs follow-up</div>
-          <div id="response-alerts-content"><div class="empty">Loading...</div></div>
-        </div>
-        <div class="card">
-          <div class="card-title">All follow-up response tracking</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:14px;line-height:1.7">Track whether stakeholders responded to your follow-up emails. Mark response as received when they reply.</p>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th style="width:20%">Task</th>
-                <th style="width:14%">Stakeholder</th>
-                <th style="width:8%">FU #</th>
-                <th style="width:10%">Sent on</th>
-                <th style="width:10%">Deadline</th>
-                <th style="width:10%">Status</th>
-                <th style="width:14%">Response</th>
-                <th style="width:14%">Action</th>
-              </tr></thead>
-              <tbody id="response-tbody"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-<div id="s-portal" class="sec">
-        <div class="card">
-          <div class="card-title">Stakeholder self-update portal</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Generate a personal link for each stakeholder. They open the link, see only their own tasks, and mark them as done — no login needed. This eliminates most of your follow-up work!</p>
-          <div class="form-row">
-            <div class="field">
-              <label>Select stakeholder</label>
-              <select id="portal-stake-select">
-                <option value="">-- select stakeholder --</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Or type stakeholder name</label>
-              <input id="portal-stake-input" placeholder="e.g. Rahul Sharma">
-            </div>
-          </div>
-          <div class="actions" style="justify-content:flex-start">
-            <button class="btn btn-primary" id="gen-portal-btn">Generate portal link</button>
-          </div>
-          <div id="portal-link-output" style="display:none;margin-top:14px">
-            <div style="font-size:12px;font-weight:600;color:#7c8298;margin-bottom:6px;text-transform:uppercase;letter-spacing:.4px">Portal link for <span id="portal-stake-name"></span></div>
-            <div class="portal-link-box">
-              <span id="portal-link-text" style="flex:1"></span>
-              <button class="copy-link-btn" onclick="copyPortalLink()">Copy link</button>
-            </div>
-            <div style="font-size:12px;color:#7c8298;margin-top:8px">Share this link with the stakeholder via WhatsApp or email. They can open it and update their task status without any login.</div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">All stakeholder portal links</div>
-          <div class="table-wrap">
-            <table>
-              <thead><tr>
-                <th style="width:25%">Stakeholder</th>
-                <th style="width:20%">Department</th>
-                <th style="width:10%">Total tasks</th>
-                <th style="width:10%">Done</th>
-                <th style="width:10%">Pending</th>
-                <th style="width:25%">Portal link</th>
-              </tr></thead>
-              <tbody id="portal-table-body"></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-<div id="s-import" class="sec">
-        <div class="card">
-          <div class="card-title">Step 1 — Download the Excel template</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:12px;line-height:1.7">First download our template, fill in your compliance items in Excel, then upload it back here. All 100 items will be imported automatically.</p>
-          <div class="actions" style="justify-content:flex-start"><button class="btn btn-primary" id="download-template-btn">Download Excel template</button></div>
-        </div>
-        <div class="card">
-          <div class="card-title">Step 2 — Upload your filled Excel file</div>
-          <div id="import-drop-zone" style="border:2px dashed #e2e5f0;border-radius:10px;padding:40px;text-align:center;cursor:pointer;transition:all .2s;margin-bottom:14px">
-            <div style="font-size:32px;margin-bottom:10px">📂</div>
-            <div style="font-size:14px;font-weight:600;color:#0f1117;margin-bottom:6px">Drag and drop your Excel file here</div>
-            <div style="font-size:13px;color:#7c8298;margin-bottom:14px">or click to browse — supports .xlsx and .xls files</div>
-            <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none">
-            <button class="btn btn-primary" onclick="document.getElementById('import-file-input').click()">Choose Excel file</button>
-          </div>
-          <div id="import-preview" style="display:none">
-            <div style="font-size:13px;font-weight:600;color:#0f1117;margin-bottom:10px" id="import-preview-title">Preview — 0 items found</div>
-            <div class="table-wrap" style="max-height:320px;overflow-y:auto"><table>
-              <thead><tr><th style="width:25%">Task name</th><th style="width:18%">Stakeholder</th><th style="width:12%">Department</th><th style="width:12%">Frequency</th><th style="width:12%">Due date</th><th style="width:11%">Category</th><th style="width:10%">Status</th></tr></thead>
-              <tbody id="import-preview-body"></tbody>
-            </table></div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:14px;flex-wrap:wrap">
-              <button class="btn btn-primary" id="confirm-import-btn">Import all items to GRC tool</button>
-              <button class="btn" id="cancel-import-btn">Cancel</button>
-              <span id="import-status" style="font-size:13px;color:#7c8298"></span>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-title">How to fill the Excel template</div>
-          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column A — Task name</div>
-              <div style="font-size:12px;color:#7c8298">Write the compliance task. e.g. Monthly server patch review</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column B — Stakeholder</div>
-              <div style="font-size:12px;color:#7c8298">Name of person responsible. e.g. Rahul Sharma</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column C — Email</div>
-              <div style="font-size:12px;color:#7c8298">Stakeholder email address</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column D — Department</div>
-              <div style="font-size:12px;color:#7c8298">e.g. IT, HR, Finance, Legal</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column E — Frequency</div>
-              <div style="font-size:12px;color:#7c8298">daily / weekly / monthly / quarterly / halfyearly / yearly</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column F — Due date</div>
-              <div style="font-size:12px;color:#7c8298">Format: YYYY-MM-DD e.g. 2026-04-30</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column G — Category</div>
-              <div style="font-size:12px;color:#7c8298">Cybersecurity / Data Privacy / HR Compliance / Legal / Financial / Operational / Audit / Other</div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px">
-              <div style="font-size:12px;font-weight:600;color:#0f1117;margin-bottom:6px">Column H — Notes</div>
-              <div style="font-size:12px;color:#7c8298">Any extra details (optional)</div>
-            </div>
-          </div>
-        </div>
-      </div>
-<div id="s-overdue" class="sec"><div id="overdue-content"></div></div>
-      <div id="s-email" class="sec">
-        <div class="card">
-          <div class="card-title">Generate follow-up email</div>
-          <div class="info-box">Select an item, set follow-up number, customize subject and tone — then generate with AI or use the standard template.</div>
-          <div class="form-row">
-            <div class="field"><label>Select compliance item *</label><select id="fu-select"><option value="">-- select item --</option></select></div>
-            <div class="field"><label>Your name (sender) *</label><input id="fu-sender" placeholder="e.g. Deepak Sharma"></div>
-          </div>
-          <div class="form-row-3">
-            <div class="field">
-              <label>Follow-up number</label>
-              <div style="display:flex;align-items:center;gap:8px">
-                <button class="btn btn-sm" id="fu-num-minus" style="padding:6px 12px;font-size:16px;font-weight:700">−</button>
-                <span id="fu-num-display" style="font-size:18px;font-weight:700;color:#4f52d9;min-width:40px;text-align:center">1</span>
-                <button class="btn btn-sm" id="fu-num-plus" style="padding:6px 12px;font-size:16px;font-weight:700">+</button>
-                <span id="fu-num-label" style="font-size:12px;color:#7c8298;margin-left:4px">1st reminder</span>
-              </div>
-            </div>
-            <div class="field">
-              <label>Email tone</label>
-              <select id="fu-tone">
-                <option value="gentle">Gentle — polite reminder</option>
-                <option value="firm">Firm — strong reminder</option>
-                <option value="escalation">Escalation — senior management</option>
-                <option value="final">Final notice — last warning</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Escalate to (CC)</label>
-              <input id="fu-cc" placeholder="manager@company.com (optional)">
-            </div>
-          </div>
-          <div class="field" style="margin-bottom:10px">
-            <label>Email subject (auto-filled — you can edit)</label>
-            <input id="fu-subject" placeholder="Subject will appear here after selecting item">
-          </div>
-          <div class="field" style="margin-bottom:12px">
-            <label>Additional instructions for AI (optional)</label>
-            <textarea id="fu-ai-instructions" placeholder="e.g. Make it more formal. Add that audit is next week. Mention GDPR compliance deadline. Mention penalty if not done..." style="width:100%;border:1.5px solid #e2e5f0;border-radius:6px;padding:9px 11px;font-family:Segoe UI,sans-serif;font-size:13px;background:#f5f6fa;color:#0f1117;resize:vertical;min-height:64px"></textarea>
-          </div>
-          <div class="form-row" style="margin-bottom:10px">
-            <div class="field">
-              <label>Expect response within (days)</label>
-              <select id="fu-response-days" style="min-height:40px">
-                <option value="1">1 day</option>
-                <option value="2" selected>2 days</option>
-                <option value="3">3 days</option>
-                <option value="5">5 days</option>
-                <option value="7">7 days</option>
-                <option value="14">14 days</option>
-              </select>
-            </div>
-            <div class="field">
-              <label>Note (optional)</label>
-              <input id="fu-note" placeholder="e.g. called on phone, discussed verbally...">
-            </div>
-          </div>
-          <div class="actions">
-            <button class="btn" id="gen-standard-btn">Use standard template</button>
-            <button class="btn btn-primary" id="gen-ai-btn">Generate with AI</button>
-          </div>
-          <div id="ai-loading" style="display:none;text-align:center;padding:16px;color:#7c8298;font-size:13px">
-            <div style="display:inline-block;width:20px;height:20px;border:2px solid #e2e5f0;border-top-color:#4f52d9;border-radius:50%;animation:spin .8s linear infinite;margin-right:8px;vertical-align:middle"></div>
-            AI is writing your email...
-          </div>
-        </div>
-
-        <div id="email-result" style="display:none">
-          <div class="card">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid #e2e5f0;flex-wrap:wrap;gap:8px">
-              <div class="card-title" style="margin-bottom:0;padding-bottom:0;border-bottom:none">Your follow-up email</div>
-              <div style="display:flex;gap:6px">
-                <span id="email-fu-badge" style="background:#eeeffe;color:#4f52d9;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">Follow-up #1</span>
-                <span id="email-tone-badge" style="background:#e0f7f2;color:#065f46;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">Gentle</span>
-              </div>
-            </div>
-            <div style="background:#f5f6fa;border-radius:8px;padding:12px 14px;margin-bottom:12px">
-              <div style="font-size:12px;margin-bottom:6px"><strong>To:</strong> <span id="email-to"></span> &nbsp;&nbsp; <span id="email-cc-show" style="display:none"><strong>CC:</strong> <span id="email-cc-val"></span></span></div>
-              <div style="font-size:12px;display:flex;align-items:center;gap:8px">
-                <strong>Subject:</strong>
-                <input id="email-subject-edit" style="flex:1;border:1px solid #e2e5f0;border-radius:4px;padding:4px 8px;font-size:12px;background:#fff;color:#0f1117" placeholder="Email subject">
-              </div>
-            </div>
-            <div style="margin-bottom:8px;display:flex;align-items:center;justify-content:space-between">
-              <span style="font-size:12px;color:#7c8298">Email body — you can edit before copying</span>
-              <button class="btn btn-sm" id="regen-ai-btn" style="font-size:11px">Regenerate with AI</button>
-            </div>
-            <textarea id="email-body-edit" style="width:100%;border:1px solid #e2e5f0;border-radius:6px;padding:16px;font-size:13px;color:#0f1117;line-height:1.8;font-family:Segoe UI,sans-serif;resize:vertical;min-height:280px;background:#f5f6fa"></textarea>
-            <div class="actions" style="margin-top:12px">
-              <button class="btn btn-sm" id="copy-email-btn">Copy full email</button>
-              <button class="btn btn-sm btn-primary" id="mark-sent-btn">Mark as sent and log it</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-title">Follow-up log</div>
-          <div class="table-wrap"><table>
-            <thead><tr>
-              <th style="width:24%">Task</th>
-              <th style="width:16%">Stakeholder</th>
-              <th style="width:8%">FU #</th>
-              <th style="width:12%">Date</th>
-              <th style="width:16%">Tone</th>
-              <th style="width:24%">Subject used</th>
-            </tr></thead>
-            <tbody id="log-body"><tr><td colspan="6" class="empty">No follow-ups yet.</td></tr></tbody>
-          </table></div>
-        </div>
-      </div>
-<div id="s-scorecard" class="sec">
-        <div class="card">
-          <div class="card-title">Stakeholder compliance scorecard</div>
-          <p style="font-size:13px;color:#7c8298;margin-bottom:16px;line-height:1.7">Ranked by compliance rate. See who completes tasks on time and who needs the most follow-ups. Use this to drive accountability.</p>
-          <div id="scorecard-content"><div class="empty">Loading...</div></div>
-        </div>
-      </div>
-<div id="s-risks" class="sec">
-        <div class="card" id="add-risk-card"><div class="card-title">Add new risk</div><div class="form-row"><div class="field"><label>Risk name *</label><input id="r-name" placeholder="e.g. Data breach"></div><div class="field"><label>Category</label><select id="r-cat"><option>Cybersecurity</option><option>Operational</option><option>Financial</option><option>Legal/Compliance</option><option>HR</option><option>Other</option></select></div></div><div class="form-row-3"><div class="field"><label>Likelihood (1–5)</label><input id="r-like" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Impact (1–5)</label><input id="r-impact" type="number" min="1" max="5" placeholder="1–5"></div><div class="field"><label>Owner</label><input id="r-owner" placeholder="Person responsible"></div></div><div class="actions"><button class="btn btn-primary" id="add-risk-btn">+ Add risk</button></div></div>
-        <div class="card"><div class="card-title">Risk register</div><div class="table-wrap"><table><thead><tr><th style="width:22%">Risk</th><th style="width:16%">Category</th><th style="width:9%">Score</th><th style="width:10%">Level</th><th style="width:15%">Owner</th><th style="width:12%">Status</th><th style="width:16%">Actions</th></tr></thead><tbody id="risk-body"><tr><td colspan="7" class="empty">Loading...</td></tr></tbody></table></div></div>
-      </div>
-      <div id="s-admin" class="sec">
-        <div class="card"><div class="card-title">Add new user</div><div class="form-row-4"><div class="field"><label>Full name *</label><input id="u-name" placeholder="Rahul Sharma"></div><div class="field"><label>Email *</label><input id="u-email" type="email" placeholder="rahul@company.com"></div><div class="field"><label>Password *</label><input id="u-pass" type="password" placeholder="Set a password"></div><div class="field"><label>Role *</label><select id="u-role"><option value="admin">Admin — full access</option><option value="manager">Manager — add not delete</option><option value="viewer">Viewer — read only</option><option value="stakeholder">Stakeholder — own tasks</option></select></div></div><div class="actions"><button class="btn btn-primary" id="add-user-btn">+ Add user</button></div></div>
-        <div class="card"><div class="card-title">All users</div><div class="table-wrap"><table><thead><tr><th style="width:25%">Name</th><th style="width:30%">Email</th><th style="width:15%">Role</th><th style="width:15%">Added</th><th style="width:15%">Actions</th></tr></thead><tbody id="user-body"></tbody></table></div></div>
-      </div>
-    </div>
-  </div>
-</div>
-<div class="sb-overlay" id="sb-overlay"></div>
-
-<!-- AI CHAT PANEL -->
-<div id="ai-chat-panel" style="display:none;position:fixed;bottom:20px;right:20px;width:380px;max-height:580px;background:#fff;border:1px solid #e2e5f0;border-radius:16px;box-shadow:0 8px 32px rgba(15,17,23,.15);z-index:200;display:none;flex-direction:column;overflow:hidden">
-  <div style="background:#4f52d9;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L3 7v5c0 5.25 3.75 10.15 9 11.25C17.25 22.15 21 17.25 21 12V7L12 2z"/></svg>
-      </div>
-      <div>
-        <div style="font-size:14px;font-weight:600;color:#fff">GRC AI Assistant</div>
-        <div style="font-size:11px;color:rgba(255,255,255,.7)">Ask anything about your compliance data</div>
-      </div>
-    </div>
-    <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center">×</button>
-  </div>
-  <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:300px;max-height:380px;background:#f9fafb">
-    <div style="background:#eeeffe;border-radius:12px 12px 12px 0;padding:10px 14px;font-size:13px;color:#3538b0;max-width:90%;line-height:1.6">
-      Hello! I am your GRC Assistant. I can answer questions about your compliance items, risks, overdue tasks and follow-up history.<br><br>
-      Try asking:<br>
-      • "How many items are overdue?"<br>
-      • "Who has the lowest compliance rate?"<br>
-      • "Show me all high risks"<br>
-      • "Which monthly tasks are pending?"
-    </div>
-  </div>
-  <div style="padding:12px;border-top:1px solid #e2e5f0;background:#fff">
-    <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap" id="ai-quick-btns">
-      <button class="ai-quick-btn" onclick="askAI('How many items are overdue?')">Overdue items</button>
-      <button class="ai-quick-btn" onclick="askAI('Who has the lowest compliance rate?')">Worst stakeholder</button>
-      <button class="ai-quick-btn" onclick="askAI('Show all high risks')">High risks</button>
-      <button class="ai-quick-btn" onclick="askAI('What is my overall compliance percentage?')">Overall %</button>
-    </div>
-    <div style="display:flex;gap:8px">
-      <input id="ai-chat-input" placeholder="Ask anything about your GRC data..." style="flex:1;border:1px solid #e2e5f0;border-radius:8px;padding:9px 12px;font-size:13px;font-family:Segoe UI,sans-serif;color:#0f1117;background:#f5f6fa" onkeydown="if(event.key==='Enter')sendAIMessage()">
-      <button onclick="sendAIMessage()" style="background:#4f52d9;color:#fff;border:none;border-radius:8px;padding:9px 14px;cursor:pointer;font-size:13px;font-weight:600;font-family:Segoe UI,sans-serif">Send</button>
-    </div>
-  </div>
-</div>
-
-<!-- AI CHAT FLOATING BUTTON -->
-<button id="ai-float-btn" onclick="toggleAIChat()" style="display:none;position:fixed;bottom:20px;right:20px;width:52px;height:52px;background:#4f52d9;border:none;border-radius:50%;cursor:pointer;box-shadow:0 4px 16px rgba(79,82,217,.4);z-index:199;align-items:center;justify-content:center">
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-</button>
-
+        
 <script>
 var SUPA_URL='https://kqvvqriyaundzefmrqzk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdnZxcml5YXVuZHplZm1ycXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTA4MjQsImV4cCI6MjA4OTY2NjgyNH0.r8JlSYTPunPO6-N_TlipqZ92sPtLf_FrtHz47nVA0Mg';
@@ -1038,6 +596,10 @@ document.getElementById('add-item-btn').onclick=async function(){
   if(!res.ok){var e=await res.json();alert('Error: '+(e.message||res.status));return;}
   ['i-name','i-stake','i-email','i-dept','i-notes','i-due'].forEach(function(id){document.getElementById(id).value='';});
   await loadAll();
+  closePanel();
+  ['i-name','i-stake','i-email','i-dept','i-notes'].forEach(function(id){document.getElementById(id).value='';});
+  showDueDateToast('','Compliance item added!');
+
 };
 
 function renderFreqFilters(){
@@ -1743,6 +1305,10 @@ document.getElementById('add-risk-btn').onclick=async function(){
   if(!res.ok){var e=await res.json();alert('Error: '+(e.message||res.status));return;}
   ['r-name','r-like','r-impact','r-owner'].forEach(function(id){document.getElementById(id).value='';});
   await loadAll();
+  closePanel();
+  ['r-name','r-owner'].forEach(function(id){document.getElementById(id).value='';});
+  showDueDateToast('','Risk added successfully!');
+
 };
 
 function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
@@ -3339,5 +2905,73 @@ document.addEventListener('keydown', function(e){
 });
 
 </script>
+
+<!-- PANEL OVERLAY -->
+<div id="panel-overlay" onclick="closePanel()" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.4);z-index:499;backdrop-filter:blur(2px)"></div>
+
+<!-- ADD ITEM PANEL -->
+<div id="item-panel" class="slide-panel">
+  <div class="panel-header">
+    <div><div class="panel-title">Add compliance item</div><div class="panel-sub">Track a new compliance task</div></div>
+    <button class="panel-close" onclick="closePanel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="panel-body">
+    <div class="pf"><label>Task name *</label><input id="i-name" placeholder="e.g. Monthly server patch review"></div>
+    <div class="pf"><label>Stakeholder name *</label><input id="i-stake" placeholder="e.g. Rahul Sharma"></div>
+    <div class="pf"><label>Stakeholder email</label><input id="i-email" type="email" placeholder="rahul@company.com"></div>
+    <div class="p2">
+      <div class="pf"><label>Department</label><input id="i-dept" placeholder="e.g. IT"></div>
+      <div class="pf"><label>Frequency</label><select id="i-freq"><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="monthly" selected>Monthly</option><option value="quarterly">Quarterly</option><option value="halfyearly">Half-yearly</option><option value="yearly">Yearly</option></select></div>
+    </div>
+    <div class="p2">
+      <div class="pf"><label>Due date</label><input id="i-due" type="date"></div>
+      <div class="pf"><label>Category</label><select id="i-cat"><option>Cybersecurity</option><option>Data Privacy</option><option>HR Compliance</option><option>Legal</option><option>Financial</option><option>Operational</option><option>Audit</option><option>Other</option></select></div>
+    </div>
+    <div class="pf"><label>Notes</label><input id="i-notes" placeholder="Any extra details..."></div>
+  </div>
+  <div class="panel-footer">
+    <button class="btn" onclick="closePanel()">Cancel</button>
+    <button class="btn btn-primary" id="add-item-btn">+ Add item</button>
+  </div>
+</div>
+
+<!-- ADD RISK PANEL -->
+<div id="risk-panel" class="slide-panel">
+  <div class="panel-header">
+    <div><div class="panel-title">Add risk</div><div class="panel-sub">Document a new organizational risk</div></div>
+    <button class="panel-close" onclick="closePanel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="panel-body">
+    <div class="pf"><label>Risk name *</label><input id="r-name" placeholder="e.g. Unauthorised data access"></div>
+    <div class="pf"><label>Category</label><select id="r-cat"><option>Cybersecurity</option><option>Data Privacy</option><option>Operational</option><option>Compliance</option><option>Financial</option><option>Reputational</option><option>Other</option></select></div>
+    <div class="p2">
+      <div class="pf"><label>Likelihood (1-5)</label><select id="r-like"><option value="1">1 — Rare</option><option value="2">2 — Unlikely</option><option value="3" selected>3 — Possible</option><option value="4">4 — Likely</option><option value="5">5 — Almost certain</option></select></div>
+      <div class="pf"><label>Impact (1-5)</label><select id="r-impact"><option value="1">1 — Negligible</option><option value="2">2 — Minor</option><option value="3" selected>3 — Moderate</option><option value="4">4 — Major</option><option value="5">5 — Critical</option></select></div>
+    </div>
+    <div class="pf"><label>Risk owner</label><input id="r-owner" placeholder="Person responsible for this risk"></div>
+  </div>
+  <div class="panel-footer">
+    <button class="btn" onclick="closePanel()">Cancel</button>
+    <button class="btn btn-primary" id="add-risk-btn">+ Add risk</button>
+  </div>
+</div>
+
+<!-- ADD USER PANEL -->
+<div id="user-panel" class="slide-panel">
+  <div class="panel-header">
+    <div><div class="panel-title">Add user</div><div class="panel-sub">Create a new team member account</div></div>
+    <button class="panel-close" onclick="closePanel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="panel-body">
+    <div class="pf"><label>Full name *</label><input id="u-name" placeholder="e.g. Rahul Sharma"></div>
+    <div class="pf"><label>Email *</label><input id="u-email" type="email" placeholder="rahul@company.com"></div>
+    <div class="pf"><label>Password *</label><input id="u-pass" type="password" placeholder="Set a password"></div>
+    <div class="pf"><label>Role</label><select id="u-role"><option value="viewer">Viewer — read only</option><option value="manager">Manager — add and email</option><option value="admin">Admin — full access</option><option value="stakeholder">Stakeholder — own tasks only</option></select></div>
+  </div>
+  <div class="panel-footer">
+    <button class="btn" onclick="closePanel()">Cancel</button>
+    <button class="btn btn-primary" id="add-user-btn">+ Add user</button>
+  </div>
+</div>
 </body>
 </html>
