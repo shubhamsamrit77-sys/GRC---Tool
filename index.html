@@ -662,6 +662,26 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f52d9;backgr
 </button>
 
 <script>
+// ── SLIDE PANELS ──
+function openPanel(id){
+  var panel=document.getElementById(id);
+  var overlay=document.getElementById('panel-overlay');
+  if(!panel||!overlay) return;
+  panel.classList.add('open');
+  overlay.style.display='block';
+  document.body.style.overflow='hidden';
+  var first=panel.querySelector('input,select,textarea');
+  if(first) setTimeout(function(){first.focus();},320);
+}
+
+function closePanel(){
+  document.querySelectorAll('.slide-panel').forEach(function(p){p.classList.remove('open');});
+  var overlay=document.getElementById('panel-overlay');
+  if(overlay) overlay.style.display='none';
+  document.body.style.overflow='';
+}
+
+
 
 function $(id){return document.getElementById(id);}
 function safeOn(id,ev,fn){var el=$(id);if(el)el.addEventListener(ev,fn);}
@@ -789,11 +809,11 @@ navCfg.forEach(function(m){
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
     if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
-    if(window.innerWidth<=600){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
+    if(window.innerWidth<=600){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
-document.getElementById('ham-btn').onclick=function(){document.getElementById('main-sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');};
-document.getElementById('sb-overlay').onclick=function(){document.getElementById('main-sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');};
+document.getElementById('ham-btn').onclick=function(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sb-overlay').classList.toggle('open');};
+document.getElementById('sb-overlay').onclick=function(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');};
 
 async function loadAll(){
   try{
@@ -980,9 +1000,9 @@ function renderDash(){
   document.getElementById('dash-metrics').innerHTML='<div class="metric m-total"><div class="metric-label">Total items</div><div class="metric-value">'+total+'</div><div class="metric-sub">compliance tasks</div></div><div class="metric m-done"><div class="metric-label">Completed</div><div class="metric-value" style="color:#0d9e7e">'+done+'</div><div class="metric-sub">on track</div></div><div class="metric m-over"><div class="metric-label">Overdue</div><div class="metric-value" style="color:#d93f3f">'+ov+'</div><div class="metric-sub">need attention</div></div><div class="metric m-prog"><div class="metric-label">Progress</div><div class="metric-value" style="color:#e07d1a">'+pct+'%</div><div class="metric-sub">overall</div></div>';
   var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'],fb='';
   freqs.forEach(function(f){var grp=items.filter(function(it){return it.freq===f;});if(!grp.length)return;var gd=grp.filter(function(it){return getStatus(it)==='done';}).length,gp=Math.round(gd/grp.length*100);fb+='<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:600">'+FL[f]+'</span><span style="color:#7c8298">'+gd+'/'+grp.length+' · '+gp+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+gp+'%"></div></div></div>';});
-  document.getElementById('freq-bars').innerHTML=fb||'<div class="empty">No items yet</div>';
+  document.getElementById('freq-progress').innerHTML=fb||'<div class="empty">No items yet</div>';
   var ovI=items.filter(function(it){return getStatus(it)==='overdue';}).slice(0,6);
-  document.getElementById('dash-ov').innerHTML=ovI.length?ovI.map(function(it){return'<div style="padding:9px 0;border-bottom:1px solid #e2e5f0"><div style="font-size:13px;font-weight:600">'+it.name+'</div><div style="font-size:11px;color:#7c8298;margin-top:2px">'+it.stakeholder+' · Due: '+it.due_date+' · '+it.followups+' follow-up(s)</div></div>';}).join(''):'<div class="empty">No overdue items</div>';
+  document.getElementById('overdue-list').innerHTML=ovI.length?ovI.map(function(it){return'<div style="padding:9px 0;border-bottom:1px solid #e2e5f0"><div style="font-size:13px;font-weight:600">'+it.name+'</div><div style="font-size:11px;color:#7c8298;margin-top:2px">'+it.stakeholder+' · Due: '+it.due_date+' · '+it.followups+' follow-up(s)</div></div>';}).join(''):'<div class="empty">No overdue items</div>';
 }
 
 function renderOverdue(){
@@ -992,7 +1012,7 @@ function renderOverdue(){
   if(ov.length){html+='<div class="danger-box">'+ov.length+' item(s) overdue.</div><div class="card"><div class="card-title">Overdue items</div><div class="table-wrap"><table><thead><tr><th style="width:26%">Task</th><th style="width:18%">Stakeholder</th><th style="width:12%">Frequency</th><th style="width:12%">Due date</th><th style="width:10%">FU</th><th style="width:22%">Action</th></tr></thead><tbody>'+ov.map(function(it){return'<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:#d93f3f;font-weight:600">'+it.due_date+'</td><td style="text-align:center">'+it.followups+'</td><td>'+(can('email')?'<button class="btn btn-sm btn-primary" data-email="'+it.id+'">Send follow-up</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div></div>';}
   if(soon.length){html+='<div class="warn-box">'+soon.length+' item(s) due within 7 days.</div><div class="card"><div class="card-title">Due within 7 days</div><div class="table-wrap"><table><thead><tr><th style="width:30%">Task</th><th style="width:20%">Stakeholder</th><th style="width:14%">Frequency</th><th style="width:14%">Due date</th><th style="width:22%">Action</th></tr></thead><tbody>'+soon.map(function(it){return'<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:#e07d1a;font-weight:600">'+it.due_date+'</td><td>'+(can('email')?'<button class="btn btn-sm" data-email="'+it.id+'">Send reminder</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div></div>';}
   if(!ov.length&&!soon.length)html='<div class="empty" style="padding:60px">All items on track!</div>';
-  var el=document.getElementById('overdue-content');el.innerHTML=html;
+  var el=document.getElementById('overdue-list');el.innerHTML=html;
   el.querySelectorAll('[data-email]').forEach(function(b){b.onclick=function(){goEmail(b.getAttribute('data-email'));};});
 }
 
@@ -2683,7 +2703,7 @@ document.addEventListener('DOMContentLoaded',function(){
 var searchTimer = null;
 
 function onSearchInput(val){
-  var clearBtn = document.getElementById('search-clear');
+  var clearBtn = document.document.createElement('div');
   if(clearBtn) clearBtn.style.display = val ? 'block' : 'none';
   clearTimeout(searchTimer);
   if(!val || val.trim().length < 2){
@@ -2700,13 +2720,13 @@ function onSearchKey(e){
 function clearSearch(){
   var inp = document.getElementById('global-search');
   if(inp) inp.value = '';
-  var clearBtn = document.getElementById('search-clear');
+  var clearBtn = document.document.createElement('div');
   if(clearBtn) clearBtn.style.display = 'none';
   hideSearchResults();
 }
 
 function hideSearchResults(){
-  var el = document.getElementById('search-results');
+  var el = document.getElementById('search-results-panel');
   if(el) el.style.display = 'none';
 }
 
@@ -2758,9 +2778,9 @@ function doSearch(q){
   });
 
   var total = matchItems.length + matchRisks.length + matchLogs.length + matchEmails.length;
-  var resultEl = document.getElementById('search-results');
-  var bodyEl = document.getElementById('search-result-body');
-  var titleEl = document.getElementById('search-result-title');
+  var resultEl = document.getElementById('search-results-panel');
+  var bodyEl = document.getElementById('search-results-panel');
+  var titleEl = document.getElementById('search-results-panel');
   if(!resultEl || !bodyEl) return;
 
   titleEl.textContent = total + ' result' + (total !== 1 ? 's' : '') + ' for "' + q + '"';
@@ -2915,8 +2935,8 @@ function doSearch(q){
 
 // Close search when clicking outside
 document.addEventListener('click', function(e){
-  var wrap = document.getElementById('search-wrap');
-  var results = document.getElementById('search-results');
+  var wrap = document.getElementById('search-results-panel');
+  var results = document.getElementById('search-results-panel');
   if(wrap && results && !wrap.contains(e.target) && !results.contains(e.target)){
     hideSearchResults();
   }
