@@ -898,22 +898,9 @@ document.getElementById('login-btn').onclick=async function(){
       return;
     }
     currentUser=data[0];
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('main-app').style.display='flex';
-    var r=currentUser.role;
-    var ini=currentUser.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
-    document.getElementById('user-av').textContent=ini;
-    document.getElementById('user-av').style.background=RC[r]||'#4f52d9';
-    document.getElementById('user-nm').textContent=currentUser.name;
-    document.getElementById('user-rl').textContent=r.charAt(0).toUpperCase()+r.slice(1);
-    document.getElementById('nav-admin').style.display=can('admin')?'flex':'none';
-    document.getElementById('admin-sec').style.display=can('admin')?'block':'none';
-    document.getElementById('add-item-card').style.display=can('add')?'block':'none';
-    document.getElementById('add-risk-card').style.display=can('add')?'block':'none';
-    if(!can('email'))document.getElementById('nav-email').style.display='none';
-    btn.textContent='Sign in to GRC Shield';btn.disabled=false;
-    document.getElementById('ai-float-btn').style.display='flex';
-    await loadAll();
+    localStorage.setItem('grc-session', JSON.stringify(currentUser));
+    setupAppUI();
+        await loadAll();
   }catch(e){
     console.error('Login error:',e);
     err.textContent='Connection failed: '+e.message+'. Please check your internet connection.';
@@ -925,10 +912,12 @@ document.getElementById('l-pass').onkeydown=function(e){if(e.key==='Enter')docum
 document.getElementById('l-email').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
 
 document.getElementById('logout-btn').onclick=function(){
+  localStorage.removeItem('grc-session');
   currentUser=null;
   document.getElementById('main-app').style.display='none';
-  document.getElementById('login-screen').style.display='grid';
-  document.getElementById('l-email').value='';document.getElementById('l-pass').value='';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('l-email').value='';
+  document.getElementById('l-pass').value='';
 };
 
 var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
@@ -3319,6 +3308,78 @@ document.addEventListener('keydown', function(e){
   }
 });
 
+
+// ── SESSION PERSISTENCE ──
+async function restoreSession(){
+  try{
+    var saved = localStorage.getItem('grc-session');
+    if(!saved) return false;
+    var user = JSON.parse(saved);
+    if(!user||!user.id||!user.email) return false;
+
+    // Verify user still exists in database
+    var res = await fetch(SUPA_URL+'/rest/v1/grc_users?id=eq.'+user.id+'&select=*',{
+      method:'GET',
+      headers:{
+        'apikey':SUPA_KEY,
+        'Authorization':'Bearer '+SUPA_KEY,
+        'Accept':'application/json'
+      },
+      mode:'cors'
+    });
+    if(!res.ok) return false;
+    var data = await res.json();
+    if(!Array.isArray(data)||!data.length){
+      localStorage.removeItem('grc-session');
+      return false;
+    }
+
+    // Session valid - log user in
+    currentUser = data[0];
+    localStorage.setItem('grc-session', JSON.stringify(currentUser));
+    setupAppUI();
+    await loadAll();
+    return true;
+  }catch(e){
+    console.log('Session restore failed:', e.message);
+    return false;
+  }
+}
+
+function setupAppUI(){
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='flex';
+  var r=currentUser.role;
+  var ini=currentUser.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+  document.getElementById('user-av').textContent=ini;
+  document.getElementById('user-av').style.background=RC[r]||'#4f52d9';
+  document.getElementById('user-nm').textContent=currentUser.name;
+  document.getElementById('user-rl').textContent=r.charAt(0).toUpperCase()+r.slice(1);
+  document.getElementById('admin-sec').style.display=can('admin')?'block':'none';
+  document.getElementById('add-item-card').style.display=can('add')?'flex':'none';
+  document.getElementById('add-risk-card').style.display=can('add')?'flex':'none';
+  if(!can('email')) document.getElementById('nav-email').style.display='none';
+  var floatBtn=document.getElementById('ai-float-btn');
+  if(floatBtn) floatBtn.style.display='flex';
+}
+
+// Run session restore on page load
+window.addEventListener('load', async function(){
+  // Apply saved theme first
+  var savedTheme = localStorage.getItem('grc-theme')||'light';
+  document.documentElement.setAttribute('data-theme', savedTheme);
+  updateThemeBtn(savedTheme);
+
+  // Check portal mode
+  if(checkPortalMode()) return;
+
+  // Try to restore session
+  var restored = await restoreSession();
+  if(!restored){
+    // No session - show login
+    document.getElementById('login-screen').style.display='flex';
+  }
+});
 
 // ── DARK / LIGHT MODE ──
 function toggleTheme(){
