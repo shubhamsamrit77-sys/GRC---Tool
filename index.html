@@ -1525,20 +1525,8 @@ function renderItems(){
   if(!tb)return;
 
   if(!filtered.length){
-tb.innerHTML = `<tr>
-  <td colspan="8" style="padding:40px;text-align:center">
-    <div style="font-size:32px;margin-bottom:10px">📋</div>
-    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">
-      No compliance items yet
-    </div>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">
-      Add your first compliance task to get started
-    </div>
-    <button class="btn btn-primary" onclick="openPanel('item-panel')" style="margin:0 auto">
-      + Add first item
-    </button>
-  </td>
-</tr>`;    return;
+    tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No compliance items yet</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Add your first compliance task to get started</div><button class="btn btn-primary" onclick="openPanel('item-panel')" style="margin:0 auto">+ Add first item</button></td></tr>';
+    return;
   }
 
   while(tb.firstChild) tb.removeChild(tb.firstChild);
