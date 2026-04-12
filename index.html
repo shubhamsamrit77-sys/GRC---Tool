@@ -47,7 +47,105 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .login-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:#b0b6c8;font-size:12px}
 .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e2e5f0}
 .login-secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#b0b6c8;margin-top:20px}
-@media(max-width:768px){.login-bg-left{display:none}.login-bg-right{width:100%}}
+
+/* ── SKELETON LOADING ── */
+.skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(255,255,255,.06) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-row{display:flex;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid var(--border)}
+.sk-circle{width:32px;height:32px;border-radius:50%;flex-shrink:0}
+.sk-line{height:10px;border-radius:4px}
+.sk-badge{width:60px;height:22px;border-radius:20px}
+
+/* ── DASHBOARD CHARTS ── */
+.dash-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.metric-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.mc-total::before{background:linear-gradient(90deg,#4f52d9,#7c3aed)}
+.mc-done::before{background:linear-gradient(90deg,#0d9e7e,#059669)}
+.mc-over::before{background:linear-gradient(90deg,#d93f3f,#dc2626)}
+.mc-pct::before{background:linear-gradient(90deg,#e07d1a,#d97706)}
+.mc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.mc-val{font-size:32px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:4px}
+.mc-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mc-sub{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.trend-up{color:#0d9e7e}
+.trend-down{color:#d93f3f}
+
+.dash-charts{display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-bottom:16px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.chart-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.chart-sub{font-size:11px;color:var(--text3);font-weight:400}
+
+/* Ring chart */
+.ring-wrap{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap}
+.ring-svg{transform:rotate(-90deg)}
+.ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-pct{font-size:28px;font-weight:800;color:var(--text);line-height:1}
+.ring-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.ring-container{position:relative;width:140px;height:140px;flex-shrink:0}
+.ring-legend{display:flex;flex-direction:column;gap:10px}
+.ring-leg-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.ring-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ring-leg-val{font-weight:700;color:var(--text);margin-left:auto}
+
+/* Dept bar chart */
+.dept-bar-wrap{display:flex;flex-direction:column;gap:10px}
+.dept-bar-row{display:flex;flex-direction:column;gap:4px}
+.dept-bar-top{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.dept-bar-name{font-weight:600;color:var(--text)}
+.dept-bar-pct{font-weight:700;color:var(--text2)}
+.dept-bar-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.dept-bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.dept-bar-counts{font-size:10px;color:var(--text3)}
+
+/* Overdue strip */
+.overdue-strip{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:14px}
+.ov-strip-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ov-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ov-item:last-child{border-bottom:none}
+.ov-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#d93f3f,#dc2626);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.ov-task{font-size:13px;font-weight:500;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-meta{font-size:11px;color:var(--text2)}
+.ov-days{font-size:11px;font-weight:700;color:#d93f3f;background:rgba(217,63,63,.1);padding:2px 8px;border-radius:20px;white-space:nowrap}
+
+/* ── BETTER ITEMS TABLE ── */
+.items-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.items-table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.items-filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+table.items-tbl{width:100%;border-collapse:collapse}
+table.items-tbl th{padding:10px 16px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;background:var(--table-head);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+table.items-tbl td{padding:0 16px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;white-space:nowrap}
+table.items-tbl tr.item-row{height:52px;transition:background .1s;cursor:pointer}
+table.items-tbl tr.item-row:hover td{background:var(--hover)}
+table.items-tbl tr:last-child td{border-bottom:none}
+.status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.status-chip svg{flex-shrink:0}
+.sc-done{background:#dcfce7;color:#15803d}
+.sc-overdue{background:#fee2e2;color:#dc2626}
+.sc-pending{background:#fef9c3;color:#a16207}
+[data-theme="dark"] .sc-done{background:rgba(21,128,61,.2);color:#4ade80}
+[data-theme="dark"] .sc-overdue{background:rgba(220,38,38,.2);color:#f87171}
+[data-theme="dark"] .sc-pending{background:rgba(161,98,7,.2);color:#fde047}
+.task-name-cell{display:flex;align-items:center;gap:8px;max-width:220px}
+.task-arrow{color:var(--text3);transition:transform .2s,color .2s;flex-shrink:0}
+.item-row.expanded .task-arrow{transform:rotate(90deg);color:#4f52d9}
+.task-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.fu-pill{background:rgba(217,63,63,.1);color:#d93f3f;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}
+.action-btn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;color:var(--text);transition:all .15s;white-space:nowrap}
+.action-btn:hover{border-color:#4f52d9;color:#4f52d9}
+.action-btn.danger{border-color:rgba(217,63,63,.3);color:#d93f3f}
+.action-btn.danger:hover{background:rgba(217,63,63,.05)}
+
+/* Page fade transition */
+.sec{opacity:0;transition:opacity .2s}
+.sec.active{opacity:1}
+
+/* Pulse on overdue */
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(217,63,63,.4)}70%{box-shadow:0 0 0 6px rgba(217,63,63,0)}100%{box-shadow:0 0 0 0 rgba(217,63,63,0)}}
+.pulse-overdue{animation:pulse-ring 2s infinite}
+
+@media(max-width:768px)@media(max-width:768px){.login-bg-left{display:none}.login-bg-right{width:100%}}
 /* Dark mode */
 :root{--bg:#f5f6fa;--bg2:#fff;--border:#e2e5f0;--text:#0f1117;--text2:#7c8298;--text3:#b0b6c8;--sidebar:#1a1d2e;--topbar:#fff;--card:#fff;--input-bg:#f9fafb;--metric-bg:#fff;--table-head:#f9fafb;--hover:#f5f6fa;--shadow:rgba(15,17,23,.06)}
 [data-theme="dark"]{--bg:#0f1117;--bg2:#1a1d2e;--border:#2d3148;--text:#e8eaf6;--text2:#9599c8;--text3:#5a5f88;--sidebar:#0d0f1a;--topbar:#13152a;--card:#1a1d2e;--input-bg:#13152a;--metric-bg:#1a1d2e;--table-head:#13152a;--hover:#21253d;--shadow:rgba(0,0,0,.3)}
@@ -219,7 +317,105 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f52d9;backgr
 .ai-typing span:nth-child(2){animation-delay:.15s}
 .ai-typing span:nth-child(3){animation-delay:.3s}
 @keyframes spin{to{transform:rotate(360deg)}}
-@media(max-width:768px){.sidebar{position:fixed;left:-240px;z-index:100;transition:left .25s}.sidebar.open{left:0}.ham-btn{display:flex!important}.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}.sb-overlay.open{display:block}.metrics{grid-template-columns:1fr 1fr}.slide-panel{width:100%;right:-100%}}
+
+/* ── SKELETON LOADING ── */
+.skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(255,255,255,.06) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.sk-row{display:flex;align-items:center;gap:12px;padding:14px 12px;border-bottom:1px solid var(--border)}
+.sk-circle{width:32px;height:32px;border-radius:50%;flex-shrink:0}
+.sk-line{height:10px;border-radius:4px}
+.sk-badge{width:60px;height:22px;border-radius:20px}
+
+/* ── DASHBOARD CHARTS ── */
+.dash-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:16px}
+.metric-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px 20px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.metric-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px var(--shadow)}
+.metric-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.mc-total::before{background:linear-gradient(90deg,#4f52d9,#7c3aed)}
+.mc-done::before{background:linear-gradient(90deg,#0d9e7e,#059669)}
+.mc-over::before{background:linear-gradient(90deg,#d93f3f,#dc2626)}
+.mc-pct::before{background:linear-gradient(90deg,#e07d1a,#d97706)}
+.mc-icon{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:12px}
+.mc-val{font-size:32px;font-weight:800;color:var(--text);letter-spacing:-1px;line-height:1;margin-bottom:4px}
+.mc-label{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
+.mc-sub{font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px}
+.trend-up{color:#0d9e7e}
+.trend-down{color:#d93f3f}
+
+.dash-charts{display:grid;grid-template-columns:1fr 1.6fr;gap:14px;margin-bottom:16px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px}
+.chart-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:16px;display:flex;align-items:center;justify-content:space-between}
+.chart-sub{font-size:11px;color:var(--text3);font-weight:400}
+
+/* Ring chart */
+.ring-wrap{display:flex;align-items:center;justify-content:center;gap:24px;flex-wrap:wrap}
+.ring-svg{transform:rotate(-90deg)}
+.ring-center{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center}
+.ring-pct{font-size:28px;font-weight:800;color:var(--text);line-height:1}
+.ring-lbl{font-size:10px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+.ring-container{position:relative;width:140px;height:140px;flex-shrink:0}
+.ring-legend{display:flex;flex-direction:column;gap:10px}
+.ring-leg-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.ring-leg-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.ring-leg-val{font-weight:700;color:var(--text);margin-left:auto}
+
+/* Dept bar chart */
+.dept-bar-wrap{display:flex;flex-direction:column;gap:10px}
+.dept-bar-row{display:flex;flex-direction:column;gap:4px}
+.dept-bar-top{display:flex;align-items:center;justify-content:space-between;font-size:12px}
+.dept-bar-name{font-weight:600;color:var(--text)}
+.dept-bar-pct{font-weight:700;color:var(--text2)}
+.dept-bar-track{height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+.dept-bar-fill{height:100%;border-radius:4px;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.dept-bar-counts{font-size:10px;color:var(--text3)}
+
+/* Overdue strip */
+.overdue-strip{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:14px}
+.ov-strip-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:12px;display:flex;align-items:center;gap:8px}
+.ov-item{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}
+.ov-item:last-child{border-bottom:none}
+.ov-avatar{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,#d93f3f,#dc2626);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0}
+.ov-task{font-size:13px;font-weight:500;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ov-meta{font-size:11px;color:var(--text2)}
+.ov-days{font-size:11px;font-weight:700;color:#d93f3f;background:rgba(217,63,63,.1);padding:2px 8px;border-radius:20px;white-space:nowrap}
+
+/* ── BETTER ITEMS TABLE ── */
+.items-table-wrap{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.items-table-header{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.items-filter-row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+table.items-tbl{width:100%;border-collapse:collapse}
+table.items-tbl th{padding:10px 16px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;background:var(--table-head);text-align:left;border-bottom:1px solid var(--border);white-space:nowrap}
+table.items-tbl td{padding:0 16px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle;white-space:nowrap}
+table.items-tbl tr.item-row{height:52px;transition:background .1s;cursor:pointer}
+table.items-tbl tr.item-row:hover td{background:var(--hover)}
+table.items-tbl tr:last-child td{border-bottom:none}
+.status-chip{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.status-chip svg{flex-shrink:0}
+.sc-done{background:#dcfce7;color:#15803d}
+.sc-overdue{background:#fee2e2;color:#dc2626}
+.sc-pending{background:#fef9c3;color:#a16207}
+[data-theme="dark"] .sc-done{background:rgba(21,128,61,.2);color:#4ade80}
+[data-theme="dark"] .sc-overdue{background:rgba(220,38,38,.2);color:#f87171}
+[data-theme="dark"] .sc-pending{background:rgba(161,98,7,.2);color:#fde047}
+.task-name-cell{display:flex;align-items:center;gap:8px;max-width:220px}
+.task-arrow{color:var(--text3);transition:transform .2s,color .2s;flex-shrink:0}
+.item-row.expanded .task-arrow{transform:rotate(90deg);color:#4f52d9}
+.task-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500}
+.fu-pill{background:rgba(217,63,63,.1);color:#d93f3f;border-radius:20px;padding:2px 8px;font-size:11px;font-weight:700;display:inline-block}
+.action-btn{padding:5px 12px;border-radius:7px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-size:12px;font-weight:500;font-family:inherit;color:var(--text);transition:all .15s;white-space:nowrap}
+.action-btn:hover{border-color:#4f52d9;color:#4f52d9}
+.action-btn.danger{border-color:rgba(217,63,63,.3);color:#d93f3f}
+.action-btn.danger:hover{background:rgba(217,63,63,.05)}
+
+/* Page fade transition */
+.sec{opacity:0;transition:opacity .2s}
+.sec.active{opacity:1}
+
+/* Pulse on overdue */
+@keyframes pulse-ring{0%{box-shadow:0 0 0 0 rgba(217,63,63,.4)}70%{box-shadow:0 0 0 6px rgba(217,63,63,0)}100%{box-shadow:0 0 0 0 rgba(217,63,63,0)}}
+.pulse-overdue{animation:pulse-ring 2s infinite}
+
+@media(max-width:768px)@media(max-width:768px){.sidebar{position:fixed;left:-240px;z-index:100;transition:left .25s}.sidebar.open{left:0}.ham-btn{display:flex!important}.sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99}.sb-overlay.open{display:block}.metrics{grid-template-columns:1fr 1fr}.slide-panel{width:100%;right:-100%}}
 </style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f52d9'/><text y='.9em' font-size='80' font-family='Segoe UI,sans-serif' font-weight='800' fill='white' x='15'>C</text></svg>">
 </head>
@@ -430,37 +626,74 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f52d9;backgr
 
       <!-- DASHBOARD -->
       <div id="s-dash" class="sec active">
-        <div id="dash-metrics" class="metrics">
-          <div class="metric"><div class="metric-label">Total items</div><div class="metric-value" id="d-total">—</div></div>
-          <div class="metric"><div class="metric-label">Completed</div><div class="metric-value" style="color:#0d9e7e" id="d-done">—</div></div>
-          <div class="metric"><div class="metric-label">Overdue</div><div class="metric-value" style="color:#d93f3f" id="d-over">—</div></div>
-          <div class="metric"><div class="metric-label">Progress</div><div class="metric-value" style="color:#e07d1a" id="d-pct">—</div></div>
+        <!-- Metric cards -->
+        <div class="dash-grid" id="dash-metrics">
+          <div class="metric-card mc-total"><div class="mc-icon" style="background:rgba(79,82,217,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f52d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div class="mc-label">Total items</div><div class="mc-val" id="d-total">—</div><div class="mc-sub" id="d-total-sub">Loading...</div></div>
+          <div class="metric-card mc-done"><div class="mc-icon" style="background:rgba(13,158,126,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d9e7e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="mc-label">Completed</div><div class="mc-val" style="color:#0d9e7e" id="d-done">—</div><div class="mc-sub" id="d-done-sub">Loading...</div></div>
+          <div class="metric-card mc-over"><div class="mc-icon" style="background:rgba(217,63,63,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d93f3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="mc-label">Overdue</div><div class="mc-val" style="color:#d93f3f" id="d-over">—</div><div class="mc-sub" id="d-over-sub">Loading...</div></div>
+          <div class="metric-card mc-pct"><div class="mc-icon" style="background:rgba(224,125,26,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e07d1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="mc-label">Progress</div><div class="mc-val" style="color:#e07d1a" id="d-pct">—</div><div class="mc-sub" id="d-pct-sub">Loading...</div></div>
         </div>
-        <div class="card"><div class="card-title">Progress by frequency</div><div id="freq-progress"></div></div>
-        <div class="card"><div class="card-title">Overdue items</div><div id="overdue-list"></div></div>
+        <!-- Charts row -->
+        <div class="dash-charts">
+          <div class="chart-card">
+            <div class="chart-title">Overall compliance <span class="chart-sub">all items</span></div>
+            <div class="ring-wrap">
+              <div class="ring-container">
+                <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
+                  <circle cx="70" cy="70" r="54" fill="none" stroke="var(--border)" stroke-width="14"/>
+                  <circle id="ring-done" cx="70" cy="70" r="54" fill="none" stroke="#0d9e7e" stroke-width="14" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
+                  <circle id="ring-over" cx="70" cy="70" r="54" fill="none" stroke="#d93f3f" stroke-width="14" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1) .2s"/>
+                </svg>
+                <div class="ring-center"><div class="ring-pct" id="ring-pct-val">0%</div><div class="ring-lbl">Done</div></div>
+              </div>
+              <div class="ring-legend">
+                <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#0d9e7e"></div>Completed<span class="ring-leg-val" id="leg-done">0</span></div>
+                <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#d93f3f"></div>Overdue<span class="ring-leg-val" id="leg-over">0</span></div>
+                <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#e07d1a"></div>Pending<span class="ring-leg-val" id="leg-pend">0</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-title">Compliance by department <span class="chart-sub">% completed</span></div>
+            <div class="dept-bar-wrap" id="dept-bars"><div style="color:var(--text3);font-size:13px;padding:20px 0">Loading...</div></div>
+          </div>
+        </div>
+        <!-- Overdue list -->
+        <div class="overdue-strip" id="overdue-list">
+          <div class="ov-strip-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d93f3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue items</div>
+          <div style="color:var(--text3);font-size:13px">Loading...</div>
+        </div>
+        <!-- Freq progress -->
+        <div class="chart-card" style="margin-bottom:14px"><div class="chart-title">Progress by frequency</div><div id="freq-progress"><div style="color:var(--text3);font-size:13px">Loading...</div></div></div>
       </div>
 
       <!-- ALL ITEMS -->
       <div id="s-items" class="sec">
-        <div class="sec-topbar">
-          <div class="sec-topbar-title">All compliance items</div>
-          <div id="add-item-card" style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="openPanel('item-panel')">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add item
-            </button>
+        <div class="items-table-wrap">
+          <div class="items-table-header">
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+              <div style="font-size:15px;font-weight:700;color:var(--text)">All compliance items</div>
+              <div id="freq-filters" class="items-filter-row"></div>
+            </div>
+            <div id="add-item-card" style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="openPanel('item-panel')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add item
+              </button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table class="items-tbl"><thead><tr>
+              <th style="min-width:220px;padding-left:20px">Task</th>
+              <th style="min-width:130px">Stakeholder</th>
+              <th style="min-width:100px">Department</th>
+              <th style="min-width:110px">Frequency</th>
+              <th style="min-width:100px">Due date</th>
+              <th style="min-width:110px">Status</th>
+              <th style="min-width:60px;text-align:center">FU</th>
+              <th style="min-width:140px">Actions</th>
+            </tr></thead><tbody id="items-body"></tbody></table>
           </div>
         </div>
-        <div id="freq-filters" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px"></div>
-        <div class="table-wrap"><table><thead><tr>
-          <th style="min-width:200px">Task</th>
-          <th style="min-width:120px">Stakeholder</th>
-          <th style="min-width:90px">Dept</th>
-          <th style="min-width:110px">Frequency</th>
-          <th style="min-width:100px">Due date</th>
-          <th style="min-width:90px">Status</th>
-          <th style="min-width:50px;text-align:center">FU</th>
-          <th style="min-width:120px">Actions</th>
-        </tr></thead><tbody id="items-body"></tbody></table></div>
       </div>
 
       <!-- OVERDUE -->
@@ -1023,6 +1256,12 @@ document.getElementById('ham-btn').onclick=function(){document.getElementById('s
 document.getElementById('sb-overlay').onclick=function(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');};
 
 async function loadAll(){
+  // Show skeletons while loading
+  showDashSkeleton();
+  showSkeleton('items-body', 8, 5);
+  showSkeleton('risk-body', 7, 4);
+  showSkeleton('log-body', 6, 4);
+
   try{
     var headers={
       'apikey':SUPA_KEY,
@@ -1100,86 +1339,129 @@ function renderFreqFilters(){
 
 function renderItems(){
   var filtered=activeFreq?items.filter(function(it){return it.freq===activeFreq;}):items;
-  var tb=document.getElementById('items-body');if(!tb)return;
-  if(!filtered.length){tb.innerHTML='<tr><td colspan="8" class="empty">No items yet.</td></tr>';return;}
-  tb.innerHTML=filtered.map(function(it){
-    var s=getStatus(it),fu=it.followups>0?'<span class="fu-count">'+it.followups+'</span>':'—';
-    var canT=can('toggle')&&(currentUser.role!=='stakeholder'||(it.email===currentUser.email||it.stakeholder_email===currentUser.email));
-    var sb='<span class="badge b-'+s+'"'+(canT?' data-toggle="'+it.id+'" style="cursor:pointer"':'')+'>'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>';
-    var acts=(can('email')?'<button class="btn btn-sm" data-email="'+it.id+'" style="margin-right:4px">Remind</button>':'')+
-             (can('delete')?'<button class="btn btn-sm btn-danger" data-del="'+it.id+'">Del</button>':'');
-    var scoreColor=s==='overdue'?'#d93f3f':s==='done'?'#0d9e7e':'#e07d1a';
-    return '<tr class="item-row" data-id="'+it.id+'" style="cursor:pointer">'+
-      '<td title="'+it.name+'"><span style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:#b0b6c8;transition:transform .2s" class="expand-arrow" id="arrow-'+it.id+'">▶</span>'+it.name+'</span></td>'+
-      '<td>'+it.stakeholder+'</td>'+
-      '<td>'+(it.dept||'—')+'</td>'+
-      '<td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td>'+
-      '<td>'+(it.due_date||'—')+'</td>'+
-      '<td>'+sb+'</td>'+
-      '<td style="text-align:center">'+fu+'</td>'+
-      '<td onclick="event.stopPropagation()">'+acts+'</td>'+
-    '</tr>'+
-    '<tr class="detail-row" id="detail-'+it.id+'" style="display:none">'+
-      '<td colspan="8" style="padding:0;white-space:normal;overflow:visible">'+
-        '<div style="background:#f5f6fa;border-left:3px solid '+scoreColor+';padding:16px 20px;margin:0">'+
-          '<div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid #e2e5f0">'+
-            '<div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Full task name</div>'+
-            '<div style="font-size:14px;color:#0f1117;font-weight:600;word-break:break-word;white-space:normal;line-height:1.5">'+it.name+'</div>'+
+  var tb=document.getElementById('items-body');
+  if(!tb)return;
+
+  if(!filtered.length){
+    tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No compliance items yet</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Add your first compliance task to get started</div><button class="btn btn-primary" onclick="openPanel('item-panel')" style="margin:0 auto">+ Add first item</button></td></tr>';
+    return;
+  }
+
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+
+  filtered.forEach(function(it){
+    var s=getStatus(it);
+    var statusHtml='';
+    if(s==='done'){
+      statusHtml='<span class="status-chip sc-done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Done</span>';
+    } else if(s==='overdue'){
+      statusHtml='<span class="status-chip sc-overdue pulse-overdue"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue</span>';
+    } else {
+      statusHtml='<span class="status-chip sc-pending"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Pending</span>';
+    }
+
+    var canT=can('toggle');
+    var fuHtml=it.followups>0?'<span class="fu-pill">'+it.followups+'</span>':'<span style="color:var(--text3)">—</span>';
+    var actHtml='';
+    if(can('email')) actHtml+='<button class="action-btn" data-email="'+it.id+'">Remind</button> ';
+    if(can('delete')) actHtml+='<button class="action-btn danger" data-del="'+it.id+'">Delete</button>';
+
+    var tr=document.createElement('tr');
+    tr.className='item-row';
+    tr.setAttribute('data-id',it.id);
+
+    var td1=document.createElement('td');
+    td1.style.paddingLeft='20px';
+    td1.innerHTML='<div class="task-name-cell"><svg class="task-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span class="task-text" title="'+it.name+'">'+it.name+'</span></div>';
+
+    var td2=document.createElement('td');
+    td2.innerHTML='<span style="font-weight:500">'+it.stakeholder+'</span>'+(it.email?'<div style="font-size:11px;color:var(--text3)">'+it.email+'</div>':'');
+
+    var td3=document.createElement('td');
+    td3.innerHTML='<span style="color:var(--text2)">'+( it.dept||'—')+'</span>';
+
+    var td4=document.createElement('td');
+    td4.innerHTML='<span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span>';
+
+    var td5=document.createElement('td');
+    var dueColor=s==='overdue'?'color:#d93f3f;font-weight:600':s==='done'?'color:var(--text3)':'color:var(--text)';
+    td5.innerHTML='<span style="'+dueColor+'">'+(it.due_date||'—')+'</span>';
+
+    var td6=document.createElement('td');
+    td6.innerHTML=statusHtml;
+    if(canT){
+      td6.style.cursor='pointer';
+      td6.title='Click to toggle status';
+      td6.setAttribute('data-toggle',it.id);
+    }
+
+    var td7=document.createElement('td');
+    td7.style.textAlign='center';
+    td7.innerHTML=fuHtml;
+
+    var td8=document.createElement('td');
+    td8.innerHTML=actHtml;
+
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);
+    tb.appendChild(tr);
+
+    // Expand row on click
+    tr.addEventListener('click',function(e){
+      if(e.target.closest('[data-toggle],[data-del],[data-email]')) return;
+      var detailId='detail-'+it.id;
+      var existing=document.getElementById(detailId);
+      var isOpen=tr.classList.contains('expanded');
+      // Close all
+      tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
+      tb.querySelectorAll('.detail-row').forEach(function(d){d.remove();});
+      if(!isOpen){
+        tr.classList.add('expanded');
+        var scoreColor=s==='overdue'?'#d93f3f':s==='done'?'#0d9e7e':'#e07d1a';
+        var detailTr=document.createElement('tr');
+        detailTr.className='detail-row';
+        detailTr.id=detailId;
+        var detailTd=document.createElement('td');
+        detailTd.colSpan=8;
+        detailTd.style.cssText='padding:0;white-space:normal;overflow:visible';
+        detailTd.innerHTML='<div style="background:var(--hover);border-left:3px solid '+scoreColor+';padding:16px 20px">'+
+          '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">'+
+            '<div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Full task name</div>'+
+            '<div style="font-size:14px;font-weight:600;color:var(--text);word-break:break-word">'+it.name+'</div>'+
           '</div>'+
           '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:12px">'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Stakeholder</div><div style="font-size:13px;color:#0f1117;word-break:break-word">'+it.stakeholder+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Email</div><div style="font-size:13px;color:#4f52d9;word-break:break-all">'+(it.email||'—')+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Department</div><div style="font-size:13px;color:#0f1117">'+(it.dept||'—')+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Frequency</div><div style="font-size:13px;color:#0f1117">'+FL[it.freq]+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Due date</div><div style="font-size:13px;color:'+scoreColor+';font-weight:600">'+(it.due_date||'—')+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Category</div><div style="font-size:13px;color:#0f1117">'+(it.category||'—')+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Status</div><div style="font-size:13px;font-weight:600;color:'+scoreColor+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</div></div>'+
-            '<div><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Follow-ups sent</div><div style="font-size:13px;color:#0f1117">'+(it.followups||0)+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Stakeholder</div><div style="font-size:13px;color:var(--text);font-weight:500">'+it.stakeholder+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:13px;color:#4f52d9;word-break:break-all">'+(it.email||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Department</div><div style="font-size:13px;color:var(--text)">'+(it.dept||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Frequency</div><div style="font-size:13px;color:var(--text)">'+FL[it.freq]+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Due date</div><div style="font-size:13px;color:'+scoreColor+';font-weight:600">'+(it.due_date||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Category</div><div style="font-size:13px;color:var(--text)">'+(it.category||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Status</div><div style="font-size:13px;font-weight:700;color:'+scoreColor+'">'+s.charAt(0).toUpperCase()+s.slice(1)+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Follow-ups sent</div><div style="font-size:13px;color:var(--text)">'+(it.followups||0)+'</div></div>'+
           '</div>'+
-          (it.notes?'<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#7c8298;text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes</div><div style="font-size:13px;color:#0f1117;background:#fff;padding:10px 12px;border-radius:6px;border:1px solid #e2e5f0;word-break:break-word;white-space:normal;line-height:1.6">'+it.notes+'</div></div>':'')+
+          (it.notes?'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes</div><div style="font-size:13px;color:var(--text);background:var(--card);padding:10px 12px;border-radius:8px;border:1px solid var(--border);word-break:break-word">'+it.notes+'</div></div>':'')+
           '<div style="display:flex;gap:8px;flex-wrap:wrap">'+
-            (canT?'<button class="btn btn-sm" data-toggle="'+it.id+'" style="background:'+(it.done?'#fef3e2':'#e0f7f2')+';color:'+(it.done?'#92400e':'#065f46')+';border-color:'+(it.done?'#fcd9a0':'#9fe1cb')+'">'+(it.done?'Mark as pending':'Mark as done')+'</button>':'')+
-            (can('email')?'<button class="btn btn-sm btn-primary" data-email="'+it.id+'">Send follow-up email</button>':'')+
-            (can('delete')?'<button class="btn btn-sm btn-danger" data-del="'+it.id+'">Delete item</button>':'')+
+            (canT?'<button class="action-btn" data-toggle="'+it.id+'" style="background:'+(it.done?'rgba(224,125,26,.1)':'rgba(13,158,126,.1)')+';border-color:'+(it.done?'rgba(224,125,26,.3)':'rgba(13,158,126,.3)')+';color:'+(it.done?'#e07d1a':'#0d9e7e')+'">'+(it.done?'Mark as pending':'Mark as done')+'</button>':'')+
+            (can('email')?'<button class="btn btn-primary btn-sm" data-email="'+it.id+'">Send follow-up</button>':'')+
+            (can('delete')?'<button class="action-btn danger" data-del="'+it.id+'">Delete item</button>':'')+
           '</div>'+
-        '</div>'+
-      '</td>'+
-    '</tr>';
-  }).join('');
-
-  // Row click to expand
-  tb.querySelectorAll('.item-row').forEach(function(row){
-    row.addEventListener('click',function(){
-      var id=row.getAttribute('data-id');
-      var detail=document.getElementById('detail-'+id);
-      var arrow=document.getElementById('arrow-'+id);
-      var isOpen=detail.style.display!=='none';
-      // Close all others
-      tb.querySelectorAll('.detail-row').forEach(function(d){d.style.display='none';});
-      tb.querySelectorAll('.expand-arrow').forEach(function(a){a.style.transform='rotate(0deg)';a.style.color='#b0b6c8';});
-      if(!isOpen){
-        detail.style.display='table-row';
-        arrow.style.transform='rotate(90deg)';
-        arrow.style.color='#4f52d9';
+        '</div>';
+        detailTr.appendChild(detailTd);
+        tr.parentNode.insertBefore(detailTr,tr.nextSibling);
       }
     });
   });
 
+  // Wire toggle buttons
   tb.querySelectorAll('[data-toggle]').forEach(function(el){
     el.addEventListener('click',async function(e){
       e.stopPropagation();
       var it=items.find(function(x){return x.id==el.getAttribute('data-toggle');});
       if(it){
         var updateBody={done:!it.done};
-        // Auto calculate next due date when marking as done
-        if(!it.done && it.due_date){
-          var nextDate=calcNextDueDate(it.freq, it.due_date);
-          if(nextDate) updateBody.due_date=nextDate;
-        }
+        if(!it.done&&it.due_date){var nd=calcNextDueDate(it.freq,it.due_date);if(nd)updateBody.due_date=nd;}
         await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
-        if(!it.done){
-          showDueDateToast(it.freq, updateBody.due_date||it.due_date);
-        }
+        if(!it.done) showDueDateToast(it.freq,updateBody.due_date||it.due_date);
         await loadAll();
       }
     });
@@ -1187,7 +1469,7 @@ function renderItems(){
   tb.querySelectorAll('[data-del]').forEach(function(el){
     el.addEventListener('click',async function(e){
       e.stopPropagation();
-      if(!confirm('Delete?'))return;
+      if(!confirm('Delete this item?'))return;
       await api('grc_items?id=eq.'+el.getAttribute('data-del'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});
       await loadAll();
     });
@@ -1199,18 +1481,148 @@ function renderItems(){
     });
   });
 }
+
+
 function goEmail(id){document.getElementById('nav-email').onclick();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
 
 function renderDash(){
-  var total=items.length,done=items.filter(function(it){return getStatus(it)==='done';}).length;
-  var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length,pct=total?Math.round(done/total*100):0;
-  document.getElementById('dash-metrics').innerHTML='<div class="metric m-total"><div class="metric-label">Total items</div><div class="metric-value">'+total+'</div><div class="metric-sub">compliance tasks</div></div><div class="metric m-done"><div class="metric-label">Completed</div><div class="metric-value" style="color:#0d9e7e">'+done+'</div><div class="metric-sub">on track</div></div><div class="metric m-over"><div class="metric-label">Overdue</div><div class="metric-value" style="color:#d93f3f">'+ov+'</div><div class="metric-sub">need attention</div></div><div class="metric m-prog"><div class="metric-label">Progress</div><div class="metric-value" style="color:#e07d1a">'+pct+'%</div><div class="metric-sub">overall</div></div>';
-  var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'],fb='';
-  freqs.forEach(function(f){var grp=items.filter(function(it){return it.freq===f;});if(!grp.length)return;var gd=grp.filter(function(it){return getStatus(it)==='done';}).length,gp=Math.round(gd/grp.length*100);fb+='<div style="margin-bottom:14px"><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:600">'+FL[f]+'</span><span style="color:#7c8298">'+gd+'/'+grp.length+' · '+gp+'%</span></div><div class="progress-bar"><div class="progress-fill" style="width:'+gp+'%"></div></div></div>';});
-  document.getElementById('freq-progress').innerHTML=fb||'<div class="empty">No items yet</div>';
-  var ovI=items.filter(function(it){return getStatus(it)==='overdue';}).slice(0,6);
-  document.getElementById('overdue-list').innerHTML=ovI.length?ovI.map(function(it){return'<div style="padding:9px 0;border-bottom:1px solid #e2e5f0"><div style="font-size:13px;font-weight:600">'+it.name+'</div><div style="font-size:11px;color:#7c8298;margin-top:2px">'+it.stakeholder+' · Due: '+it.due_date+' · '+it.followups+' follow-up(s)</div></div>';}).join(''):'<div class="empty">No overdue items</div>';
+  var total=items.length;
+  var done=items.filter(function(it){return getStatus(it)==='done';}).length;
+  var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length;
+  var pend=total-done-ov;
+  var pct=total?Math.round(done/total*100):0;
+  var circ=339.3;
+
+  // Metric cards
+  var el=document.getElementById('d-total');if(el)el.textContent=total;
+  el=document.getElementById('d-done');if(el)el.textContent=done;
+  el=document.getElementById('d-over');if(el)el.textContent=ov;
+  el=document.getElementById('d-pct');if(el)el.textContent=pct+'%';
+
+  // Metric sub labels
+  el=document.getElementById('d-total-sub');if(el)el.textContent=total===1?'1 compliance task':total+' compliance tasks';
+  el=document.getElementById('d-done-sub');if(el){
+    el.innerHTML=total?'<span class="trend-up">↑ '+pct+'% completion rate</span>':'No items yet';
+  }
+  el=document.getElementById('d-over-sub');if(el){
+    el.innerHTML=ov>0?'<span class="trend-down">'+ov+' need'+( ov===1?' attention':' attention')+'</span>':'<span class="trend-up">All on track</span>';
+  }
+  el=document.getElementById('d-pct-sub');if(el){
+    el.innerHTML=pct>=80?'<span class="trend-up">Excellent</span>':pct>=50?'<span style="color:#e07d1a">On track</span>':'<span class="trend-down">Needs attention</span>';
+  }
+
+  // Ring chart - done arc
+  var ringDone=document.getElementById('ring-done');
+  var ringOver=document.getElementById('ring-over');
+  if(ringDone&&ringOver&&total>0){
+    var donePct=done/total;
+    var ovPct=ov/total;
+    var doneOffset=circ-(donePct*circ);
+    var overOffset=circ-(ovPct*circ);
+    // Position overdue arc after done arc
+    ringDone.style.strokeDashoffset=doneOffset;
+    ringOver.style.strokeDashoffset=overOffset;
+    ringOver.style.strokeDasharray=(ovPct*circ)+' '+(circ-ovPct*circ);
+    var rotDeg = donePct*360;
+    ringOver.style.transform='rotate('+rotDeg+'deg)';
+    ringOver.style.transformOrigin='70px 70px';
+  } else if(ringDone){
+    ringDone.style.strokeDashoffset=circ;
+    if(ringOver) ringOver.style.strokeDashoffset=circ;
+  }
+  el=document.getElementById('ring-pct-val');if(el)el.textContent=pct+'%';
+  el=document.getElementById('leg-done');if(el)el.textContent=done;
+  el=document.getElementById('leg-over');if(el)el.textContent=ov;
+  el=document.getElementById('leg-pend');if(el)el.textContent=pend;
+
+  // Department bar chart
+  var depts={};
+  items.forEach(function(it){
+    var d=it.dept||'Unknown';
+    if(!depts[d])depts[d]={done:0,total:0};
+    depts[d].total++;
+    if(getStatus(it)==='done')depts[d].done++;
+  });
+  var deptKeys=Object.keys(depts).sort(function(a,b){
+    return(depts[b].done/depts[b].total)-(depts[a].done/depts[a].total);
+  }).slice(0,6);
+  var deptEl=document.getElementById('dept-bars');
+  if(deptEl){
+    if(!deptKeys.length){
+      deptEl.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">No items with department assigned yet.</div>';
+    } else {
+      var html='';
+      deptKeys.forEach(function(d){
+        var p=Math.round(depts[d].done/depts[d].total*100);
+        var barColor=p>=80?'#0d9e7e':p>=50?'#e07d1a':'#d93f3f';
+        html+='<div class="dept-bar-row">'+
+          '<div class="dept-bar-top"><span class="dept-bar-name">'+d+'</span><span class="dept-bar-pct" style="color:'+barColor+'">'+p+'%</span></div>'+
+          '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:0%;background:'+barColor+'" data-width="'+p+'"></div></div>'+
+          '<div class="dept-bar-counts">'+depts[d].done+' of '+depts[d].total+' tasks completed</div>'+
+        '</div>';
+      });
+      deptEl.innerHTML=html;
+      // Animate bars
+      setTimeout(function(){
+        deptEl.querySelectorAll('.dept-bar-fill').forEach(function(bar){
+          bar.style.width=bar.getAttribute('data-width')+'%';
+        });
+      },100);
+    }
+  }
+
+  // Overdue list
+  var ovItems=items.filter(function(it){return getStatus(it)==='overdue';}).slice(0,6);
+  var ovEl=document.getElementById('overdue-list');
+  if(ovEl){
+    var ovHtml='<div class="ov-strip-title"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d93f3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue items';
+    if(ovItems.length) ovHtml+='<span style="margin-left:auto;font-size:11px;color:#d93f3f;font-weight:600">'+ovItems.length+' item'+(ovItems.length>1?'s':'')+' overdue</span>';
+    ovHtml+='</div>';
+    if(!ovItems.length){
+      ovHtml+='<div style="padding:12px 0;text-align:center;color:var(--text3);font-size:13px">🎉 No overdue items! Everything is on track.</div>';
+    } else {
+      ovItems.forEach(function(it){
+        var daysOv=it.due_date?Math.floor((new Date(today())-new Date(it.due_date))/86400000):0;
+        var ini=(it.stakeholder||'?').charAt(0).toUpperCase();
+        ovHtml+='<div class="ov-item">'+
+          '<div class="ov-avatar">'+ini+'</div>'+
+          '<div style="flex:1;min-width:0">'+
+          '<div class="ov-task" title="'+it.name+'">'+it.name+'</div>'+
+          '<div class="ov-meta">'+it.stakeholder+(it.dept?' · '+it.dept:'')+(it.due_date?' · Due '+it.due_date:'')+'</div>'+
+          '</div>'+
+          '<div class="ov-days">'+daysOv+'d overdue</div>'+
+        '</div>';
+      });
+    }
+    ovEl.innerHTML=ovHtml;
+  }
+
+  // Freq progress bars
+  var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'];
+  var fpEl=document.getElementById('freq-progress');
+  if(fpEl){
+    var fpHtml='<div style="display:flex;flex-direction:column;gap:10px">';
+    freqs.forEach(function(f){
+      var grp=items.filter(function(it){return it.freq===f;});
+      if(!grp.length)return;
+      var gdone=grp.filter(function(it){return getStatus(it)==='done';}).length;
+      var gp=Math.round(gdone/grp.length*100);
+      var barColor=gp>=80?'#0d9e7e':gp>=50?'#e07d1a':'#d93f3f';
+      fpHtml+='<div class="dept-bar-row">'+
+        '<div class="dept-bar-top"><span class="dept-bar-name">'+FL[f]+'</span><span class="dept-bar-pct" style="color:'+barColor+'">'+gdone+'/'+grp.length+' &nbsp;'+gp+'%</span></div>'+
+        '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:0%;background:'+barColor+'" data-width="'+gp+'"></div></div>'+
+      '</div>';
+    });
+    fpHtml+='</div>';
+    fpEl.innerHTML=fpHtml;
+    setTimeout(function(){
+      fpEl.querySelectorAll('.dept-bar-fill').forEach(function(bar){
+        bar.style.width=bar.getAttribute('data-width')+'%';
+      });
+    },150);
+  }
 }
+
 
 function renderOverdue(){
   var ov=items.filter(function(it){return getStatus(it)==='overdue';});
@@ -3475,6 +3887,50 @@ window.addEventListener('load', async function(){
     document.getElementById('login-screen').style.display='flex';
   }
 });
+
+// ── SKELETON LOADING ──
+function showSkeleton(tbId, cols, rows){
+  var tb=document.getElementById(tbId);
+  if(!tb) return;
+  var html='';
+  for(var i=0;i<(rows||5);i++){
+    html+='<tr>';
+    for(var j=0;j<cols;j++){
+      var w=[60,40,30,25,20,15][j]||20;
+      html+='<td style="padding:12px 16px"><div class="skeleton sk-line" style="width:'+w+'%;height:11px"></div></td>';
+    }
+    html+='</tr>';
+  }
+  tb.innerHTML=html;
+}
+
+function showDashSkeleton(){
+  // Metric cards skeleton
+  var dm=document.getElementById('dash-metrics');
+  if(dm){
+    dm.querySelectorAll('.mc-val').forEach(function(el){el.textContent='—';});
+    dm.querySelectorAll('.mc-sub').forEach(function(el){el.innerHTML='<div class="skeleton sk-line" style="width:60%;height:9px"></div>';});
+  }
+  // Chart skeletons
+  var dept=document.getElementById('dept-bars');
+  if(dept){
+    var skHtml='';
+    for(var i=0;i<4;i++){
+      skHtml+='<div class="dept-bar-row"><div class="dept-bar-top"><div class="skeleton sk-line" style="width:80px;height:10px"></div><div class="skeleton sk-line" style="width:30px;height:10px"></div></div><div class="dept-bar-track"><div class="skeleton" style="width:'+(40+i*15)+'%;height:8px;border-radius:4px"></div></div></div>';
+    }
+    dept.innerHTML=skHtml;
+  }
+  var ovEl=document.getElementById('overdue-list');
+  if(ovEl){
+    var ovSk='<div class="ov-strip-title">Overdue items</div>';
+    for(var i=0;i<3;i++){
+      ovSk+='<div class="sk-row"><div class="skeleton sk-circle" style="width:32px;height:32px;border-radius:8px;flex-shrink:0"></div><div style="flex:1"><div class="skeleton sk-line" style="width:70%;height:11px;margin-bottom:6px"></div><div class="skeleton sk-line" style="width:45%;height:9px"></div></div><div class="skeleton sk-badge"></div></div>';
+    }
+    ovEl.innerHTML=ovSk;
+  }
+}
+
+var originalLoadAll = null;
 
 // ── SESSION SECURITY ──
 var sessionCheckInterval = null;
