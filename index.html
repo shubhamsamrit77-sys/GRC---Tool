@@ -48,6 +48,48 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#e2e5f0}
 .login-secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;color:#b0b6c8;margin-top:20px}
 
+/* ── MISSING UTILITY CLASSES ── */
+.danger-box{background:rgba(217,63,63,.08);border:1px solid rgba(217,63,63,.2);border-left:4px solid #d93f3f;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:#d93f3f;display:flex;align-items:center;gap:8px}
+.warn-box{background:rgba(224,125,26,.08);border:1px solid rgba(224,125,26,.2);border-left:4px solid #e07d1a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:#e07d1a;display:flex;align-items:center;gap:8px}
+
+/* ── IMPORT PAGE ── */
+.import-step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:14px}
+.import-step-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.import-step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f52d9,#7c3aed);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.import-step-title{font-size:14px;font-weight:700;color:var(--text)}
+.import-step-sub{font-size:12px;color:var(--text3)}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--hover)}
+.drop-zone:hover,.drop-zone.dragover{border-color:#4f52d9;background:rgba(79,82,217,.05)}
+.drop-zone-icon{font-size:36px;margin-bottom:10px}
+.drop-zone-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.drop-zone-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+.import-preview-table{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-top:12px}
+.import-preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.import-preview-title{font-size:13px;font-weight:700;color:var(--text)}
+.import-actions{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+
+/* ── EXPORT PAGE ── */
+.export-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:0}
+.export-card{background:var(--hover);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;transition:all .2s}
+.export-card:hover{border-color:#4f52d9;transform:translateY(-2px);box-shadow:0 6px 20px var(--shadow)}
+.export-card-icon{font-size:28px;margin-bottom:8px}
+.export-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.export-card-sub{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5}
+.export-btn-group{display:flex;gap:6px;justify-content:center}
+
+/* ── SECTION LAYOUT ── */
+.page-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:14px}
+.page-section-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.page-section-sub{font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6}
+.full-report-card{background:linear-gradient(135deg,rgba(79,82,217,.08),rgba(124,58,237,.05));border:1px solid rgba(79,82,217,.2);border-radius:14px;padding:20px 24px}
+
+/* ── OVERDUE PAGE ── */
+.overdue-count-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.ov-count-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.ov-count-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ov-count-val{font-size:24px;font-weight:800;color:var(--text)}
+.ov-count-lbl{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
+
 /* ── SKELETON LOADING ── */
 .skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(255,255,255,.06) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
 @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -317,6 +359,48 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#4f52d9;backgr
 .ai-typing span:nth-child(2){animation-delay:.15s}
 .ai-typing span:nth-child(3){animation-delay:.3s}
 @keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── MISSING UTILITY CLASSES ── */
+.danger-box{background:rgba(217,63,63,.08);border:1px solid rgba(217,63,63,.2);border-left:4px solid #d93f3f;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:#d93f3f;display:flex;align-items:center;gap:8px}
+.warn-box{background:rgba(224,125,26,.08);border:1px solid rgba(224,125,26,.2);border-left:4px solid #e07d1a;border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:#e07d1a;display:flex;align-items:center;gap:8px}
+
+/* ── IMPORT PAGE ── */
+.import-step{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:14px}
+.import-step-header{display:flex;align-items:center;gap:12px;margin-bottom:14px}
+.import-step-num{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#4f52d9,#7c3aed);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.import-step-title{font-size:14px;font-weight:700;color:var(--text)}
+.import-step-sub{font-size:12px;color:var(--text3)}
+.drop-zone{border:2px dashed var(--border);border-radius:12px;padding:40px 20px;text-align:center;cursor:pointer;transition:all .2s;background:var(--hover)}
+.drop-zone:hover,.drop-zone.dragover{border-color:#4f52d9;background:rgba(79,82,217,.05)}
+.drop-zone-icon{font-size:36px;margin-bottom:10px}
+.drop-zone-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px}
+.drop-zone-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+.import-preview-table{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-top:12px}
+.import-preview-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px}
+.import-preview-title{font-size:13px;font-weight:700;color:var(--text)}
+.import-actions{display:flex;gap:8px;align-items:center;margin-top:14px;flex-wrap:wrap}
+
+/* ── EXPORT PAGE ── */
+.export-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:0}
+.export-card{background:var(--hover);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;transition:all .2s}
+.export-card:hover{border-color:#4f52d9;transform:translateY(-2px);box-shadow:0 6px 20px var(--shadow)}
+.export-card-icon{font-size:28px;margin-bottom:8px}
+.export-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
+.export-card-sub{font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.5}
+.export-btn-group{display:flex;gap:6px;justify-content:center}
+
+/* ── SECTION LAYOUT ── */
+.page-section{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px 24px;margin-bottom:14px}
+.page-section-title{font-size:14px;font-weight:700;color:var(--text);margin-bottom:4px}
+.page-section-sub{font-size:12px;color:var(--text3);margin-bottom:16px;line-height:1.6}
+.full-report-card{background:linear-gradient(135deg,rgba(79,82,217,.08),rgba(124,58,237,.05));border:1px solid rgba(79,82,217,.2);border-radius:14px;padding:20px 24px}
+
+/* ── OVERDUE PAGE ── */
+.overdue-count-bar{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.ov-count-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:12px}
+.ov-count-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.ov-count-val{font-size:24px;font-weight:800;color:var(--text)}
+.ov-count-lbl{font-size:11px;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.4px}
 
 /* ── SKELETON LOADING ── */
 .skeleton{background:linear-gradient(90deg,var(--border) 25%,rgba(255,255,255,.06) 50%,var(--border) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px}
@@ -698,10 +782,9 @@ table.items-tbl tr:last-child td{border-bottom:none}
 
       <!-- OVERDUE -->
       <div id="s-overdue" class="sec">
-        <div class="card"><div class="card-title">Overdue &amp; due soon</div><div class="table-wrap"><table><thead><tr>
-          <th style="width:28%">Task</th><th style="width:18%">Stakeholder</th><th style="width:12%">Dept</th>
-          <th style="width:12%">Due date</th><th style="width:12%">Status</th><th style="width:18%">Actions</th>
-        </tr></thead><tbody id="overdue-body"></tbody></table></div></div>
+        <div id="overdue-list">
+          <div style="padding:60px;text-align:center;color:var(--text3);font-size:13px">Loading...</div>
+        </div>
       </div>
 
       <!-- FOLLOW-UP EMAILS -->
@@ -858,22 +941,85 @@ table.items-tbl tr:last-child td{border-bottom:none}
 
       <!-- IMPORT -->
       <div id="s-import" class="sec">
-        <div class="card"><div class="card-title">Step 1 — Download template</div><div class="actions" style="justify-content:flex-start"><button class="btn btn-primary" id="download-template-btn">Download Excel template</button></div></div>
-        <div class="card"><div class="card-title">Step 2 — Upload your filled Excel file</div>
-          <div id="import-drop-zone" style="border:2px dashed #e2e5f0;border-radius:10px;padding:36px;text-align:center;cursor:pointer">
-            <div style="font-size:28px;margin-bottom:8px">📂</div>
-            <div style="font-size:14px;font-weight:600;margin-bottom:6px">Drag and drop your Excel file here</div>
-            <div style="font-size:13px;color:#7c8298;margin-bottom:12px">or click to browse — supports .xlsx and .xls</div>
-            <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none">
-            <button class="btn btn-primary" onclick="document.getElementById('import-file-input').click()">Choose file</button>
+        <!-- Step 1 -->
+        <div class="import-step">
+          <div class="import-step-header">
+            <div class="import-step-num">1</div>
+            <div>
+              <div class="import-step-title">Download the Excel template</div>
+              <div class="import-step-sub">Fill in your compliance items and upload back — supports up to 500 items at once</div>
+            </div>
           </div>
-          <div id="import-preview" style="display:none">
-            <div style="font-size:13px;font-weight:600;margin-bottom:10px" id="import-preview-title">Preview</div>
-            <div class="table-wrap" style="max-height:280px;overflow-y:auto"><table><thead><tr><th>Task name</th><th>Stakeholder</th><th>Department</th><th>Frequency</th><th>Due date</th><th>Category</th><th>Status</th></tr></thead><tbody id="import-preview-body"></tbody></table></div>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap">
-              <button class="btn btn-primary" id="confirm-import-btn">Import all items</button>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary" id="download-template-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Excel template
+            </button>
+            <span style="font-size:12px;color:var(--text3)">Columns: Task name, Stakeholder, Email, Department, Frequency, Due date, Category, Notes</span>
+          </div>
+        </div>
+        <!-- Step 2 -->
+        <div class="import-step">
+          <div class="import-step-header">
+            <div class="import-step-num">2</div>
+            <div>
+              <div class="import-step-title">Upload your filled Excel file</div>
+              <div class="import-step-sub">Drag and drop or click to choose your .xlsx file</div>
+            </div>
+          </div>
+          <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none">
+          <div class="drop-zone" id="import-drop-zone" onclick="document.getElementById('import-file-input').click()">
+            <div class="drop-zone-icon">📂</div>
+            <div class="drop-zone-title">Drop your Excel file here</div>
+            <div class="drop-zone-sub">or click to browse — supports .xlsx and .xls</div>
+            <button class="btn btn-primary" onclick="event.stopPropagation();document.getElementById('import-file-input').click()">Choose file</button>
+          </div>
+          <!-- Preview -->
+          <div id="import-preview" style="display:none;margin-top:14px">
+            <div class="import-preview-header">
+              <div class="import-preview-title" id="import-preview-title">Preview</div>
+              <span id="import-status" style="font-size:12px;color:var(--text3)"></span>
+            </div>
+            <div class="import-preview-table">
+              <table><thead><tr>
+                <th>Task name</th><th>Stakeholder</th><th>Department</th>
+                <th>Frequency</th><th>Due date</th><th>Category</th><th>Ready?</th>
+              </tr></thead><tbody id="import-preview-body"></tbody></table>
+            </div>
+            <div class="import-actions">
+              <button class="btn btn-primary" id="confirm-import-btn">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Import all items
+              </button>
               <button class="btn" id="cancel-import-btn">Cancel</button>
-              <span id="import-status" style="font-size:13px;color:#7c8298"></span>
+            </div>
+          </div>
+        </div>
+        <!-- How to fill guide -->
+        <div class="import-step">
+          <div class="import-step-header">
+            <div class="import-step-num" style="background:linear-gradient(135deg,#0d9e7e,#059669)">?</div>
+            <div>
+              <div class="import-step-title">How to fill the template</div>
+              <div class="import-step-sub">Follow these guidelines for each column</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px">
+            <div style="background:var(--hover);border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">Frequency options</div>
+              <div style="font-size:12px;color:var(--text3)">daily · weekly · monthly · quarterly · halfyearly · yearly</div>
+            </div>
+            <div style="background:var(--hover);border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">Due date format</div>
+              <div style="font-size:12px;color:var(--text3)">YYYY-MM-DD &nbsp; e.g. 2026-06-30</div>
+            </div>
+            <div style="background:var(--hover);border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">Category options</div>
+              <div style="font-size:12px;color:var(--text3)">Cybersecurity · Data Privacy · HR Compliance · Legal · Financial · Operational · Audit · Other</div>
+            </div>
+            <div style="background:var(--hover);border-radius:8px;padding:12px">
+              <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">Required columns</div>
+              <div style="font-size:12px;color:var(--text3)">Task name and Stakeholder are mandatory — all others are optional</div>
             </div>
           </div>
         </div>
@@ -881,43 +1027,79 @@ table.items-tbl tr:last-child td{border-bottom:none}
 
       <!-- EXPORT -->
       <div id="s-export" class="sec">
-        <div class="card"><div class="card-title">Export compliance items</div>
-          <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px">
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:24px;margin-bottom:8px">📊</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">All items</div>
-              <button class="btn btn-primary" style="width:100%;margin-bottom:6px" id="export-items-xlsx">Excel</button>
-              <button class="btn" style="width:100%" id="export-items-csv">CSV</button>
+        <!-- Compliance exports -->
+        <div class="page-section">
+          <div class="page-section-title">Export compliance items</div>
+          <div class="page-section-sub">Download your compliance data in Excel or CSV format for sharing with management or audit purposes.</div>
+          <div class="export-grid">
+            <div class="export-card">
+              <div class="export-card-icon">📊</div>
+              <div class="export-card-title">All items</div>
+              <div class="export-card-sub">Complete compliance register with all tasks and statuses</div>
+              <div class="export-btn-group">
+                <button class="btn btn-primary btn-sm" id="export-items-xlsx">Excel</button>
+                <button class="btn btn-sm" id="export-items-csv">CSV</button>
+              </div>
             </div>
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:24px;margin-bottom:8px">⚠️</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Overdue only</div>
-              <button class="btn btn-primary" style="width:100%;margin-bottom:6px" id="export-overdue-xlsx">Excel</button>
-              <button class="btn" style="width:100%" id="export-overdue-csv">CSV</button>
+            <div class="export-card">
+              <div class="export-card-icon">⚠️</div>
+              <div class="export-card-title">Overdue only</div>
+              <div class="export-card-sub">Items that are past their due date and need immediate attention</div>
+              <div class="export-btn-group">
+                <button class="btn btn-primary btn-sm" id="export-overdue-xlsx">Excel</button>
+                <button class="btn btn-sm" id="export-overdue-csv">CSV</button>
+              </div>
             </div>
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:24px;margin-bottom:8px">📋</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">Follow-up log</div>
-              <button class="btn btn-primary" style="width:100%;margin-bottom:6px" id="export-logs-xlsx">Excel</button>
-              <button class="btn" style="width:100%" id="export-logs-csv">CSV</button>
+            <div class="export-card">
+              <div class="export-card-icon">📋</div>
+              <div class="export-card-title">Follow-up log</div>
+              <div class="export-card-sub">Full history of all follow-up emails sent with dates and tones</div>
+              <div class="export-btn-group">
+                <button class="btn btn-primary btn-sm" id="export-logs-xlsx">Excel</button>
+                <button class="btn btn-sm" id="export-logs-csv">CSV</button>
+              </div>
             </div>
           </div>
         </div>
-        <div class="card"><div class="card-title">Export risks</div>
+        <!-- Risk exports -->
+        <div class="page-section">
+          <div class="page-section-title">Export risk register</div>
+          <div class="page-section-sub">Download your complete risk register with likelihood, impact scores and current status.</div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:24px;margin-bottom:8px">🛡️</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">All risks</div>
-              <button class="btn btn-primary" style="width:100%;margin-bottom:6px" id="export-risks-xlsx">Excel</button>
-              <button class="btn" style="width:100%" id="export-risks-csv">CSV</button>
+            <div class="export-card">
+              <div class="export-card-icon">🛡️</div>
+              <div class="export-card-title">All risks</div>
+              <div class="export-card-sub">Complete risk register with scores, levels and owners</div>
+              <div class="export-btn-group">
+                <button class="btn btn-primary btn-sm" id="export-risks-xlsx">Excel</button>
+                <button class="btn btn-sm" id="export-risks-csv">CSV</button>
+              </div>
             </div>
-            <div style="background:#f5f6fa;border:1px solid #e2e5f0;border-radius:10px;padding:16px;text-align:center">
-              <div style="font-size:24px;margin-bottom:8px">📈</div><div style="font-size:13px;font-weight:600;margin-bottom:4px">High risks only</div>
-              <button class="btn btn-primary" style="width:100%;margin-bottom:6px" id="export-highrisks-xlsx">Excel</button>
-              <button class="btn" style="width:100%" id="export-highrisks-csv">CSV</button>
+            <div class="export-card">
+              <div class="export-card-icon">🔴</div>
+              <div class="export-card-title">High risks only</div>
+              <div class="export-card-sub">Only risks with score 15 or above — critical items for management</div>
+              <div class="export-btn-group">
+                <button class="btn btn-primary btn-sm" id="export-highrisks-xlsx">Excel</button>
+                <button class="btn btn-sm" id="export-highrisks-csv">CSV</button>
+              </div>
             </div>
           </div>
         </div>
-        <div class="card"><div class="card-title">Full GRC report</div><p style="font-size:13px;color:#7c8298;margin-bottom:14px;line-height:1.7">One Excel file with all sheets — compliance items, risks, follow-up log and summary.</p><div class="actions" style="justify-content:flex-start"><button class="btn btn-primary" id="export-full-report">Download full GRC report (Excel)</button></div></div>
+        <!-- Full report -->
+        <div class="full-report-card">
+          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+            <div style="flex:1">
+              <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">📁 Full Clarix GRC Report</div>
+              <div style="font-size:13px;color:var(--text3);line-height:1.6">One Excel file with 4 sheets — Summary, Compliance Items, Risk Register and Follow-up Log. Ready for auditors and management presentations.</div>
+            </div>
+            <button class="btn btn-primary" id="export-full-report" style="white-space:nowrap;flex-shrink:0">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download Full Report
+            </button>
+          </div>
+        </div>
       </div>
-
-      <!-- ADMIN -->
       <div id="s-admin" class="sec">
         <div class="sec-topbar">
           <div class="sec-topbar-title">Manage users</div>
@@ -1343,21 +1525,8 @@ function renderItems(){
   if(!tb)return;
 
   if(!filtered.length){
-tb.innerHTML = `
-<tr>
-  <td colspan="8" style="padding:40px;text-align:center">
-    <div style="font-size:32px;margin-bottom:10px">📋</div>
-    <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">
-      No compliance items yet
-    </div>
-    <div style="font-size:13px;color:var(--text3);margin-bottom:16px">
-      Add your first compliance task to get started
-    </div>
-    <button class="btn btn-primary" onclick="openPanel('item-panel')" style="margin:0 auto">
-      + Add first item
-    </button>
-  </td>
-</tr>`;    return;
+    tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No compliance items yet</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Add your first compliance task to get started</div><button class="btn btn-primary" onclick="openPanel('item-panel')" style="margin:0 auto">+ Add first item</button></td></tr>';
+    return;
   }
 
   while(tb.firstChild) tb.removeChild(tb.firstChild);
@@ -2087,10 +2256,10 @@ document.getElementById('download-template-btn').onclick = function(){
 var dropZone = document.getElementById('import-drop-zone');
 var fileInput = document.getElementById('import-file-input');
 
-dropZone.addEventListener('dragover', function(e){e.preventDefault();dropZone.style.borderColor='#4f52d9';dropZone.style.background='#eeeffe';});
-dropZone.addEventListener('dragleave', function(){dropZone.style.borderColor='#e2e5f0';dropZone.style.background='';});
+dropZone.addEventListener('dragover', function(e){e.preventDefault();dropZone.classList.add('dragover');});
+dropZone.addEventListener('dragleave', function(){dropZone.classList.remove('dragover');});
 dropZone.addEventListener('drop', function(e){
-  e.preventDefault();dropZone.style.borderColor='#e2e5f0';dropZone.style.background='';
+  e.preventDefault();dropZone.classList.remove('dragover');
   var file = e.dataTransfer.files[0];
   if(file) processExcelFile(file);
 });
