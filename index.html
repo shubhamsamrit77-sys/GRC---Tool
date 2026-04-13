@@ -782,9 +782,7 @@ table.items-tbl tr:last-child td{border-bottom:none}
 
       <!-- OVERDUE -->
       <div id="s-overdue" class="sec">
-        <div id="overdue-list">
-          <div style="padding:60px;text-align:center;color:var(--text3);font-size:13px">Loading...</div>
-        </div>
+        <div id="overdue-list"></div>
       </div>
 
       <!-- FOLLOW-UP EMAILS -->
@@ -1525,7 +1523,17 @@ function renderItems(){
   if(!tb)return;
 
   if(!filtered.length){
-    tb.innerHTML='<tr><td colspan="8" style="padding:40px;text-align:center"><div style="font-size:32px;margin-bottom:10px">📋</div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No compliance items yet</div><div style="font-size:13px;color:var(--text3);margin-bottom:16px">Add your first compliance task to get started</div><button class="btn btn-primary" onclick="openPanel('item-panel')" style="margin:0 auto">+ Add first item</button></td></tr>';
+    var emptyTr=document.createElement('tr');
+    var emptyTd=document.createElement('td');
+    emptyTd.colSpan=8;
+    emptyTd.style.cssText='padding:40px;text-align:center';
+    var d1=document.createElement('div');d1.style.cssText='font-size:32px;margin-bottom:10px';d1.textContent='📋';
+    var d2=document.createElement('div');d2.style.cssText='font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px';d2.textContent='No compliance items yet';
+    var d3=document.createElement('div');d3.style.cssText='font-size:13px;color:var(--text3);margin-bottom:16px';d3.textContent='Add your first compliance task to get started';
+    var b=document.createElement('button');b.className='btn btn-primary';b.style.margin='0 auto';b.textContent='+ Add first item';
+    b.onclick=function(){openPanel('item-panel');};
+    emptyTd.appendChild(d1);emptyTd.appendChild(d2);emptyTd.appendChild(d3);emptyTd.appendChild(b);
+    emptyTr.appendChild(emptyTd);tb.appendChild(emptyTr);
     return;
   }
 
@@ -1807,15 +1815,188 @@ function renderDash(){
 
 
 function renderOverdue(){
-  var ov=items.filter(function(it){return getStatus(it)==='overdue';});
-  var soon=items.filter(function(it){if(getStatus(it)!=='pending'||!it.due_date)return false;return(new Date(it.due_date)-new Date(today()))/86400000<=7;});
-  var html='';
-  if(ov.length){html+='<div class="danger-box">'+ov.length+' item(s) overdue.</div><div class="card"><div class="card-title">Overdue items</div><div class="table-wrap"><table><thead><tr><th style="width:26%">Task</th><th style="width:18%">Stakeholder</th><th style="width:12%">Frequency</th><th style="width:12%">Due date</th><th style="width:10%">FU</th><th style="width:22%">Action</th></tr></thead><tbody>'+ov.map(function(it){return'<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:#d93f3f;font-weight:600">'+it.due_date+'</td><td style="text-align:center">'+it.followups+'</td><td>'+(can('email')?'<button class="btn btn-sm btn-primary" data-email="'+it.id+'">Send follow-up</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div></div>';}
-  if(soon.length){html+='<div class="warn-box">'+soon.length+' item(s) due within 7 days.</div><div class="card"><div class="card-title">Due within 7 days</div><div class="table-wrap"><table><thead><tr><th style="width:30%">Task</th><th style="width:20%">Stakeholder</th><th style="width:14%">Frequency</th><th style="width:14%">Due date</th><th style="width:22%">Action</th></tr></thead><tbody>'+soon.map(function(it){return'<tr><td title="'+it.name+'">'+it.name+'</td><td>'+it.stakeholder+'</td><td><span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span></td><td style="color:#e07d1a;font-weight:600">'+it.due_date+'</td><td>'+(can('email')?'<button class="btn btn-sm" data-email="'+it.id+'">Send reminder</button>':'')+'</td></tr>';}).join('')+'</tbody></table></div></div>';}
-  if(!ov.length&&!soon.length)html='<div class="empty" style="padding:60px">All items on track!</div>';
-  var el=document.getElementById('overdue-list');el.innerHTML=html;
-  el.querySelectorAll('[data-email]').forEach(function(b){b.onclick=function(){goEmail(b.getAttribute('data-email'));};});
+  var el = document.getElementById('overdue-list');
+  if(!el) return;
+
+  var ov = items.filter(function(it){ return getStatus(it)==='overdue'; });
+  var soon = items.filter(function(it){
+    if(getStatus(it)!=='pending' || !it.due_date) return false;
+    var diff = (new Date(it.due_date) - new Date(today())) / 86400000;
+    return diff >= 0 && diff <= 7;
+  });
+
+  // Clear existing content
+  while(el.firstChild) el.removeChild(el.firstChild);
+
+  // All on track
+  if(!ov.length && !soon.length){
+    var emptyDiv = document.createElement('div');
+    emptyDiv.style.cssText = 'text-align:center;padding:60px 20px';
+    emptyDiv.innerHTML = '<div style="font-size:48px;margin-bottom:12px">🎉</div>' +
+      '<div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">All items on track!</div>' +
+      '<div style="font-size:13px;color:var(--text3)">No overdue items or items due soon. Great work!</div>';
+    el.appendChild(emptyDiv);
+    return;
+  }
+
+  // Summary count bar
+  if(ov.length || soon.length){
+    var bar = document.createElement('div');
+    bar.className = 'overdue-count-bar';
+    bar.style.marginBottom = '16px';
+
+    function makeCountCard(icon, val, lbl, color, bg){
+      var card = document.createElement('div');
+      card.className = 'ov-count-card';
+      var iconDiv = document.createElement('div');
+      iconDiv.className = 'ov-count-icon';
+      iconDiv.style.background = bg;
+      iconDiv.innerHTML = icon;
+      var textDiv = document.createElement('div');
+      var valDiv = document.createElement('div');
+      valDiv.className = 'ov-count-val';
+      valDiv.style.color = color;
+      valDiv.textContent = val;
+      var lblDiv = document.createElement('div');
+      lblDiv.className = 'ov-count-lbl';
+      lblDiv.textContent = lbl;
+      textDiv.appendChild(valDiv);
+      textDiv.appendChild(lblDiv);
+      card.appendChild(iconDiv);
+      card.appendChild(textDiv);
+      return card;
+    }
+
+    bar.appendChild(makeCountCard(
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#d93f3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+      ov.length, 'Overdue items', '#d93f3f', 'rgba(217,63,63,.1)'
+    ));
+    bar.appendChild(makeCountCard(
+      '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#e07d1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+      soon.length, 'Due within 7 days', '#e07d1a', 'rgba(224,125,26,.1)'
+    ));
+    el.appendChild(bar);
+  }
+
+  // Build a table section
+  function buildTable(title, data, borderColor){
+    var wrap = document.createElement('div');
+    wrap.className = 'page-section';
+    wrap.style.borderLeft = '4px solid ' + borderColor;
+    wrap.style.marginBottom = '14px';
+
+    var titleEl = document.createElement('div');
+    titleEl.className = 'page-section-title';
+    titleEl.style.marginBottom = '14px';
+    titleEl.textContent = title + ' (' + data.length + ')';
+    wrap.appendChild(titleEl);
+
+    var tableWrap = document.createElement('div');
+    tableWrap.style.cssText = 'overflow-x:auto;border:1px solid var(--border);border-radius:10px';
+
+    var table = document.createElement('table');
+    table.className = 'items-tbl';
+    table.style.width = '100%';
+
+    var thead = document.createElement('thead');
+    var htr = document.createElement('tr');
+    ['Task','Stakeholder','Dept','Frequency','Due date','FU','Action'].forEach(function(h){
+      var th = document.createElement('th');
+      th.textContent = h;
+      th.style.minWidth = h==='Task'?'200px':h==='Action'?'140px':'90px';
+      if(h==='Task') th.style.paddingLeft='16px';
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr);
+    table.appendChild(thead);
+
+    var tbody = document.createElement('tbody');
+    data.forEach(function(it){
+      var daysOv = it.due_date ? Math.floor((new Date(today()) - new Date(it.due_date)) / 86400000) : 0;
+      var daysDue = it.due_date ? Math.ceil((new Date(it.due_date) - new Date(today())) / 86400000) : null;
+
+      var tr = document.createElement('tr');
+      tr.className = 'item-row';
+      tr.style.height = '52px';
+
+      // Task
+      var td1 = document.createElement('td');
+      td1.style.paddingLeft = '16px';
+      td1.title = it.name;
+      td1.innerHTML = '<div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+it.name+'</div>';
+
+      // Stakeholder
+      var td2 = document.createElement('td');
+      td2.innerHTML = '<span style="font-weight:500">'+it.stakeholder+'</span>'+(it.dept?'<div style="font-size:11px;color:var(--text3)">'+it.dept+'</div>':'');
+
+      // Dept (hidden as subtext in stakeholder now - show dept col)
+      var td3 = document.createElement('td');
+      td3.style.color = 'var(--text2)';
+      td3.textContent = it.dept || '—';
+
+      // Frequency
+      var td4 = document.createElement('td');
+      td4.innerHTML = '<span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span>';
+
+      // Due date
+      var td5 = document.createElement('td');
+      if(borderColor === '#d93f3f'){
+        td5.innerHTML = '<div style="color:#d93f3f;font-weight:700">'+( it.due_date||'—')+'</div>'+
+          '<div style="font-size:11px;color:#d93f3f;font-weight:600">'+daysOv+'d overdue</div>';
+      } else {
+        td5.innerHTML = '<div style="color:#e07d1a;font-weight:600">'+(it.due_date||'—')+'</div>'+
+          (daysDue!==null?'<div style="font-size:11px;color:#e07d1a">'+daysDue+'d left</div>':'');
+      }
+
+      // Follow-ups
+      var td6 = document.createElement('td');
+      td6.style.textAlign = 'center';
+      td6.innerHTML = it.followups>0 ? '<span class="fu-pill">'+it.followups+'</span>' : '<span style="color:var(--text3)">—</span>';
+
+      // Actions
+      var td7 = document.createElement('td');
+      var actWrap = document.createElement('div');
+      actWrap.style.cssText = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
+
+      if(can('email')){
+        var emailBtn = document.createElement('button');
+        emailBtn.className = 'btn btn-sm btn-primary';
+        emailBtn.textContent = 'Send follow-up';
+        (function(id){ emailBtn.onclick = function(){ goEmail(id); }; })(it.id);
+        actWrap.appendChild(emailBtn);
+      }
+      if(can('toggle')){
+        var doneBtn = document.createElement('button');
+        doneBtn.className = 'action-btn';
+        doneBtn.textContent = 'Mark done';
+        doneBtn.style.cssText = 'background:rgba(13,158,126,.08);border-color:rgba(13,158,126,.25);color:#0d9e7e';
+        (function(it2){ doneBtn.onclick = async function(){
+          var updateBody = {done:true};
+          var nd = calcNextDueDate(it2.freq, it2.due_date);
+          if(nd) updateBody.due_date = nd;
+          await api('grc_items?id=eq.'+it2.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
+          await loadAll();
+        };})(it);
+        actWrap.appendChild(doneBtn);
+      }
+
+      td7.appendChild(actWrap);
+
+      tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
+      tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    tableWrap.appendChild(table);
+    wrap.appendChild(tableWrap);
+    return wrap;
+  }
+
+  if(ov.length) el.appendChild(buildTable('Overdue items', ov, '#d93f3f'));
+  if(soon.length) el.appendChild(buildTable('Due within 7 days', soon, '#e07d1a'));
 }
+
 
 function renderEmailTab(){
   var sel=document.getElementById('fu-select'),prev=sel.value;
