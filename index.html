@@ -1475,7 +1475,7 @@ async function loadAll(){
     var ob=document.getElementById('ov-badge');
     ob.textContent=ov;ob.style.display=ov>0?'inline-block':'none';
     
-    renderDash();renderFreqFilters();renderItems();renderLog();renderRisks();
+    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();
     if(can('admin'))loadUsers();
     updateResponseBadge();
     renderDashResponseAlert();
