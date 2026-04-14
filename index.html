@@ -618,6 +618,7 @@ table.items-tbl tr:last-child td{border-bottom:none}
       </button>
       <div class="sb-group open" id="grp-compliance">
         <button class="sb-btn sb-child" id="nav-items"><span class="sb-dot"></span>All items</button>
+        <button class="sb-btn sb-child" id="nav-overdue"><span class="sb-dot"></span>Overdue / due soon<span class="ov-badge" id="ov-badge" style="display:none">0</span></button>
         <button class="sb-btn sb-child" id="nav-import"><span class="sb-dot"></span>Bulk import</button>
         <button class="sb-btn sb-child" id="nav-export"><span class="sb-dot"></span>Export reports</button>
       </div>
@@ -772,6 +773,12 @@ table.items-tbl tr:last-child td{border-bottom:none}
 
       <!-- OVERDUE -->
       
+
+
+      <!-- OVERDUE / DUE SOON -->
+      <div id="s-overdue" class="sec">
+        <div id="overdue-list"></div>
+      </div>
 
       <!-- FOLLOW-UP EMAILS -->
       <div id="s-email" class="sec">
@@ -1406,7 +1413,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -1415,7 +1422,7 @@ navCfg.forEach(function(m){
     btn.classList.add('active');document.getElementById(m[1]).classList.add('active');
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
-    if(m[1]==='s-email')renderEmailTab();
+    if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
     if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
     if(window.innerWidth<=600){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
@@ -1461,7 +1468,10 @@ async function loadAll(){
     
 
     
-    renderDash();renderFreqFilters();renderItems();renderLog();renderRisks();
+    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();
+    var ovCount=items.filter(function(it){return getStatus(it)==='overdue';}).length;
+    var ob=document.getElementById('ov-badge');
+    if(ob){ob.textContent=ovCount;ob.style.display=ovCount>0?'inline-block':'none';}
     if(can('admin'))loadUsers();
     updateResponseBadge();
     renderDashResponseAlert();
@@ -3516,6 +3526,323 @@ function forceLogout(msg){
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('login-err').textContent = msg;
   document.getElementById('login-err').style.display = 'block';
+}
+
+
+// ── EMAIL MODULE FUNCTIONS ──
+function updateFuNum(){
+  var el=document.getElementById('fu-num-display');
+  var lbl=document.getElementById('fu-num-label');
+  if(el) el.textContent=fuNum;
+  if(lbl){var s=fuNum===1?'st':fuNum===2?'nd':fuNum===3?'rd':'th';lbl.textContent=fuNum+s+' reminder';}
+}
+
+function autoSubject(it,tone){
+  var m={
+    gentle:'[Reminder #'+fuNum+'] Action required: '+it.name,
+    firm:'[Follow-up #'+fuNum+'] Pending: '+it.name+' — '+it.dept,
+    escalation:'[Escalation #'+fuNum+'] URGENT: '+it.name+' — '+it.stakeholder,
+    final:'[FINAL NOTICE #'+fuNum+'] Non-compliance: '+it.name
+  };
+  var el=document.getElementById('fu-subject');
+  if(el) el.value=m[tone]||m.gentle;
+}
+
+function buildEmail(it,tone,num,sender){
+  var NL='\n';
+  var ord=num===1?'1st':num===2?'2nd':num===3?'3rd':num+'th';
+  var prev=num-1;
+  var prevTxt=prev>0?prev+' previous reminder'+(prev>1?'s':''):'our earlier communication';
+  var L2s={
+    gentle:'I hope this message finds you well. This is our '+ord+' reminder regarding the following compliance task which remains pending.',
+    firm:'This is our '+ord+' follow-up. Despite '+prevTxt+', the task below remains incomplete.',
+    escalation:'Despite '+prevTxt+', the following task is still incomplete. This matter is now being formally escalated.',
+    final:'FINAL NOTICE. After '+prevTxt+' with no action, this is your final opportunity to complete the task.'
+  };
+  var L3='Task           : '+it.name+NL+'Frequency      : '+(FL[it.freq]||it.freq)+NL+'Due date       : '+(it.due_date||'As discussed')+NL+'Department     : '+(it.dept||'Your team')+NL+'Follow-up no.  : '+num+NL+'Status         : '+(it.done?'Done':'Pending');
+  var L4s={
+    gentle:'Kindly complete this at your earliest convenience and confirm by reply.',
+    firm:'Please treat this as urgent and complete immediately. Confirm by reply.',
+    escalation:'Please complete IMMEDIATELY and respond within 24 hours. Non-compliance will be recorded in the audit report.',
+    final:'Failure to act will result in formal escalation to senior management. No further reminders will be issued.'
+  };
+  var sign='Best regards,'+NL+sender+NL+'Compliance Team — Clarix';
+  return 'Dear '+it.stakeholder+','+NL+NL+(L2s[tone]||L2s.gentle)+NL+NL+L3+NL+NL+(L4s[tone]||L4s.gentle)+NL+NL+sign;
+}
+
+function buildSmartEmail(it,tone,num,sender,extra,ord){
+  var NL='\n';
+  var prev=num-1;
+  var prevTxt=prev>0?prev+' previous reminder'+(prev>1?'s':''):'our earlier communication';
+  var opens={
+    gentle:'I hope this message finds you well.',
+    firm:'I am writing to follow up on our previous reminder(s) regarding an important compliance matter.',
+    escalation:'This email is to formally notify you of a serious compliance concern that requires your immediate attention.',
+    final:'This is a final and urgent notice regarding a critical compliance obligation.'
+  };
+  var contexts={
+    gentle:'This is a friendly '+ord+' reminder that the following compliance task is currently pending:',
+    firm:'Despite '+prevTxt+', the following compliance task remains incomplete:',
+    escalation:'After '+prevTxt+' with no response, this matter is now being formally escalated:',
+    final:'After '+prevTxt+' and no action, this serves as your final notice:'
+  };
+  var details='Task Name      : '+it.name+NL+'Frequency      : '+(FL[it.freq]||it.freq)+NL+'Due Date       : '+(it.due_date||'As discussed')+NL+'Department     : '+(it.dept||'Your team')+NL+'Follow-up No.  : '+num;
+  var extraBlock='';
+  if(extra){
+    var el=extra.toLowerCase();
+    var msgs={audit:NL+'Please note that our audit is approaching.',penalty:NL+'Non-compliance may result in regulatory penalties.',deadline:NL+'The deadline for this task is firm and cannot be extended.',gdpr:NL+'This task is directly related to our GDPR obligations.',iso:NL+'This task is part of our ISO 27001 compliance program.'};
+    var matched=false;
+    for(var k in msgs){if(el.indexOf(k)>-1){extraBlock=msgs[k];matched=true;break;}}
+    if(!matched) extraBlock=NL+extra.charAt(0).toUpperCase()+extra.slice(1)+'.';
+  }
+  var closes={
+    gentle:'Kindly complete this task and confirm by replying to this email. Thank you for your cooperation.',
+    firm:'Please complete this task immediately and confirm completion by reply.',
+    escalation:'Please complete this task IMMEDIATELY and respond within 24 hours.',
+    final:'You are required to complete this task within 24 hours. No further reminders will be issued.'
+  };
+  var sign='Best regards,'+NL+sender+NL+'Compliance Team — Clarix';
+  return 'Dear '+it.stakeholder+','+NL+NL+(opens[tone]||opens.gentle)+NL+NL+(contexts[tone]||contexts.gentle)+NL+NL+details+extraBlock+NL+NL+(closes[tone]||closes.gentle)+NL+NL+sign;
+}
+
+function showEmail(it,tone,subj,body){
+  var toneLabels={gentle:'Gentle',firm:'Firm',escalation:'Escalation',final:'Final notice'};
+  var cc=document.getElementById('fu-cc')?document.getElementById('fu-cc').value.trim():'';
+  currentEmail={itemId:it.id,itemName:it.name,stakeholder:it.stakeholder,email:it.email,num:fuNum,type:toneLabels[tone]||tone,subject:subj,body:body,cc:cc};
+  var toEl=document.getElementById('email-to');
+  var subEl=document.getElementById('email-subject-edit');
+  var bodyEl=document.getElementById('email-body-edit');
+  var fuBadge=document.getElementById('email-fu-badge');
+  var toneBadge=document.getElementById('email-tone-badge');
+  var ccShow=document.getElementById('email-cc-show');
+  var ccVal=document.getElementById('email-cc-val');
+  var resultEl=document.getElementById('email-result');
+  if(toEl) toEl.textContent=(it.email||it.stakeholder);
+  if(subEl) subEl.value=subj;
+  if(bodyEl) bodyEl.value=body;
+  if(fuBadge) fuBadge.textContent='Follow-up #'+fuNum;
+  if(toneBadge) toneBadge.textContent=toneLabels[tone]||tone;
+  if(ccShow) ccShow.style.display=cc?'inline':'none';
+  if(ccVal) ccVal.textContent=cc;
+  if(resultEl){resultEl.style.display='block';resultEl.scrollIntoView({behavior:'smooth'});}
+}
+
+function renderLog(){
+  var tb=document.getElementById('log-body');
+  if(!tb) return;
+  if(!logs.length){tb.innerHTML='<tr><td colspan="6" class="empty">No follow-ups logged yet.</td></tr>';return;}
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+  logs.forEach(function(l,idx){
+    var badge=l.followup_type==='Escalation'?'b-overdue':l.followup_type==='Firm'?'b-pending':l.followup_type==='Final notice'?'b-overdue':'b-done';
+    var shortSubj=l.subject_used?(l.subject_used.length>35?l.subject_used.substring(0,35)+'...':l.subject_used):'—';
+    var scoreColor=l.followup_type==='Escalation'||l.followup_type==='Final notice'?'#d93f3f':l.followup_type==='Firm'?'#e07d1a':'#0d9e7e';
+    var tr=document.createElement('tr');
+    tr.className='log-row';
+    tr.setAttribute('data-idx',idx);
+    tr.style.cursor='pointer';
+    function cell(text,css){var td=document.createElement('td');td.textContent=text||'—';if(css)td.style.cssText=css;return td;}
+    var td1=document.createElement('td');td1.title=l.item_name;td1.innerHTML='<span style="display:flex;align-items:center;gap:6px"><span style="font-size:10px;color:var(--text3)" class="log-arrow" id="log-arrow-'+idx+'">▶</span>'+l.item_name+'</span>';
+    tr.appendChild(td1);
+    tr.appendChild(cell(l.stakeholder));
+    var td3=document.createElement('td');td3.style.cssText='text-align:center;font-weight:700;color:#4f52d9';td3.textContent='#'+l.followup_num;tr.appendChild(td3);
+    tr.appendChild(cell(l.log_date,'font-size:12px'));
+    var td5=document.createElement('td');td5.innerHTML='<span class="badge '+badge+'" style="cursor:default">'+l.followup_type+'</span>';tr.appendChild(td5);
+    var td6=document.createElement('td');td6.title=l.subject_used||'';td6.style.cssText='font-size:12px;color:var(--text2)';td6.textContent=shortSubj;tr.appendChild(td6);
+    tb.appendChild(tr);
+    tr.addEventListener('click',function(){
+      var detail=document.getElementById('log-detail-'+idx);
+      var arrow=document.getElementById('log-arrow-'+idx);
+      var isOpen=detail&&detail.style.display!=='none';
+      tb.querySelectorAll('.log-detail-row').forEach(function(d){d.style.display='none';});
+      tb.querySelectorAll('.log-arrow').forEach(function(a){a.textContent='▶';a.style.color='var(--text3)';});
+      if(!isOpen&&detail){detail.style.display='table-row';if(arrow){arrow.textContent='▼';arrow.style.color='#4f52d9';}}
+      else if(!detail){
+        var dtr=document.createElement('tr');dtr.className='log-detail-row';dtr.id='log-detail-'+idx;
+        var dtd=document.createElement('td');dtd.colSpan=6;dtd.style.cssText='padding:0;white-space:normal;overflow:visible';
+        dtd.innerHTML='<div style="background:var(--hover);border-left:3px solid '+scoreColor+';padding:14px 16px">'+
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;font-size:12px">'+
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Task</div><div style="color:var(--text);font-weight:500">'+l.item_name+'</div></div>'+
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Stakeholder</div><div style="color:var(--text)">'+l.stakeholder+'</div></div>'+
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Follow-up #</div><div style="color:#4f52d9;font-weight:700;font-size:16px">#'+l.followup_num+'</div></div>'+
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Date</div><div style="color:var(--text)">'+l.log_date+'</div></div>'+
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Tone</div><div><span class="badge '+badge+'" style="cursor:default">'+l.followup_type+'</span></div></div>'+
+          '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">Subject</div><div style="color:var(--text);word-break:break-word">'+(l.subject_used||'—')+'</div></div>'+
+          '</div></div>';
+        dtr.appendChild(dtd);
+        tr.parentNode.insertBefore(dtr,tr.nextSibling);
+      }
+    });
+  });
+}
+
+function renderEmailTab(){
+  var sel=document.getElementById('fu-select');
+  if(!sel) return;
+  var prev=sel.value;
+  sel.innerHTML='<option value="">-- select item --</option>';
+  items.forEach(function(it){
+    var opt=document.createElement('option');
+    opt.value=it.id;opt.textContent=it.name+' — '+it.stakeholder;
+    sel.appendChild(opt);
+  });
+  if(prev) sel.value=prev;
+  renderLog();
+}
+
+// ── RISKS ──
+function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
+
+function renderRisks(){
+  var tb=document.getElementById('risk-body');
+  if(!tb) return;
+  if(!risks.length){tb.innerHTML='<tr><td colspan="7" class="empty">No risks yet. Click Add risk to get started.</td></tr>';return;}
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+  var sorted=risks.slice().sort(function(a,b){return(b.likelihood*b.impact)-(a.likelihood*a.impact);});
+  sorted.forEach(function(r){
+    var score=r.likelihood*r.impact,lv=riskLevel(score);
+    var lvBadge={high:'b-overdue',medium:'b-pending',low:'b-done'}[lv];
+    var tr=document.createElement('tr');
+    function cell(txt,css){var td=document.createElement('td');td.textContent=txt||'—';if(css)td.style.cssText=css;return td;}
+    tr.appendChild(cell(r.name,'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0'));
+    tr.appendChild(cell(r.category));
+    var sc=document.createElement('td');sc.innerHTML='<span style="font-weight:700">'+score+'</span><span style="color:var(--text3);font-size:11px">/25</span>';tr.appendChild(sc);
+    var lvc=document.createElement('td');lvc.innerHTML='<span class="badge '+lvBadge+'" style="cursor:default">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span>';tr.appendChild(lvc);
+    tr.appendChild(cell(r.owner||'—'));
+    var stTd=document.createElement('td');
+    var stSpan=document.createElement('span');
+    stSpan.className='badge b-'+(r.status||'open').toLowerCase().replace(/ /g,'');
+    stSpan.style.cursor='pointer';stSpan.title='Click to change status';
+    stSpan.textContent=r.status||'Open';
+    (function(rid,curSt){stSpan.onclick=async function(){
+      var s=['Open','In progress','Closed'],next=s[(s.indexOf(curSt)+1)%s.length];
+      await api('grc_risks?id=eq.'+rid,{method:'PATCH',body:{status:next},extra:{'Prefer':'return=minimal'}});
+      await loadAll();
+    };})(r.id,r.status||'Open');
+    stTd.appendChild(stSpan);tr.appendChild(stTd);
+    var actTd=document.createElement('td');
+    if(can('delete')){
+      var del=document.createElement('button');del.className='action-btn danger';del.textContent='Delete';
+      (function(rid){del.onclick=async function(){if(!confirm('Delete this risk?'))return;await api('grc_risks?id=eq.'+rid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};})(r.id);
+      actTd.appendChild(del);
+    }
+    tr.appendChild(actTd);
+    tb.appendChild(tr);
+  });
+}
+
+// ── EXPORT HELPERS ──
+function getDateStr(){return new Date().toISOString().split('T')[0];}
+function getStatusLabel(it){if(it.done)return 'Done';if(it.due_date&&it.due_date<today())return 'Overdue';return 'Pending';}
+function itemsToRows(data){
+  var rows=[['Task name','Stakeholder','Email','Department','Frequency','Due date','Category','Notes','Status','Follow-ups']];
+  data.forEach(function(it){rows.push([it.name,it.stakeholder,it.email||'',it.dept||'',FL[it.freq]||it.freq,it.due_date||'',it.category||'',it.notes||'',getStatusLabel(it),it.followups||0]);});
+  return rows;
+}
+function risksToRows(data){
+  var rows=[['Risk name','Category','Likelihood','Impact','Score','Level','Owner','Status']];
+  data.forEach(function(r){var s=r.likelihood*r.impact,lv=s>=15?'High':s>=8?'Medium':'Low';rows.push([r.name,r.category,r.likelihood,r.impact,s,lv,r.owner||'',r.status||'']);});
+  return rows;
+}
+function logsToRows(data){
+  var rows=[['Task name','Stakeholder','Follow-up #','Type','Date','Subject']];
+  data.forEach(function(l){rows.push([l.item_name,l.stakeholder,l.followup_num,l.followup_type,l.log_date,l.subject_used||'']);});
+  return rows;
+}
+function exportToXLSX(filename,sheetName,rows){
+  if(typeof XLSX==='undefined'){alert('Excel library loading. Wait 3 seconds and try again.');return;}
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols']=rows[0].map(function(h){return{wch:Math.max(String(h).length+4,14)};});
+  XLSX.utils.book_append_sheet(wb,ws,sheetName);
+  XLSX.writeFile(wb,filename);
+}
+function exportToCSV(filename,rows){
+  var lines=[];
+  rows.forEach(function(r){
+    var cells=r.map(function(c){var s=String(c===null||c===undefined?'':c);if(s.indexOf(',')>-1||s.indexOf('"')>-1){s='"'+s.split('"').join('""')+'"';}return s;});
+    lines.push(cells.join(','));
+  });
+  var csv=lines.join(String.fromCharCode(13,10));
+  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
+}
+
+// ── OVERDUE / DUE SOON ──
+function renderOverdue(){
+  var el=document.getElementById('overdue-list');
+  if(!el) return;
+  var ov=items.filter(function(it){return getStatus(it)==='overdue';});
+  var soon=items.filter(function(it){
+    if(getStatus(it)!=='pending'||!it.due_date) return false;
+    var diff=(new Date(it.due_date)-new Date(today()))/86400000;
+    return diff>=0&&diff<=7;
+  });
+  while(el.firstChild) el.removeChild(el.firstChild);
+  if(!ov.length&&!soon.length){
+    var emp=document.createElement('div');
+    emp.style.cssText='text-align:center;padding:60px 20px';
+    emp.innerHTML='<div style="font-size:48px;margin-bottom:12px">🎉</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">All items on track!</div><div style="font-size:13px;color:var(--text3)">No overdue items or items due within 7 days.</div>';
+    el.appendChild(emp);
+    return;
+  }
+  function makeTable(title,data,color){
+    var wrap=document.createElement('div');
+    wrap.className='page-section';
+    wrap.style.cssText='border-left:4px solid '+color+';margin-bottom:14px';
+    var hdr=document.createElement('div');
+    hdr.style.cssText='font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px';
+    hdr.innerHTML='<span style="color:'+color+'">●</span>'+title+' <span style="background:'+color+';color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700">'+data.length+'</span>';
+    wrap.appendChild(hdr);
+    var tWrap=document.createElement('div');tWrap.style.cssText='overflow-x:auto;border:1px solid var(--border);border-radius:10px';
+    var tbl=document.createElement('table');tbl.className='items-tbl';tbl.style.width='100%';
+    var thead=document.createElement('thead');
+    var htr=document.createElement('tr');
+    ['Task','Stakeholder','Dept','Frequency','Due date','FU','Action'].forEach(function(h){
+      var th=document.createElement('th');th.textContent=h;
+      th.style.minWidth=h==='Task'?'200px':h==='Action'?'160px':'90px';
+      if(h==='Task') th.style.paddingLeft='16px';
+      htr.appendChild(th);
+    });
+    thead.appendChild(htr);tbl.appendChild(thead);
+    var tbody=document.createElement('tbody');
+    data.forEach(function(it){
+      var daysOv=it.due_date?Math.floor((new Date(today())-new Date(it.due_date))/86400000):0;
+      var daysDue=it.due_date?Math.ceil((new Date(it.due_date)-new Date(today()))/86400000):null;
+      var tr=document.createElement('tr');tr.className='item-row';tr.style.height='52px';
+      function cell(html,css){var td=document.createElement('td');td.innerHTML=html;if(css)td.style.cssText=css;return td;}
+      var td1=document.createElement('td');td1.style.paddingLeft='16px';td1.title=it.name;
+      td1.innerHTML='<div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+it.name+'</div>';
+      tr.appendChild(td1);
+      tr.appendChild(cell('<span style="font-weight:500">'+it.stakeholder+'</span>'));
+      tr.appendChild(cell('<span style="color:var(--text2)">'+( it.dept||'—')+'</span>'));
+      tr.appendChild(cell('<span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span>'));
+      var dateHtml=color==='#d93f3f'?
+        '<div style="color:#d93f3f;font-weight:700">'+(it.due_date||'—')+'</div><div style="font-size:11px;color:#d93f3f">'+daysOv+'d overdue</div>':
+        '<div style="color:#e07d1a;font-weight:600">'+(it.due_date||'—')+'</div>'+(daysDue!==null?'<div style="font-size:11px;color:#e07d1a">'+daysDue+'d left</div>':'');
+      tr.appendChild(cell(dateHtml));
+      tr.appendChild(cell(it.followups>0?'<span class="fu-pill">'+it.followups+'</span>':'<span style="color:var(--text3)">—</span>','text-align:center'));
+      var actTd=document.createElement('td');
+      var actWrap=document.createElement('div');actWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
+      if(can('email')){
+        var eBtn=document.createElement('button');eBtn.className='btn btn-sm btn-primary';eBtn.textContent='Send follow-up';
+        (function(id){eBtn.onclick=function(){goEmail(id);};})(it.id);actWrap.appendChild(eBtn);
+      }
+      if(can('toggle')){
+        var dBtn=document.createElement('button');dBtn.className='action-btn';dBtn.textContent='Mark done';
+        dBtn.style.cssText='background:rgba(13,158,126,.08);border-color:rgba(13,158,126,.25);color:#0d9e7e';
+        (function(it2){dBtn.onclick=async function(){
+          var upd={done:true};var nd=calcNextDueDate(it2.freq,it2.due_date);if(nd)upd.due_date=nd;
+          await api('grc_items?id=eq.'+it2.id,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});await loadAll();
+        };})(it);actWrap.appendChild(dBtn);
+      }
+      actTd.appendChild(actWrap);tr.appendChild(actTd);
+      tbody.appendChild(tr);
+    });
+    tbl.appendChild(tbody);tWrap.appendChild(tbl);wrap.appendChild(tWrap);
+    return wrap;
+  }
+  if(ov.length) el.appendChild(makeTable('Overdue items',ov,'#d93f3f'));
+  if(soon.length) el.appendChild(makeTable('Due within 7 days',soon,'#e07d1a'));
 }
 
 
