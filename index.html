@@ -4665,13 +4665,16 @@ function renderActions(){
     td0.colSpan=7;
     td0.style.cssText='padding:48px 20px;text-align:center';
     if(!actions.length){
-      td0.innerHTML=
-        '<div style="font-size:36px;margin-bottom:12px">✅</div>'+
-        '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">No actions or issues logged</div>'+
-        '<div style="font-size:13px;color:var(--text3);margin-bottom:18px">When an audit finding, control failure or incident occurs, log it here and track it to closure.</div>'+
-        '<button class="btn btn-primary" onclick="openPanel('action-panel')" style="margin:0 auto">+ Log first action</button>';
+      var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:12px';ei.textContent='✅';
+      var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px';et.textContent='No actions or issues logged';
+      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:18px';es.textContent='When an audit finding, control failure or incident occurs, log it here and track it to closure.';
+      var eb=document.createElement('button');eb.className='btn btn-primary';eb.style.margin='0 auto';eb.textContent='+ Log first action';
+      eb.onclick=function(){openPanel('action-panel');};
+      td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);td0.appendChild(eb);
     } else {
-      td0.innerHTML='<div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-size:13px;color:var(--text3)">No items match this filter</div>';
+      var ei2=document.createElement('div');ei2.style.cssText='font-size:28px;margin-bottom:8px';ei2.textContent='🔍';
+      var es2=document.createElement('div');es2.style.cssText='font-size:13px;color:var(--text3)';es2.textContent='No items match this filter';
+      td0.appendChild(ei2);td0.appendChild(es2);
     }
     tr0.appendChild(td0);tb.appendChild(tr0);
 
