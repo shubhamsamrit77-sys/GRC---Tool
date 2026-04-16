@@ -943,6 +943,15 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <div class="sb-group open" id="grp-risk">
         <button class="sb-btn sb-child" id="nav-risks"><span class="sb-dot"></span>Risk register</button>
       </div>
+      <!-- ACTIONS & ISSUES -->
+      <button class="sb-group-btn" onclick="toggleGroup('grp-actions')">
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        ACTIONS &amp; ISSUES
+        <svg class="sb-chevron open" id="chv-actions" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="sb-group open" id="grp-actions">
+        <button class="sb-btn sb-child" id="nav-actions"><span class="sb-dot"></span>Action tracker<span class="ov-badge" id="actions-badge" style="display:none">0</span></button>
+      </div>
       <!-- STAKEHOLDERS -->
       <button class="sb-group-btn" onclick="toggleGroup('grp-stake')">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
@@ -1295,6 +1304,58 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       </div>
 
       <!-- SCORECARD -->
+      <!-- ACTIONS & ISSUES -->
+      <div id="s-actions" class="sec">
+
+        <!-- Add/Edit Action slide panel trigger area -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">Action &amp; Issue Tracker</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">Track failures, issues and corrective actions — assign owners and monitor closure</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <select id="action-filter-status" onchange="renderActions()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+              <option value="">All statuses</option>
+              <option value="Open">Open</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Closed">Closed</option>
+              <option value="Overdue">Overdue</option>
+            </select>
+            <select id="action-filter-priority" onchange="renderActions()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+              <option value="">All priorities</option>
+              <option value="Critical">Critical</option>
+              <option value="High">High</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+            <button class="btn btn-primary" onclick="openPanel('action-panel')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Add action / issue
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary cards -->
+        <div id="actions-summary" class="dash-grid" style="margin-bottom:16px"></div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="min-width:220px;padding-left:16px">Title &amp; source</th>
+              <th style="min-width:90px">Priority</th>
+              <th style="min-width:110px">Owner</th>
+              <th style="min-width:100px">Due date</th>
+              <th style="min-width:100px">Status</th>
+              <th style="min-width:90px">Category</th>
+              <th style="min-width:180px">Actions</th>
+            </tr></thead>
+            <tbody id="actions-body"></tbody>
+          </table>
+        </div>
+
+      </div>
+
       <div id="s-scorecard" class="sec">
         <div class="card"><div class="card-title">Stakeholder compliance scorecard</div><div id="scorecard-content"><div class="empty">Loading...</div></div></div>
       </div>
@@ -1502,6 +1563,61 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 <!-- PANEL OVERLAY -->
 <div id="panel-overlay" onclick="closePanel()" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.45);z-index:499;backdrop-filter:blur(3px)"></div>
 
+<!-- ACTION / ISSUE PANEL -->
+<div id="action-panel" class="slide-panel">
+  <div class="panel-header">
+    <div><div class="panel-title" id="action-panel-title">Add action / issue</div><div class="panel-sub">Track a corrective action or compliance issue</div></div>
+    <button class="panel-close" onclick="closePanel()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+  </div>
+  <div class="panel-body">
+    <input type="hidden" id="action-edit-id">
+    <div class="pf"><label>Title / Issue name *</label><input id="action-title" placeholder="e.g. Firewall rule misconfiguration found in Q1 audit"></div>
+    <div class="p2">
+      <div class="pf"><label>Category *</label>
+        <select id="action-category">
+          <option value="Audit Finding">Audit Finding</option>
+          <option value="Policy Violation">Policy Violation</option>
+          <option value="Risk Materialised">Risk Materialised</option>
+          <option value="Control Failure">Control Failure</option>
+          <option value="Incident">Incident</option>
+          <option value="Observation">Observation</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="pf"><label>Priority *</label>
+        <select id="action-priority">
+          <option value="Critical">🔴 Critical</option>
+          <option value="High">🟠 High</option>
+          <option value="Medium" selected>🟡 Medium</option>
+          <option value="Low">🟢 Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="pf"><label>Description / What happened</label><textarea id="action-desc" placeholder="Describe the issue, what failed, and why..." style="min-height:80px;resize:vertical"></textarea></div>
+    <div class="p2">
+      <div class="pf"><label>Owner / Assigned to *</label><input id="action-owner" placeholder="e.g. Shubham Samrit"></div>
+      <div class="pf"><label>Department</label><input id="action-dept" placeholder="e.g. IT, Security, HR"></div>
+    </div>
+    <div class="p2">
+      <div class="pf"><label>Due date *</label><input id="action-due" type="date"></div>
+      <div class="pf"><label>Source / Reference</label><input id="action-source" placeholder="e.g. ISO 27001 Audit 2026"></div>
+    </div>
+    <div class="pf"><label>Corrective action plan</label><textarea id="action-plan" placeholder="What steps will be taken to fix this issue?" style="min-height:70px;resize:vertical"></textarea></div>
+    <div class="pf"><label>Status</label>
+      <select id="action-status">
+        <option value="Open">Open</option>
+        <option value="In Progress">In Progress</option>
+        <option value="Closed">Closed</option>
+      </select>
+    </div>
+    <div class="pf" id="action-closure-wrap" style="display:none"><label>Closure notes</label><textarea id="action-closure" placeholder="How was this issue resolved?" style="min-height:60px;resize:vertical"></textarea></div>
+  </div>
+  <div class="panel-footer">
+    <button class="btn" onclick="closePanel()">Cancel</button>
+    <button class="btn btn-primary" onclick="saveAction()">Save action</button>
+  </div>
+</div>
+
 <!-- ADD ITEM PANEL -->
 <div id="item-panel" class="slide-panel">
   <div class="panel-header">
@@ -1623,7 +1739,7 @@ function safeOn(id,ev,fn){var el=$(id);if(el)el.addEventListener(ev,fn);}
 
 var SUPA_URL='https://kqvvqriyaundzefmrqzk.supabase.co';
 var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdnZxcml5YXVuZHplZm1ycXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTA4MjQsImV4cCI6MjA4OTY2NjgyNH0.r8JlSYTPunPO6-N_TlipqZ92sPtLf_FrtHz47nVA0Mg';
-var items=[],logs=[],risks=[],users=[],currentUser=null,currentEmail=null,activeFreq='';
+var items=[],logs=[],risks=[],users=[],actions=[],currentUser=null,currentEmail=null,activeFreq='';
 var FL={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
 var RC={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'};
 
@@ -1803,7 +1919,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-actions','s-actions','Action & Issue Tracker','Track failures, corrective actions and closure'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -1813,7 +1929,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
     if(window.innerWidth<=600){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -1838,19 +1954,21 @@ async function loadAll(){
     var r1=await fetch(base+'grc_items?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
     var r2=await fetch(base+'grc_logs?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
     var r3=await fetch(base+'grc_risks?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
-    
+    var r4=await fetch(base+'grc_actions?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
+
     if(!r1.ok||!r2.ok||!r3.ok){
       throw new Error('HTTP error: '+(r1.ok?r2.ok?r3.status:r2.status:r1.status));
     }
-    
+
     var d1=await r1.json(),d2=await r2.json(),d3=await r3.json();
-    
+    var d4=r4.ok?(await r4.json()):[];
+
     if(!Array.isArray(d1)||!Array.isArray(d2)||!Array.isArray(d3)){
       throw new Error('Invalid data from database');
     }
-    
+
     items=currentUser.role==='stakeholder'?d1.filter(function(it){return it.email===currentUser.email||it.stakeholder_email===currentUser.email;}):d1;
-    logs=d2;risks=d3;
+    logs=d2;risks=d3;actions=Array.isArray(d4)?d4:[];
     
     document.getElementById('conn-dot').style.background='#0d9e7e';
     document.getElementById('conn-lbl').style.color='#0d9e7e';
@@ -1858,7 +1976,7 @@ async function loadAll(){
     
 
     
-    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();
+    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();renderActions();
     var ovCount=items.filter(function(it){return getStatus(it)==='overdue';}).length;
     var ob=document.getElementById('ov-badge');
     if(ob){ob.textContent=ovCount;ob.style.display=ovCount>0?'inline-block':'none';}
@@ -4479,6 +4597,350 @@ function renderOverdue(){
   if(ov.length) el.appendChild(makeTable('Overdue items',ov,'#d93f3f'));
   if(soon.length) el.appendChild(makeTable('Due within 7 days',soon,'#e07d1a'));
 }
+
+
+// ══════════════════════════════════════
+// ACTION & ISSUE TRACKER
+// ══════════════════════════════════════
+
+function getActionStatus(a){
+  if(a.status==='Closed') return 'closed';
+  if(a.due_date && a.due_date < today()) return 'overdue';
+  if(a.status==='In Progress') return 'inprogress';
+  return 'open';
+}
+
+function renderActions(){
+  var statusFilter = (document.getElementById('action-filter-status')||{}).value||'';
+  var priorityFilter = (document.getElementById('action-filter-priority')||{}).value||'';
+
+  var open=0, inprog=0, closed=0, overdue=0;
+  actions.forEach(function(a){
+    var s=getActionStatus(a);
+    if(s==='closed') closed++;
+    else if(s==='overdue') overdue++;
+    else if(s==='inprogress') inprog++;
+    else open++;
+  });
+
+  // Summary cards
+  var sumEl=document.getElementById('actions-summary');
+  if(sumEl){
+    sumEl.innerHTML='';
+    [
+      {label:'Open',val:open,color:'var(--primary)',top:'#5b5ef4'},
+      {label:'In Progress',val:inprog,color:'var(--warning)',top:'#f59e0b'},
+      {label:'Overdue',val:overdue,color:'var(--danger)',top:'#ef4444'},
+      {label:'Closed',val:closed,color:'var(--success)',top:'#10b981'}
+    ].forEach(function(m){
+      var card=document.createElement('div');
+      card.className='metric-card';
+      card.style.cursor='pointer';
+      card.innerHTML=
+        '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.top+'"></div>'+
+        '<div class="mc-label" style="margin-top:4px">'+m.label+'</div>'+
+        '<div class="mc-val" style="color:'+m.color+'">'+m.val+'</div>';
+      sumEl.appendChild(card);
+    });
+  }
+
+  // Filter
+  var filtered=actions.filter(function(a){
+    var s=getActionStatus(a);
+    if(statusFilter==='Overdue' && s!=='overdue') return false;
+    if(statusFilter==='Open' && s!=='open') return false;
+    if(statusFilter==='In Progress' && s!=='inprogress') return false;
+    if(statusFilter==='Closed' && s!=='closed') return false;
+    if(priorityFilter && a.priority!==priorityFilter) return false;
+    return true;
+  });
+
+  var tb=document.getElementById('actions-body');
+  if(!tb) return;
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+
+  if(!filtered.length){
+    var tr0=document.createElement('tr');
+    var td0=document.createElement('td');
+    td0.colSpan=7;
+    td0.style.cssText='padding:48px 20px;text-align:center';
+    if(!actions.length){
+      td0.innerHTML=
+        '<div style="font-size:36px;margin-bottom:12px">✅</div>'+
+        '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">No actions or issues logged</div>'+
+        '<div style="font-size:13px;color:var(--text3);margin-bottom:18px">When an audit finding, control failure or incident occurs, log it here and track it to closure.</div>'+
+        '<button class="btn btn-primary" onclick="openPanel('action-panel')" style="margin:0 auto">+ Log first action</button>';
+    } else {
+      td0.innerHTML='<div style="font-size:28px;margin-bottom:8px">🔍</div><div style="font-size:13px;color:var(--text3)">No items match this filter</div>';
+    }
+    tr0.appendChild(td0);tb.appendChild(tr0);
+
+    // Update badge
+    updateActionsBadge();
+    return;
+  }
+
+  filtered.forEach(function(a){
+    var s=getActionStatus(a);
+    var isOverdue=s==='overdue';
+    var isClosed=s==='closed';
+
+    var tr=document.createElement('tr');
+    tr.className='item-row';
+    tr.style.height='58px';
+    if(isOverdue && !isClosed) tr.style.background='rgba(239,68,68,.03)';
+    if(isClosed) tr.style.opacity='0.75';
+
+    // Col 1: Title + source
+    var td1=document.createElement('td');
+    td1.style.paddingLeft='16px';
+    var titleDiv=document.createElement('div');
+    titleDiv.style.cssText='font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px'+(isClosed?';text-decoration:line-through;color:var(--text3)':'');
+    titleDiv.textContent=a.title||'—';
+    titleDiv.title=a.title||'';
+    var srcDiv=document.createElement('div');
+    srcDiv.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
+    srcDiv.textContent=(a.category||'')+(a.source?' · '+a.source:'');
+    td1.appendChild(titleDiv);td1.appendChild(srcDiv);
+
+    // Col 2: Priority badge
+    var td2=document.createElement('td');
+    var pColors={Critical:['#fee2e2','#dc2626'],High:['#fff7ed','#ea580c'],Medium:['#fef9c3','#ca8a04'],Low:['#f0fdf4','#16a34a']};
+    var pDark={Critical:['rgba(239,68,68,.2)','#f87171'],High:['rgba(234,88,12,.2)','#fb923c'],Medium:['rgba(202,138,4,.2)','#fde047'],Low:['rgba(22,163,74,.2)','#4ade80']};
+    var pc=(a.priority in pColors)?pColors[a.priority]:pColors.Medium;
+    td2.innerHTML='<span class="badge" style="background:'+pc[0]+';color:'+pc[1]+'">'+(a.priority||'Medium')+'</span>';
+
+    // Col 3: Owner
+    var td3=document.createElement('td');
+    var ownerDiv=document.createElement('div');
+    ownerDiv.style.cssText='font-weight:500;color:var(--text)';
+    ownerDiv.textContent=a.owner||'—';
+    var deptDiv=document.createElement('div');
+    deptDiv.style.cssText='font-size:11px;color:var(--text3)';
+    deptDiv.textContent=a.department||'';
+    td3.appendChild(ownerDiv);if(a.department)td3.appendChild(deptDiv);
+
+    // Col 4: Due date
+    var td4=document.createElement('td');
+    if(a.due_date){
+      var daysLeft=Math.ceil((new Date(a.due_date)-new Date(today()))/86400000);
+      var dColor=isOverdue&&!isClosed?'var(--danger)':!isClosed&&daysLeft<=3?'var(--warning)':'var(--text2)';
+      td4.innerHTML='<div style="font-size:12px;font-weight:'+(isOverdue&&!isClosed?'700':'400')+';color:'+dColor+'">'+a.due_date+'</div>'+
+        (isOverdue&&!isClosed?'<div style="font-size:10px;color:var(--danger);font-weight:700">'+Math.abs(daysLeft)+'d overdue</div>':
+         (!isClosed&&daysLeft<=3&&daysLeft>=0?'<div style="font-size:10px;color:var(--warning);font-weight:600">'+daysLeft+'d left</div>':''));
+    } else {
+      td4.innerHTML='<span style="color:var(--text3)">—</span>';
+    }
+
+    // Col 5: Status
+    var td5=document.createElement('td');
+    var sConfig={
+      open:   {bg:'var(--primary-light)',c:'var(--primary)',lbl:'Open'},
+      inprogress:{bg:'var(--warning-light)',c:'var(--warning)',lbl:'In Progress'},
+      overdue:{bg:'var(--danger-light)',c:'var(--danger)',lbl:'Overdue'},
+      closed: {bg:'var(--success-light)',c:'var(--success)',lbl:'✓ Closed'}
+    };
+    var sc=sConfig[s]||sConfig.open;
+    var sBadge=document.createElement('span');
+    sBadge.className='badge';
+    sBadge.style.cssText='background:'+sc.bg+';color:'+sc.c+';cursor:pointer';
+    sBadge.title='Click to change status';
+    sBadge.textContent=sc.lbl;
+    var statusList=['Open','In Progress','Closed'];
+    (function(aid,curS){
+      sBadge.onclick=async function(e){
+        e.stopPropagation();
+        var cur=curS==='overdue'?'Open':curS==='inprogress'?'In Progress':curS==='closed'?'Closed':'Open';
+        var nextIdx=(statusList.indexOf(cur)+1)%statusList.length;
+        var next=statusList[nextIdx];
+        var upd={status:next};
+        if(next==='Closed') upd.closed_date=today();
+        await api('grc_actions?id=eq.'+aid,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});
+        await loadAll();
+      };
+    })(a.id,s);
+    td5.appendChild(sBadge);
+    if(isClosed&&a.closed_date){
+      var cdDiv=document.createElement('div');
+      cdDiv.style.cssText='font-size:10px;color:var(--success);margin-top:3px;font-weight:500';
+      cdDiv.textContent='Closed '+a.closed_date;
+      td5.appendChild(cdDiv);
+    }
+
+    // Col 6: Category
+    var td6=document.createElement('td');
+    td6.style.cssText='font-size:12px;color:var(--text2)';
+    td6.textContent=a.category||'—';
+
+    // Col 7: Actions
+    var td7=document.createElement('td');
+    var wrap=document.createElement('div');
+    wrap.style.cssText='display:flex;gap:5px;flex-wrap:wrap;align-items:center';
+
+    if(!isClosed){
+      var closeBtn=document.createElement('button');
+      closeBtn.className='btn btn-sm';
+      closeBtn.style.cssText='background:var(--success-light);border-color:rgba(16,185,129,.3);color:var(--success);font-weight:600;font-size:11px';
+      closeBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Close';
+      closeBtn.title='Mark this action as closed/resolved';
+      (function(aid){ closeBtn.onclick=async function(e){ e.stopPropagation(); await closeAction(aid); }; })(a.id);
+      wrap.appendChild(closeBtn);
+    }
+
+    var editBtn=document.createElement('button');
+    editBtn.className='btn btn-sm';
+    editBtn.style.fontSize='11px';
+    editBtn.textContent='Edit';
+    (function(act){ editBtn.onclick=function(e){ e.stopPropagation(); editAction(act); }; })(a);
+    wrap.appendChild(editBtn);
+
+    if(can('delete')){
+      var delBtn=document.createElement('button');
+      delBtn.className='btn btn-sm';
+      delBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';
+      delBtn.textContent='Del';
+      (function(aid){ delBtn.onclick=async function(e){ e.stopPropagation(); if(!confirm('Delete this action?'))return; await api('grc_actions?id=eq.'+aid,{method:'DELETE',extra:{'Prefer':'return=minimal'}}); await loadAll(); }; })(a.id);
+      wrap.appendChild(delBtn);
+    }
+
+    td7.appendChild(wrap);
+
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);
+
+    // Expand row for details
+    tr.addEventListener('click', function(){
+      var existing=document.getElementById('action-detail-'+a.id);
+      var isOpen=tr.classList.contains('expanded');
+      tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
+      tb.querySelectorAll('.action-detail-row').forEach(function(d){d.remove();});
+      if(!isOpen){
+        tr.classList.add('expanded');
+        var dtr=document.createElement('tr');
+        dtr.className='action-detail-row';
+        dtr.id='action-detail-'+a.id;
+        var dtd=document.createElement('td');
+        dtd.colSpan=7;
+        dtd.style.cssText='padding:0;white-space:normal;overflow:visible';
+        var bc=s==='overdue'?'var(--danger)':s==='closed'?'var(--success)':s==='inprogress'?'var(--warning)':'var(--primary)';
+        dtd.innerHTML=
+          '<div style="background:var(--surface2);border-left:3px solid '+bc+';padding:16px 20px">'+
+          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px">'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Owner</div><div style="font-weight:600;color:var(--text)">'+(a.owner||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Department</div><div style="color:var(--text)">'+(a.department||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Source / Ref</div><div style="color:var(--text)">'+(a.source||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Due date</div><div style="color:var(--text)">'+(a.due_date||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Priority</div><div style="color:var(--text)">'+(a.priority||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Created</div><div style="font-size:12px;color:var(--text2)">'+(a.created_at?a.created_at.split('T')[0]:'—')+'</div></div>'+
+          '</div>'+
+          (a.description?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Description / What happened</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+a.description+'</div></div>':'')+
+          (a.action_plan?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Corrective action plan</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+a.action_plan+'</div></div>':'')+
+          (a.closure_notes?'<div><div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Closure notes</div><div style="font-size:13px;color:var(--text);background:var(--success-light);padding:10px 12px;border-radius:8px;border:1px solid rgba(16,185,129,.2);line-height:1.7">'+a.closure_notes+'</div></div>':'')+
+          '</div>';
+        dtr.appendChild(dtd);
+        tr.parentNode.insertBefore(dtr, tr.nextSibling);
+      }
+    });
+
+    tb.appendChild(tr);
+  });
+
+  updateActionsBadge();
+}
+
+async function closeAction(id){
+  var notes=prompt('Add closure notes (optional — describe how this was resolved):');
+  if(notes===null) return; // cancelled
+  var upd={status:'Closed',closed_date:today()};
+  if(notes) upd.closure_notes=notes;
+  await api('grc_actions?id=eq.'+id,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});
+  showDueDateToast('','✅ Action closed and recorded!');
+  await loadAll();
+}
+
+function editAction(a){
+  document.getElementById('action-panel-title').textContent='Edit action / issue';
+  document.getElementById('action-edit-id').value=a.id;
+  document.getElementById('action-title').value=a.title||'';
+  document.getElementById('action-category').value=a.category||'Audit Finding';
+  document.getElementById('action-priority').value=a.priority||'Medium';
+  document.getElementById('action-desc').value=a.description||'';
+  document.getElementById('action-owner').value=a.owner||'';
+  document.getElementById('action-dept').value=a.department||'';
+  document.getElementById('action-due').value=a.due_date||'';
+  document.getElementById('action-source').value=a.source||'';
+  document.getElementById('action-plan').value=a.action_plan||'';
+  document.getElementById('action-status').value=a.status||'Open';
+  document.getElementById('action-closure').value=a.closure_notes||'';
+  var cw=document.getElementById('action-closure-wrap');
+  if(cw) cw.style.display=(a.status==='Closed')?'flex':'none';
+  openPanel('action-panel');
+}
+
+async function saveAction(){
+  var editId=document.getElementById('action-edit-id').value;
+  var title=document.getElementById('action-title').value.trim();
+  var owner=document.getElementById('action-owner').value.trim();
+  var due=document.getElementById('action-due').value;
+  if(!title){alert('Please enter a title for the action.');return;}
+  if(!owner){alert('Please assign an owner.');return;}
+  if(!due){alert('Please set a due date.');return;}
+
+  var status=document.getElementById('action-status').value;
+  var body={
+    title:title,
+    category:document.getElementById('action-category').value,
+    priority:document.getElementById('action-priority').value,
+    description:document.getElementById('action-desc').value.trim(),
+    owner:owner,
+    department:document.getElementById('action-dept').value.trim(),
+    due_date:due,
+    source:document.getElementById('action-source').value.trim(),
+    action_plan:document.getElementById('action-plan').value.trim(),
+    status:status,
+    closure_notes:document.getElementById('action-closure').value.trim()
+  };
+  if(status==='Closed'&&!editId) body.closed_date=today();
+
+  var res;
+  if(editId){
+    res=await api('grc_actions?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}});
+  } else {
+    res=await api('grc_actions',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
+  }
+
+  if(res&&res.ok){
+    closePanel();
+    // Reset panel
+    document.getElementById('action-panel-title').textContent='Add action / issue';
+    document.getElementById('action-edit-id').value='';
+    ['action-title','action-desc','action-owner','action-dept','action-due',
+     'action-source','action-plan','action-closure'].forEach(function(id){
+      var el=document.getElementById(id);if(el)el.value='';
+    });
+    document.getElementById('action-status').value='Open';
+    var cw=document.getElementById('action-closure-wrap');if(cw)cw.style.display='none';
+    showDueDateToast('',editId?'Action updated!':'New action logged!');
+    await loadAll();
+  } else {
+    alert('Error saving action. Make sure the grc_actions table exists in Supabase.');
+  }
+}
+
+function updateActionsBadge(){
+  var openCount=actions.filter(function(a){
+    var s=getActionStatus(a);return s==='open'||s==='overdue'||s==='inprogress';
+  }).length;
+  var badge=document.getElementById('actions-badge');
+  if(badge){badge.textContent=openCount;badge.style.display=openCount>0?'inline-block':'none';}
+}
+
+// Show/hide closure notes when status changes
+safeOn('action-status','change',function(){
+  var val=document.getElementById('action-status').value;
+  var wrap=document.getElementById('action-closure-wrap');
+  if(wrap) wrap.style.display=val==='Closed'?'flex':'none';
+});
 
 
 // ── DARK / LIGHT MODE ──
