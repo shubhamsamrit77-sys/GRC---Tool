@@ -1910,7 +1910,44 @@ var RC={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'
 
 function today(){return new Date().toISOString().split('T')[0];}
 function getStatus(it){if(it.done)return'done';if(it.due_date&&it.due_date<today())return'overdue';return'pending';}
-function can(a){if(!currentUser)return false;var r=currentUser.role;if(a==='view')return true;if(a==='add')return r==='admin'||r==='manager';if(a==='delete')return r==='admin';if(a==='toggle')return r==='admin'||r==='manager'||r==='stakeholder';if(a==='admin')return r==='admin';if(a==='email')return r==='admin'||r==='manager';return false;}
+// ── ROLE BASED ACCESS CONTROL ──
+// Roles: admin > manager > viewer > stakeholder
+// admin:       full access to everything
+// manager:     add/edit/email — no delete, no manage users
+// viewer:      read only — no add/edit/delete/email
+// stakeholder: see ONLY their own tasks
+
+function can(a){
+  if(!currentUser) return false;
+  var r=currentUser.role;
+  // view: everyone can view
+  if(a==='view') return true;
+  // add/edit: admin + manager only
+  if(a==='add') return r==='admin'||r==='manager';
+  if(a==='edit') return r==='admin'||r==='manager';
+  // delete: admin only
+  if(a==='delete') return r==='admin';
+  // toggle (mark done): admin + manager only (NOT stakeholder — they use portal)
+  if(a==='toggle') return r==='admin'||r==='manager';
+  // email/comms: admin + manager only
+  if(a==='email') return r==='admin'||r==='manager';
+  // admin panel: admin only
+  if(a==='admin') return r==='admin';
+  // export: admin + manager + viewer (read-only is fine)
+  if(a==='export') return r==='admin'||r==='manager'||r==='viewer';
+  // import: admin + manager only
+  if(a==='import') return r==='admin'||r==='manager';
+  // actions/evidence: admin + manager only
+  if(a==='actions') return r==='admin'||r==='manager';
+  // risk: admin + manager can add/edit risks
+  if(a==='risk') return r==='admin'||r==='manager';
+  return false;
+}
+
+// Show "no permission" message
+function noPermission(msg){
+  showDueDateToast('','🚫 '+(msg||'You do not have permission to do this.'));
+}
 
 function api(path,opts){
   var method=(opts&&opts.method)||'GET';
@@ -2088,6 +2125,20 @@ var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-i
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
+    // Check page access by role
+    var restricted={
+      'nav-import':can('import'),
+      'nav-email':can('email'),
+      'nav-emailtracker':can('email'),
+      'nav-response':can('email'),
+      'nav-actions':can('actions'),
+      'nav-evidence':can('actions'),
+      'nav-admin':can('admin')
+    };
+    if(m[0] in restricted && !restricted[m[0]]){
+      noPermission('Your role does not have access to this section.');
+      return;
+    }
     document.querySelectorAll('.sb-btn').forEach(function(b){b.classList.remove('active');});
     document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
     btn.classList.add('active');document.getElementById(m[1]).classList.add('active');
@@ -2134,8 +2185,20 @@ async function loadAll(){
       throw new Error('Invalid data from database');
     }
 
-    items=currentUser.role==='stakeholder'?d1.filter(function(it){return it.email===currentUser.email||it.stakeholder_email===currentUser.email;}):d1;
-    logs=d2;risks=d3;actions=Array.isArray(d4)?d4:[];
+    // Role-based data filtering
+  var role=currentUser.role;
+  if(role==='stakeholder'){
+    // Stakeholder sees ONLY items assigned to their email
+    items=d1.filter(function(it){
+      return (it.email&&it.email.toLowerCase()===currentUser.email.toLowerCase())||
+             (it.stakeholder_email&&it.stakeholder_email.toLowerCase()===currentUser.email.toLowerCase());
+    });
+    logs=[];risks=[];  // stakeholders cannot see logs or risks
+  } else {
+    items=d1;
+    logs=d2;risks=d3;
+  }
+    actions=Array.isArray(d4)?d4:[];
     var d5=r5.ok?(await r5.json()):[];var d6=r6.ok?(await r6.json()):[];
     audits=Array.isArray(d5)?d5:[];
     evidenceItems=Array.isArray(d6)?d6:[];
@@ -3326,6 +3389,7 @@ function openGmail(){
 }
 
 async function saveTrackedEmail(){
+  if(!can('email')){noPermission('Only admin and manager can track emails.');return;}
   var stakeholder=document.getElementById('et-stakeholder').value.trim();
   var email=document.getElementById('et-email').value.trim();
   var subject=document.getElementById('et-subject').value.trim();
@@ -4322,12 +4386,65 @@ function setupAppUI(){
   document.getElementById('user-av').style.background=RC[r]||'#4f52d9';
   document.getElementById('user-nm').textContent=currentUser.name;
   document.getElementById('user-rl').textContent=r.charAt(0).toUpperCase()+r.slice(1);
-  document.getElementById('admin-sec').style.display=can('admin')?'block':'none';
-  document.getElementById('add-item-card').style.display=can('add')?'flex':'none';
-  document.getElementById('add-risk-card').style.display=can('add')?'flex':'none';
-  if(!can('email')) document.getElementById('nav-email').style.display='none';
+
+  // Show role badge next to user name
+  var rlEl=document.getElementById('user-rl');
+  if(rlEl){
+    var roleLabels={admin:'Admin',manager:'Manager',viewer:'Read only',stakeholder:'Stakeholder'};
+    rlEl.textContent=roleLabels[r]||r;
+  }
+
+  function show(id,visible){ var el=document.getElementById(id);if(el)el.style.display=visible?'':'none'; }
+  function showFlex(id,visible){ var el=document.getElementById(id);if(el)el.style.display=visible?'flex':'none'; }
+
+  // ── STAKEHOLDER: only sees their own tasks (no other nav) ──
+  if(r==='stakeholder'){
+    // Hide everything except dashboard and their items
+    ['nav-overdue','nav-import','nav-export','nav-email','nav-emailtracker',
+     'nav-response','nav-risks','nav-scorecard','nav-portal','nav-admin',
+     'nav-actions','nav-evidence','grp-comm','grp-risk','grp-stake','grp-admin','grp-actions'].forEach(function(id){
+      show(id, false);
+    });
+    show('add-item-card', false);
+    show('add-risk-card', false);
+    var floatBtn=document.getElementById('ai-float-btn');
+    if(floatBtn) floatBtn.style.display='flex';
+    return;
+  }
+
+  // ── VIEWER: read-only — sees data but cannot add/edit/delete/email ──
+  if(r==='viewer'){
+    ['nav-import','nav-email','nav-emailtracker','nav-response',
+     'nav-admin','nav-actions','nav-evidence'].forEach(function(id){
+      show(id, false);
+    });
+    showFlex('add-item-card', false);
+    showFlex('add-risk-card', false);
+    show('admin-sec', false);
+    var floatBtn=document.getElementById('ai-float-btn');
+    if(floatBtn) floatBtn.style.display='flex';
+    return;
+  }
+
+  // ── MANAGER: add/edit/email — no delete, no user management ──
+  if(r==='manager'){
+    show('admin-sec', false);
+    show('nav-admin', false);
+    showFlex('add-item-card', true);
+    showFlex('add-risk-card', true);
+    var floatBtn=document.getElementById('ai-float-btn');
+    if(floatBtn) floatBtn.style.display='flex';
+    return;
+  }
+
+  // ── ADMIN: full access ──
+  show('admin-sec', true);
+  showFlex('add-item-card', true);
+  showFlex('add-risk-card', true);
   var floatBtn=document.getElementById('ai-float-btn');
   if(floatBtn) floatBtn.style.display='flex';
+  // Wire export buttons with role checks
+  setTimeout(wireExportButtons, 100);
 }
 
 // Run session restore on page load
@@ -5022,6 +5139,7 @@ function renderActions(){
 }
 
 async function closeAction(id){
+  if(!can('actions')){noPermission();return;}
   var notes=prompt('Add closure notes (optional — describe how this was resolved):');
   if(notes===null) return; // cancelled
   var upd={status:'Closed',closed_date:today()};
@@ -5051,6 +5169,7 @@ function editAction(a){
 }
 
 async function saveAction(){
+  if(!can('actions')){noPermission('Only admin and manager can add or edit actions.');return;}
   var editId=document.getElementById('action-edit-id').value;
   var title=document.getElementById('action-title').value.trim();
   var owner=document.getElementById('action-owner').value.trim();
@@ -5498,6 +5617,7 @@ async function submitEvidence(){
 }
 
 async function saveAudit(){
+  if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}
   var name=document.getElementById('audit-name').value.trim();
   if(!name){alert('Please enter an audit name.');return;}
   var body={
@@ -5522,6 +5642,7 @@ async function saveAudit(){
 }
 
 async function saveEvidence(){
+  if(!can('actions')){noPermission('Only admin and manager can manage evidence requests.');return;}
   var editId=document.getElementById('ev-edit-id').value;
   var title=document.getElementById('ev-title').value.trim();
   var owner=document.getElementById('ev-owner').value.trim();
@@ -5590,6 +5711,106 @@ function updateEvidenceBadge(){
   var b=document.getElementById('evidence-badge');
   if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}
 }
+
+
+// ── EXPORT BUTTON WIRING ──
+function wireExportButtons(){
+  function bindExport(id, fn){
+    var el=document.getElementById(id);
+    if(!el) return;
+    el.onclick=function(){
+      if(!can('export')){ noPermission('Your role cannot export data.'); return; }
+      fn();
+    };
+  }
+
+  bindExport('export-items-xlsx', function(){
+    exportToXLSX('Clarix_Items_'+getDateStr()+'.xlsx','All Items',itemsToRows(items));
+  });
+  bindExport('export-items-csv', function(){
+    exportToCSV('Clarix_Items_'+getDateStr()+'.csv',itemsToRows(items));
+  });
+  bindExport('export-overdue-xlsx', function(){
+    var ov=items.filter(function(it){return getStatus(it)==='overdue';});
+    exportToXLSX('Clarix_Overdue_'+getDateStr()+'.xlsx','Overdue Items',itemsToRows(ov));
+  });
+  bindExport('export-overdue-csv', function(){
+    var ov=items.filter(function(it){return getStatus(it)==='overdue';});
+    exportToCSV('Clarix_Overdue_'+getDateStr()+'.csv',itemsToRows(ov));
+  });
+  bindExport('export-logs-xlsx', function(){
+    exportToXLSX('Clarix_Logs_'+getDateStr()+'.xlsx','Follow-up Log',logsToRows(logs));
+  });
+  bindExport('export-logs-csv', function(){
+    exportToCSV('Clarix_Logs_'+getDateStr()+'.csv',logsToRows(logs));
+  });
+  bindExport('export-risks-xlsx', function(){
+    exportToXLSX('Clarix_Risks_'+getDateStr()+'.xlsx','Risk Register',risksToRows(risks));
+  });
+  bindExport('export-risks-csv', function(){
+    exportToCSV('Clarix_Risks_'+getDateStr()+'.csv',risksToRows(risks));
+  });
+  bindExport('export-highrisks-xlsx', function(){
+    var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
+    exportToXLSX('Clarix_HighRisks_'+getDateStr()+'.xlsx','High Risks',risksToRows(hr));
+  });
+  bindExport('export-highrisks-csv', function(){
+    var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
+    exportToCSV('Clarix_HighRisks_'+getDateStr()+'.csv',risksToRows(hr));
+  });
+  bindExport('export-full-report', function(){
+    if(typeof XLSX==='undefined'){alert('Excel library loading. Please wait 3 seconds and try again.');return;}
+    var wb=XLSX.utils.book_new();
+    var summary=[
+      ['Clarix GRC Report — '+getDateStr()],
+      [],
+      ['Total items',items.length],
+      ['Completed',items.filter(function(it){return getStatus(it)==='done';}).length],
+      ['Overdue',items.filter(function(it){return getStatus(it)==='overdue';}).length],
+      ['Pending',items.filter(function(it){return getStatus(it)==='pending';}).length],
+      [],
+      ['Total risks',risks.length],
+      ['High risks',risks.filter(function(r){return r.likelihood*r.impact>=15;}).length],
+      [],
+      ['Follow-ups sent',logs.length],
+      ['Generated by','Clarix — Compliance Intelligence']
+    ];
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),'Summary');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(itemsToRows(items)),'Compliance Items');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(risksToRows(risks)),'Risk Register');
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(logsToRows(logs)),'Follow-up Log');
+    XLSX.writeFile(wb,'Clarix_Full_Report_'+getDateStr()+'.xlsx');
+  });
+
+  // Download template button
+  var tBtn=document.getElementById('download-template-btn');
+  if(tBtn) tBtn.onclick=function(){
+    if(!can('import')){noPermission('Only admin and manager can download the import template.');return;}
+    var rows=[['Task name','Stakeholder','Email','Department','Frequency','Due date (YYYY-MM-DD)','Category','Notes']];
+    exportToXLSX('Clarix_Import_Template.xlsx','Template',rows);
+  };
+}
+
+
+// ── IMPORT / EXPORT PERMISSION WRAPPERS ──
+function guardedImport(){
+  if(!can('import')){noPermission('Only admin and manager can import data.');return;}
+  document.getElementById('import-file-input').click();
+}
+
+// Wire import confirm button with permission check
+(function(){
+  var cb=document.getElementById('confirm-import-btn');
+  if(cb){
+    var origClick=cb.onclick;
+    cb.addEventListener('click',function(e){
+      if(!can('import')){
+        e.preventDefault();e.stopImmediatePropagation();
+        noPermission('Only admin and manager can import data.');
+      }
+    },true);
+  }
+})();
 
 
 // ── DARK / LIGHT MODE ──
