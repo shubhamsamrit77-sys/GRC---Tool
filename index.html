@@ -1880,6 +1880,20 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 <script>
 // ── SLIDE PANELS ──
 function openPanel(id){
+  // Role-based panel access
+  var panelPerms={
+    'item-panel': can('add'),
+    'risk-panel': can('add'),
+    'user-panel': can('admin'),
+    'action-panel': can('actions'),
+    'audit-panel': can('actions'),
+    'evidence-panel': can('actions'),
+    'ev-submit-panel': can('actions')
+  };
+  if(id in panelPerms && !panelPerms[id]){
+    noPermission('You do not have permission to perform this action.');
+    return;
+  }
   var panel=document.getElementById(id);
   var overlay=document.getElementById('panel-overlay');
   if(!panel||!overlay) return;
@@ -2133,7 +2147,12 @@ navCfg.forEach(function(m){
       'nav-response':can('email'),
       'nav-actions':can('actions'),
       'nav-evidence':can('actions'),
-      'nav-admin':can('admin')
+      'nav-admin':can('admin'),
+      'nav-scorecard':currentUser&&currentUser.role!=='stakeholder',
+      'nav-portal':currentUser&&currentUser.role!=='stakeholder',
+      'nav-overdue':currentUser&&currentUser.role!=='stakeholder',
+      'nav-risks':currentUser&&currentUser.role!=='stakeholder',
+      'nav-export':currentUser&&currentUser.role!=='stakeholder'
     };
     if(m[0] in restricted && !restricted[m[0]]){
       noPermission('Your role does not have access to this section.');
@@ -4381,72 +4400,83 @@ function setupAppUI(){
   document.getElementById('login-screen').style.display='none';
   document.getElementById('main-app').style.display='flex';
   var r=currentUser.role;
-  var ini=currentUser.name.split(' ').map(function(w){return w[0];}).join('').substring(0,2).toUpperCase();
+
+  // Avatar initials
+  var ini=currentUser.name.split(' ').map(function(w){return w[0]||'';}).join('').substring(0,2).toUpperCase();
   document.getElementById('user-av').textContent=ini;
   document.getElementById('user-av').style.background=RC[r]||'#4f52d9';
   document.getElementById('user-nm').textContent=currentUser.name;
-  document.getElementById('user-rl').textContent=r.charAt(0).toUpperCase()+r.slice(1);
 
-  // Show role badge next to user name
+  // Role label
   var rlEl=document.getElementById('user-rl');
   if(rlEl){
     var roleLabels={admin:'Admin',manager:'Manager',viewer:'Read only',stakeholder:'Stakeholder'};
     rlEl.textContent=roleLabels[r]||r;
   }
 
-  function show(id,visible){ var el=document.getElementById(id);if(el)el.style.display=visible?'':'none'; }
-  function showFlex(id,visible){ var el=document.getElementById(id);if(el)el.style.display=visible?'flex':'none'; }
+  // Helper: set display on element
+  function show(id,visible,flex){
+    var el=document.getElementById(id);
+    if(!el) return;
+    if(!visible){ el.style.display='none'; return; }
+    el.style.display=flex?'flex':'';
+  }
 
-  // ── STAKEHOLDER: only sees their own tasks (no other nav) ──
+  // ALL nav buttons - start by showing everything, then hide based on role
+  var allNavs=['nav-dash','nav-items','nav-overdue','nav-import','nav-export',
+               'nav-email','nav-emailtracker','nav-response','nav-risks',
+               'nav-actions','nav-evidence','nav-scorecard','nav-portal','nav-admin'];
+  var allGrps=['grp-compliance','grp-comm','grp-risk','grp-actions','grp-stake','grp-admin'];
+
+  // Reset - show all first
+  allNavs.forEach(function(id){ show(id,true); });
+  allGrps.forEach(function(id){ show(id,true); });
+  show('admin-sec',true);
+  show('add-item-card',true,true);
+  show('add-risk-card',true,true);
+
+  // Role-specific hiding
+  var hideNavs=[], hideGrps=[], hideEls=[];
+
   if(r==='stakeholder'){
-    // Hide everything except dashboard and their items
-    ['nav-overdue','nav-import','nav-export','nav-email','nav-emailtracker',
-     'nav-response','nav-risks','nav-scorecard','nav-portal','nav-admin',
-     'nav-actions','nav-evidence','grp-comm','grp-risk','grp-stake','grp-admin','grp-actions'].forEach(function(id){
-      show(id, false);
-    });
-    show('add-item-card', false);
-    show('add-risk-card', false);
-    var floatBtn=document.getElementById('ai-float-btn');
-    if(floatBtn) floatBtn.style.display='flex';
-    return;
+    // Stakeholder: ONLY dashboard + their own items
+    hideNavs=['nav-overdue','nav-import','nav-export','nav-email','nav-emailtracker',
+              'nav-response','nav-risks','nav-scorecard','nav-portal','nav-admin',
+              'nav-actions','nav-evidence'];
+    hideGrps=['grp-comm','grp-risk','grp-stake','grp-actions','grp-admin'];
+    hideEls=['admin-sec','add-item-card','add-risk-card'];
+  }
+  else if(r==='viewer'){
+    // Viewer: sees all data pages but cannot add/edit/import/email
+    hideNavs=['nav-import','nav-email','nav-emailtracker','nav-response',
+              'nav-actions','nav-evidence','nav-admin'];
+    hideGrps=['grp-comm','grp-actions','grp-admin'];
+    hideEls=['admin-sec','add-item-card','add-risk-card'];
+  }
+  else if(r==='manager'){
+    // Manager: full access except delete + manage users
+    hideNavs=['nav-admin'];
+    hideGrps=['grp-admin'];
+    hideEls=['admin-sec'];
+  }
+  else {
+    // Admin: full access - show everything
+    hideNavs=[];
+    hideGrps=[];
+    hideEls=[];
   }
 
-  // ── VIEWER: read-only — sees data but cannot add/edit/delete/email ──
-  if(r==='viewer'){
-    ['nav-import','nav-email','nav-emailtracker','nav-response',
-     'nav-admin','nav-actions','nav-evidence'].forEach(function(id){
-      show(id, false);
-    });
-    showFlex('add-item-card', false);
-    showFlex('add-risk-card', false);
-    show('admin-sec', false);
-    var floatBtn=document.getElementById('ai-float-btn');
-    if(floatBtn) floatBtn.style.display='flex';
-    return;
-  }
+  hideNavs.forEach(function(id){ show(id,false); });
+  hideGrps.forEach(function(id){ show(id,false); });
+  hideEls.forEach(function(id){ show(id,false); });
 
-  // ── MANAGER: add/edit/email — no delete, no user management ──
-  if(r==='manager'){
-    show('admin-sec', false);
-    show('nav-admin', false);
-    showFlex('add-item-card', true);
-    showFlex('add-risk-card', true);
-    var floatBtn=document.getElementById('ai-float-btn');
-    if(floatBtn) floatBtn.style.display='flex';
-    return;
-  }
-
-  // ── ADMIN: full access ──
-  show('admin-sec', true);
-  showFlex('add-item-card', true);
-  showFlex('add-risk-card', true);
+  // AI assistant button
   var floatBtn=document.getElementById('ai-float-btn');
   if(floatBtn) floatBtn.style.display='flex';
-  // Wire export buttons with role checks
-  setTimeout(wireExportButtons, 100);
-}
 
+  // Wire export buttons for ALL roles (with permission checks inside)
+  setTimeout(wireExportButtons, 150);
+}
 // Run session restore on page load
 window.addEventListener('load', async function(){
   // Apply saved theme first
@@ -5448,7 +5478,7 @@ function renderEvidence(){
     var wrap=document.createElement('div');
     wrap.style.cssText='display:flex;gap:4px;flex-wrap:wrap;align-items:center';
 
-    if(s==='pending'||s==='overdue'){
+    if((s==='pending'||s==='overdue')&&can('actions')){
       // Send reminder via email
       var remBtn=document.createElement('button');
       remBtn.className='btn btn-sm btn-primary';remBtn.style.fontSize='11px';
@@ -5478,7 +5508,7 @@ function renderEvidence(){
       wrap.appendChild(subBtn);
     }
 
-    if(s==='submitted'){
+    if(s==='submitted'&&can('actions')){
       // Approve button
       var appBtn=document.createElement('button');
       appBtn.className='btn btn-sm';
@@ -5527,11 +5557,13 @@ function renderEvidence(){
       wrap.appendChild(vBtn);
     }
 
-    // Edit button
-    var editBtn=document.createElement('button');
-    editBtn.className='btn btn-sm';editBtn.style.fontSize='11px';editBtn.textContent='Edit';
-    (function(itev){ editBtn.onclick=function(e){ e.stopPropagation(); editEvidence(itev); }; })(ev);
-    wrap.appendChild(editBtn);
+    // Edit button - only admin/manager
+    if(can('actions')){
+      var editBtn=document.createElement('button');
+      editBtn.className='btn btn-sm';editBtn.style.fontSize='11px';editBtn.textContent='Edit';
+      (function(itev){ editBtn.onclick=function(e){ e.stopPropagation(); editEvidence(itev); }; })(ev);
+      wrap.appendChild(editBtn);
+    }
 
     // Delete button
     if(can('delete')){
