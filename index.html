@@ -751,6 +751,50 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .ai-typing span:nth-child(3){animation-delay:.3s}
 
 /* ── SKELETON ── */
+/* ── RISK HEAT MAP ── */
+.hm-cell{
+  border-radius:8px;
+  min-height:72px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  transition:all .2s;
+  position:relative;
+  padding:6px 4px;
+  border:2px solid transparent;
+}
+.hm-cell:hover{transform:scale(1.04);box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:2;}
+.hm-cell.selected{border-color:var(--text)!important;transform:scale(1.04);z-index:2;}
+.hm-cell-score{font-size:16px;font-weight:800;line-height:1;}
+.hm-cell-count{font-size:10px;font-weight:600;margin-top:3px;opacity:.85;}
+.hm-cell-dots{display:flex;flex-wrap:wrap;gap:2px;justify-content:center;margin-top:4px;max-width:52px;}
+.hm-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.85);flex-shrink:0;}
+.hm-row-label{display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:600;color:var(--text2);white-space:nowrap;min-height:72px;}
+.hm-critical{background:#ef4444;}
+.hm-high{background:#f59e0b;}
+.hm-low{background:#10b981;}
+.hm-empty{background:var(--surface2);border:1px solid var(--border)!important;}
+[data-theme="dark"] .hm-critical{background:#dc2626;}
+[data-theme="dark"] .hm-high{background:#d97706;}
+[data-theme="dark"] .hm-low{background:#059669;}
+
+/* Risk cell detail card */
+.risk-cell-item{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 12px;
+  border-bottom:1px solid var(--border2);
+  transition:background .1s;
+}
+.risk-cell-item:last-child{border-bottom:none;}
+.risk-cell-item:hover{background:var(--hover);}
+.risk-score-bubble{
+  width:36px;height:36px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:800;color:#fff;flex-shrink:0;
+}
+
 .skeleton{
   background:linear-gradient(90deg,var(--border) 25%,var(--surface2) 50%,var(--border) 75%);
   background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:6px;
@@ -1299,18 +1343,97 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
       <!-- RISKS -->
       <div id="s-risks" class="sec">
-        <div class="sec-topbar">
-          <div class="sec-topbar-title">Risk register</div>
-          <div id="add-risk-card" style="display:flex;gap:8px">
-            <button class="btn btn-primary" onclick="openPanel('risk-panel')">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add risk
-            </button>
+
+        <!-- Top bar -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">Risk Register</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">Track, score and manage organisational risks — heat map shows your risk posture at a glance</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center">
+            <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
+              <button id="risk-view-heatmap" onclick="setRiskView('heatmap')" style="padding:7px 14px;font-size:12px;font-weight:600;font-family:inherit;border:none;background:var(--primary);color:#fff;cursor:pointer;transition:all .15s">Heat map</button>
+              <button id="risk-view-table" onclick="setRiskView('table')" style="padding:7px 14px;font-size:12px;font-weight:500;font-family:inherit;border:none;background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s">Register</button>
+            </div>
+            <div id="add-risk-card" style="display:flex;gap:8px">
+              <button class="btn btn-primary" onclick="openPanel('risk-panel')">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add risk
+              </button>
+            </div>
           </div>
         </div>
-        <div class="card"><div class="table-wrap"><table><thead><tr>
-          <th style="width:22%">Risk</th><th style="width:16%">Category</th><th style="width:9%">Score</th>
-          <th style="width:10%">Level</th><th style="width:15%">Owner</th><th style="width:12%">Status</th><th style="width:16%">Actions</th>
-        </tr></thead><tbody id="risk-body"></tbody></table></div></div>
+
+        <!-- HEAT MAP VIEW -->
+        <div id="risk-heatmap-view">
+
+          <!-- Summary metrics -->
+          <div id="risk-summary" class="dash-grid" style="margin-bottom:16px"></div>
+
+          <!-- Heat map container -->
+          <div class="page-section" style="margin-bottom:14px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:8px">
+              <div style="font-size:13px;font-weight:700;color:var(--text)">Risk heat map — Likelihood vs Impact</div>
+              <div style="display:flex;gap:12px;font-size:11px;color:var(--text2)">
+                <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#ef4444"></span>Critical (15-25)</span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#f59e0b"></span>High (8-14)</span>
+                <span style="display:flex;align-items:center;gap:5px"><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:#10b981"></span>Low (1-7)</span>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:0;align-items:flex-start">
+              <!-- Y-axis label -->
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;margin-right:6px;margin-top:32px">
+                <div style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.6px;white-space:nowrap">Likelihood →</div>
+              </div>
+
+              <!-- Grid wrap -->
+              <div style="flex:1;min-width:0">
+                <!-- X axis labels top -->
+                <div style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:3px;margin-bottom:3px">
+                  <div></div>
+                  <div style="text-align:center;font-size:11px;color:var(--text3);font-weight:600">1<br>Insignificant</div>
+                  <div style="text-align:center;font-size:11px;color:var(--text3);font-weight:600">2<br>Minor</div>
+                  <div style="text-align:center;font-size:11px;color:var(--text3);font-weight:600">3<br>Moderate</div>
+                  <div style="text-align:center;font-size:11px;color:var(--text3);font-weight:600">4<br>Major</div>
+                  <div style="text-align:center;font-size:11px;color:var(--text3);font-weight:600">5<br>Catastrophic</div>
+                </div>
+                <div style="font-size:10px;text-align:center;color:var(--text3);margin-bottom:8px;margin-left:60px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">Impact →</div>
+
+                <!-- 5x5 Grid -->
+                <div id="risk-heatmap-grid" style="display:grid;grid-template-columns:60px repeat(5,1fr);gap:3px"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Selected cell risks panel -->
+          <div id="risk-cell-detail" style="display:none" class="page-section">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+              <div style="font-size:13px;font-weight:700;color:var(--text)" id="risk-cell-title">Risks in this zone</div>
+              <button onclick="document.getElementById('risk-cell-detail').style.display='none'" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;line-height:1;padding:0 4px">×</button>
+            </div>
+            <div id="risk-cell-list"></div>
+          </div>
+
+        </div>
+
+        <!-- TABLE VIEW (risk register) -->
+        <div id="risk-table-view" style="display:none">
+          <div class="table-wrap">
+            <table><thead><tr>
+              <th style="min-width:200px;padding-left:16px">Risk</th>
+              <th style="min-width:120px">Category</th>
+              <th style="min-width:80px;text-align:center">Likelihood</th>
+              <th style="min-width:80px;text-align:center">Impact</th>
+              <th style="min-width:80px;text-align:center">Score</th>
+              <th style="min-width:90px">Level</th>
+              <th style="min-width:120px">Owner</th>
+              <th style="min-width:100px">Status</th>
+              <th style="min-width:120px">Actions</th>
+            </tr></thead><tbody id="risk-body"></tbody></table>
+          </div>
+        </div>
+
       </div>
 
       <!-- SCORECARD -->
@@ -4888,1780 +5011,313 @@ function renderEmailTab(){
 // ── RISKS ──
 function riskLevel(s){return s>=15?'high':s>=8?'medium':'low';}
 
-function renderRisks(){
+// ── RISK VIEW TOGGLE ──
+var riskView = 'heatmap';
+
+function setRiskView(view){
+  riskView = view;
+  var hmBtn = document.getElementById('risk-view-heatmap');
+  var tbBtn = document.getElementById('risk-view-table');
+  var hmView = document.getElementById('risk-heatmap-view');
+  var tbView = document.getElementById('risk-table-view');
+  if(view === 'heatmap'){
+    if(hmBtn){hmBtn.style.background='var(--primary)';hmBtn.style.color='#fff';hmBtn.style.fontWeight='600';}
+    if(tbBtn){tbBtn.style.background='var(--surface)';tbBtn.style.color='var(--text2)';tbBtn.style.fontWeight='500';}
+    if(hmView) hmView.style.display='';
+    if(tbView) tbView.style.display='none';
+    renderHeatMap();
+  } else {
+    if(tbBtn){tbBtn.style.background='var(--primary)';tbBtn.style.color='#fff';tbBtn.style.fontWeight='600';}
+    if(hmBtn){hmBtn.style.background='var(--surface)';hmBtn.style.color='var(--text2)';hmBtn.style.fontWeight='500';}
+    if(hmView) hmView.style.display='none';
+    if(tbView) tbView.style.display='';
+    renderRiskTable();
+  }
+}
+
+function renderHeatMap(){
+  var grid = document.getElementById('risk-heatmap-grid');
+  var sumEl = document.getElementById('risk-summary');
+  if(!grid) return;
+
+  // Summary cards
+  if(sumEl){
+    sumEl.innerHTML = '';
+    var critical = risks.filter(function(r){return r.likelihood*r.impact>=15;}).length;
+    var high     = risks.filter(function(r){var s=r.likelihood*r.impact;return s>=8&&s<15;}).length;
+    var low      = risks.filter(function(r){return r.likelihood*r.impact<8;}).length;
+    var open     = risks.filter(function(r){return (r.status||'Open').toLowerCase()!=='closed';}).length;
+    [{l:'Total risks',v:risks.length,c:'var(--text)',t:'#5b5ef4'},
+     {l:'Critical',   v:critical,    c:'var(--danger)',t:'#ef4444'},
+     {l:'High',       v:high,        c:'var(--warning)',t:'#f59e0b'},
+     {l:'Open',       v:open,        c:'var(--primary)',t:'#10b981'}
+    ].forEach(function(m){
+      var card=document.createElement('div');
+      card.className='metric-card';
+      card.innerHTML='<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
+        '<div class="mc-label" style="margin-top:4px">'+m.l+'</div>'+
+        '<div class="mc-val" style="color:'+m.c+'">'+m.v+'</div>';
+      sumEl.appendChild(card);
+    });
+  }
+
+  // Build lookup: risks[likelihood][impact] = [risk, ...]
+  var cellMap = {};
+  risks.forEach(function(r){
+    var l = parseInt(r.likelihood)||1;
+    var i = parseInt(r.impact)||1;
+    var key = l+'-'+i;
+    if(!cellMap[key]) cellMap[key] = [];
+    cellMap[key].push(r);
+  });
+
+  // Cell colour logic
+  function cellColor(l, i){
+    var score = l * i;
+    if(score >= 15) return 'hm-critical';
+    if(score >= 8)  return 'hm-high';
+    return 'hm-low';
+  }
+  function cellTextColor(l, i){
+    return '#fff';
+  }
+
+  // Likelihood labels (5=Almost certain top, 1=Rare bottom)
+  var likelihoodLabels = ['Rare','Unlikely','Possible','Likely','Almost certain'];
+  var impactLabels     = ['Insignificant','Minor','Moderate','Major','Catastrophic'];
+
+  grid.innerHTML = '';
+
+  // Rows: likelihood 5 (top) to 1 (bottom)
+  for(var l = 5; l >= 1; l--){
+    // Row label
+    var rowLabel = document.createElement('div');
+    rowLabel.className = 'hm-row-label';
+    rowLabel.innerHTML = '<span style="font-size:10px;text-align:right;line-height:1.3"><strong>'+l+'</strong><br>'+likelihoodLabels[l-1]+'</span>';
+    grid.appendChild(rowLabel);
+
+    // 5 cells across (impact 1-5)
+    for(var i = 1; i <= 5; i++){
+      var score = l * i;
+      var key   = l+'-'+i;
+      var cellRisks = cellMap[key] || [];
+      var colorClass = cellColor(l, i);
+      var hasRisks   = cellRisks.length > 0;
+
+      var cell = document.createElement('div');
+      cell.className = 'hm-cell ' + (hasRisks ? colorClass : 'hm-empty');
+      cell.setAttribute('data-l', l);
+      cell.setAttribute('data-i', i);
+      cell.setAttribute('data-score', score);
+      cell.title = 'L'+l+' × I'+i+' = Score '+score+(cellRisks.length?' ('+cellRisks.length+' risk'+(cellRisks.length>1?'s':'')+')':', no risks here');
+
+      var scoreDiv = document.createElement('div');
+      scoreDiv.className = 'hm-cell-score';
+      scoreDiv.style.color = hasRisks ? '#fff' : 'var(--text3)';
+      scoreDiv.textContent = score;
+
+      cell.appendChild(scoreDiv);
+
+      if(hasRisks){
+        // Show count
+        var countDiv = document.createElement('div');
+        countDiv.className = 'hm-cell-count';
+        countDiv.style.color = '#fff';
+        countDiv.textContent = cellRisks.length+' risk'+(cellRisks.length>1?'s':'');
+        cell.appendChild(countDiv);
+
+        // Show dots for each risk (max 6)
+        var dotsDiv = document.createElement('div');
+        dotsDiv.className = 'hm-cell-dots';
+        var maxDots = Math.min(cellRisks.length, 6);
+        for(var d=0; d<maxDots; d++){
+          var dot = document.createElement('div');
+          dot.className = 'hm-dot';
+          dotsDiv.appendChild(dot);
+        }
+        if(cellRisks.length > 6){
+          var moreDot = document.createElement('div');
+          moreDot.style.cssText='font-size:9px;color:rgba(255,255,255,.8);align-self:center';
+          moreDot.textContent='+';
+          dotsDiv.appendChild(moreDot);
+        }
+        cell.appendChild(dotsDiv);
+
+        // Click handler — show risks in this cell
+        (function(cellL, cellI, cellRiskList, cellScore, cColor){
+          cell.addEventListener('click', function(){
+            // Toggle selection
+            var wasSelected = cell.classList.contains('selected');
+            document.querySelectorAll('.hm-cell.selected').forEach(function(c){c.classList.remove('selected');});
+            var detailEl = document.getElementById('risk-cell-detail');
+            if(wasSelected){
+              if(detailEl) detailEl.style.display='none';
+              return;
+            }
+            cell.classList.add('selected');
+            showCellDetail(cellL, cellI, cellScore, cellRiskList, cColor);
+          });
+        })(l, i, cellRisks.slice(), score, colorClass);
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+}
+
+function showCellDetail(l, i, score, cellRisks, colorClass){
+  var el = document.getElementById('risk-cell-detail');
+  var titleEl = document.getElementById('risk-cell-title');
+  var listEl = document.getElementById('risk-cell-list');
+  if(!el||!listEl) return;
+
+  var levelName = score>=15?'Critical':score>=8?'High':'Low';
+  var levelColor = score>=15?'var(--danger)':score>=8?'var(--warning)':'var(--success)';
+  var bgColor = score>=15?'#ef4444':score>=8?'#f59e0b':'#10b981';
+
+  if(titleEl) titleEl.innerHTML =
+    'Likelihood <strong>'+l+'</strong> × Impact <strong>'+i+'</strong> = Score <strong style="color:'+levelColor+'">'+score+'</strong> — '+
+    '<span style="color:'+levelColor+'">'+levelName+'</span> zone &nbsp;·&nbsp; '+cellRisks.length+' risk'+(cellRisks.length>1?'s':'');
+
+  listEl.innerHTML = '';
+  cellRisks.forEach(function(r){
+    var rScore = r.likelihood*r.impact;
+    var item = document.createElement('div');
+    item.className = 'risk-cell-item';
+
+    var bubble = document.createElement('div');
+    bubble.className = 'risk-score-bubble';
+    bubble.style.background = bgColor;
+    bubble.textContent = rScore;
+
+    var info = document.createElement('div');
+    info.style.flex = '1';
+    info.style.minWidth = '0';
+    var name = document.createElement('div');
+    name.style.cssText = 'font-weight:600;color:var(--text);font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    name.textContent = r.name;
+    var meta = document.createElement('div');
+    meta.style.cssText = 'font-size:11px;color:var(--text3);margin-top:2px';
+    meta.textContent = (r.category||'')+(r.owner?' · '+r.owner:'')+(r.status?' · '+r.status:'');
+    info.appendChild(name);info.appendChild(meta);
+
+    var statusBadge = document.createElement('span');
+    statusBadge.className='badge';
+    var st=(r.status||'Open').toLowerCase();
+    statusBadge.style.cssText='background:'+(st==='closed'?'var(--success-light)':st==='in progress'?'var(--warning-light)':'var(--danger-light)')+
+      ';color:'+(st==='closed'?'var(--success)':st==='in progress'?'var(--warning)':'var(--danger)');
+    statusBadge.textContent=r.status||'Open';
+
+    item.appendChild(bubble);item.appendChild(info);item.appendChild(statusBadge);
+
+    if(can('add')){
+      var editBtn=document.createElement('button');
+      editBtn.className='btn btn-sm';editBtn.style.fontSize='11px';editBtn.textContent='Edit';
+      editBtn.onclick=function(e){e.stopPropagation();/* open edit panel */ };
+      item.appendChild(editBtn);
+    }
+
+    listEl.appendChild(item);
+  });
+
+  el.style.display='';
+  el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function renderRiskTable(){
   var tb=document.getElementById('risk-body');
   if(!tb) return;
-  if(!risks.length){tb.innerHTML='<tr><td colspan="7" class="empty">No risks yet. Click Add risk to get started.</td></tr>';return;}
+  if(!risks.length){
+    tb.innerHTML='<tr><td colspan="9" class="empty" style="padding:48px 20px;text-align:center"><div style="font-size:32px;margin-bottom:10px">🛡️</div><div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">No risks logged yet</div><div style="font-size:13px;color:var(--text3)">Add your first risk to start tracking your organisation risk register</div></td></tr>';
+    return;
+  }
   while(tb.firstChild) tb.removeChild(tb.firstChild);
   var sorted=risks.slice().sort(function(a,b){return(b.likelihood*b.impact)-(a.likelihood*a.impact);});
   sorted.forEach(function(r){
-    var score=r.likelihood*r.impact,lv=riskLevel(score);
-    var lvBadge={high:'b-overdue',medium:'b-pending',low:'b-done'}[lv];
-    var tr=document.createElement('tr');
-    function cell(txt,css){var td=document.createElement('td');td.textContent=txt||'—';if(css)td.style.cssText=css;return td;}
-    tr.appendChild(cell(r.name,'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:0'));
-    tr.appendChild(cell(r.category));
-    var sc=document.createElement('td');sc.innerHTML='<span style="font-weight:700">'+score+'</span><span style="color:var(--text3);font-size:11px">/25</span>';tr.appendChild(sc);
-    var lvc=document.createElement('td');lvc.innerHTML='<span class="badge '+lvBadge+'" style="cursor:default">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span>';tr.appendChild(lvc);
-    tr.appendChild(cell(r.owner||'—'));
-    var stTd=document.createElement('td');
-    var stSpan=document.createElement('span');
-    stSpan.className='badge b-'+(r.status||'open').toLowerCase().replace(/ /g,'');
-    stSpan.style.cursor='pointer';stSpan.title='Click to change status';
-    stSpan.textContent=r.status||'Open';
-    (function(rid,curSt){stSpan.onclick=async function(){
-      var s=['Open','In progress','Closed'],next=s[(s.indexOf(curSt)+1)%s.length];
-      await api('grc_risks?id=eq.'+rid,{method:'PATCH',body:{status:next},extra:{'Prefer':'return=minimal'}});
-      await loadAll();
-    };})(r.id,r.status||'Open');
-    stTd.appendChild(stSpan);tr.appendChild(stTd);
-    var actTd=document.createElement('td');
-    if(can('delete')){
-      var del=document.createElement('button');del.className='action-btn danger';del.textContent='Delete';
-      (function(rid){del.onclick=async function(){if(!confirm('Delete this risk?'))return;await api('grc_risks?id=eq.'+rid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};})(r.id);
-      actTd.appendChild(del);
-    }
-    tr.appendChild(actTd);
-    tb.appendChild(tr);
-  });
-}
-
-// ── EXPORT HELPERS ──
-function getDateStr(){return new Date().toISOString().split('T')[0];}
-function getStatusLabel(it){if(it.done)return 'Done';if(it.due_date&&it.due_date<today())return 'Overdue';return 'Pending';}
-function itemsToRows(data){
-  var rows=[['Task name','Stakeholder','Email','Department','Frequency','Due date','Category','Notes','Status','Follow-ups']];
-  data.forEach(function(it){rows.push([it.name,it.stakeholder,it.email||'',it.dept||'',FL[it.freq]||it.freq,it.due_date||'',it.category||'',it.notes||'',getStatusLabel(it),it.followups||0]);});
-  return rows;
-}
-function risksToRows(data){
-  var rows=[['Risk name','Category','Likelihood','Impact','Score','Level','Owner','Status']];
-  data.forEach(function(r){var s=r.likelihood*r.impact,lv=s>=15?'High':s>=8?'Medium':'Low';rows.push([r.name,r.category,r.likelihood,r.impact,s,lv,r.owner||'',r.status||'']);});
-  return rows;
-}
-function logsToRows(data){
-  var rows=[['Task name','Stakeholder','Follow-up #','Type','Date','Subject']];
-  data.forEach(function(l){rows.push([l.item_name,l.stakeholder,l.followup_num,l.followup_type,l.log_date,l.subject_used||'']);});
-  return rows;
-}
-function exportToXLSX(filename,sheetName,rows){
-  if(typeof XLSX==='undefined'){alert('Excel library loading. Wait 3 seconds and try again.');return;}
-  var wb=XLSX.utils.book_new();
-  var ws=XLSX.utils.aoa_to_sheet(rows);
-  ws['!cols']=rows[0].map(function(h){return{wch:Math.max(String(h).length+4,14)};});
-  XLSX.utils.book_append_sheet(wb,ws,sheetName);
-  XLSX.writeFile(wb,filename);
-}
-function exportToCSV(filename,rows){
-  var lines=[];
-  rows.forEach(function(r){
-    var cells=r.map(function(c){var s=String(c===null||c===undefined?'':c);if(s.indexOf(',')>-1||s.indexOf('"')>-1){s='"'+s.split('"').join('""')+'"';}return s;});
-    lines.push(cells.join(','));
-  });
-  var csv=lines.join(String.fromCharCode(13,10));
-  var blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();document.body.removeChild(a);
-}
-
-// ── OVERDUE / DUE SOON ──
-function renderOverdue(){
-  var el=document.getElementById('overdue-list');
-  if(!el) return;
-  var ov=items.filter(function(it){return getStatus(it)==='overdue';});
-  var soon=items.filter(function(it){
-    if(getStatus(it)!=='pending'||!it.due_date) return false;
-    var diff=(new Date(it.due_date)-new Date(today()))/86400000;
-    return diff>=0&&diff<=7;
-  });
-  while(el.firstChild) el.removeChild(el.firstChild);
-  if(!ov.length&&!soon.length){
-    var emp=document.createElement('div');
-    emp.style.cssText='text-align:center;padding:60px 20px';
-    emp.innerHTML='<div style="font-size:48px;margin-bottom:12px">🎉</div><div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">All items on track!</div><div style="font-size:13px;color:var(--text3)">No overdue items or items due within 7 days.</div>';
-    el.appendChild(emp);
-    return;
-  }
-  function makeTable(title,data,color){
-    var wrap=document.createElement('div');
-    wrap.className='page-section';
-    wrap.style.cssText='border-left:4px solid '+color+';margin-bottom:14px';
-    var hdr=document.createElement('div');
-    hdr.style.cssText='font-size:14px;font-weight:700;color:var(--text);margin-bottom:14px;display:flex;align-items:center;gap:8px';
-    hdr.innerHTML='<span style="color:'+color+'">●</span>'+title+' <span style="background:'+color+';color:#fff;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:700">'+data.length+'</span>';
-    wrap.appendChild(hdr);
-    var tWrap=document.createElement('div');tWrap.style.cssText='overflow-x:auto;border:1px solid var(--border);border-radius:10px';
-    var tbl=document.createElement('table');tbl.className='items-tbl';tbl.style.width='100%';
-    var thead=document.createElement('thead');
-    var htr=document.createElement('tr');
-    ['Task','Stakeholder','Dept','Frequency','Due date','FU','Action'].forEach(function(h){
-      var th=document.createElement('th');th.textContent=h;
-      th.style.minWidth=h==='Task'?'200px':h==='Action'?'160px':'90px';
-      if(h==='Task') th.style.paddingLeft='16px';
-      htr.appendChild(th);
-    });
-    thead.appendChild(htr);tbl.appendChild(thead);
-    var tbody=document.createElement('tbody');
-    data.forEach(function(it){
-      var daysOv=it.due_date?Math.floor((new Date(today())-new Date(it.due_date))/86400000):0;
-      var daysDue=it.due_date?Math.ceil((new Date(it.due_date)-new Date(today()))/86400000):null;
-      var tr=document.createElement('tr');tr.className='item-row';tr.style.height='52px';
-      function cell(html,css){var td=document.createElement('td');td.innerHTML=html;if(css)td.style.cssText=css;return td;}
-      var td1=document.createElement('td');td1.style.paddingLeft='16px';td1.title=it.name;
-      td1.innerHTML='<div style="font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px">'+it.name+'</div>';
-      tr.appendChild(td1);
-      tr.appendChild(cell('<span style="font-weight:500">'+it.stakeholder+'</span>'));
-      tr.appendChild(cell('<span style="color:var(--text2)">'+( it.dept||'—')+'</span>'));
-      tr.appendChild(cell('<span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span>'));
-      var dateHtml=color==='#d93f3f'?
-        '<div style="color:#d93f3f;font-weight:700">'+(it.due_date||'—')+'</div><div style="font-size:11px;color:#d93f3f">'+daysOv+'d overdue</div>':
-        '<div style="color:#e07d1a;font-weight:600">'+(it.due_date||'—')+'</div>'+(daysDue!==null?'<div style="font-size:11px;color:#e07d1a">'+daysDue+'d left</div>':'');
-      tr.appendChild(cell(dateHtml));
-      tr.appendChild(cell(it.followups>0?'<span class="fu-pill">'+it.followups+'</span>':'<span style="color:var(--text3)">—</span>','text-align:center'));
-      var actTd=document.createElement('td');
-      var actWrap=document.createElement('div');actWrap.style.cssText='display:flex;gap:6px;flex-wrap:wrap';
-      if(can('email')){
-        var eBtn=document.createElement('button');eBtn.className='btn btn-sm btn-primary';eBtn.textContent='Send follow-up';
-        (function(id){eBtn.onclick=function(){goEmail(id);};})(it.id);actWrap.appendChild(eBtn);
-      }
-      if(can('toggle')){
-        var dBtn=document.createElement('button');dBtn.className='action-btn';dBtn.textContent='Mark done';
-        dBtn.style.cssText='background:rgba(13,158,126,.08);border-color:rgba(13,158,126,.25);color:#0d9e7e';
-        (function(it2){dBtn.onclick=async function(){
-          var upd={done:true};var nd=calcNextDueDate(it2.freq,it2.due_date);if(nd)upd.due_date=nd;
-          await api('grc_items?id=eq.'+it2.id,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});await loadAll();
-        };})(it);actWrap.appendChild(dBtn);
-      }
-      actTd.appendChild(actWrap);tr.appendChild(actTd);
-      tbody.appendChild(tr);
-    });
-    tbl.appendChild(tbody);tWrap.appendChild(tbl);wrap.appendChild(tWrap);
-    return wrap;
-  }
-  if(ov.length) el.appendChild(makeTable('Overdue items',ov,'#d93f3f'));
-  if(soon.length) el.appendChild(makeTable('Due within 7 days',soon,'#e07d1a'));
-}
-
-
-// ══════════════════════════════════════
-// ACTION & ISSUE TRACKER
-// ══════════════════════════════════════
-
-function getActionStatus(a){
-  if(a.status==='Closed') return 'closed';
-  if(a.due_date && a.due_date < today()) return 'overdue';
-  if(a.status==='In Progress') return 'inprogress';
-  return 'open';
-}
-
-function renderActions(){
-  var statusFilter = (document.getElementById('action-filter-status')||{}).value||'';
-  var priorityFilter = (document.getElementById('action-filter-priority')||{}).value||'';
-
-  var open=0, inprog=0, closed=0, overdue=0;
-  actions.forEach(function(a){
-    var s=getActionStatus(a);
-    if(s==='closed') closed++;
-    else if(s==='overdue') overdue++;
-    else if(s==='inprogress') inprog++;
-    else open++;
-  });
-
-  // Summary cards
-  var sumEl=document.getElementById('actions-summary');
-  if(sumEl){
-    sumEl.innerHTML='';
-    [
-      {label:'Open',val:open,color:'var(--primary)',top:'#5b5ef4'},
-      {label:'In Progress',val:inprog,color:'var(--warning)',top:'#f59e0b'},
-      {label:'Overdue',val:overdue,color:'var(--danger)',top:'#ef4444'},
-      {label:'Closed',val:closed,color:'var(--success)',top:'#10b981'}
-    ].forEach(function(m){
-      var card=document.createElement('div');
-      card.className='metric-card';
-      card.style.cursor='pointer';
-      card.innerHTML=
-        '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.top+'"></div>'+
-        '<div class="mc-label" style="margin-top:4px">'+m.label+'</div>'+
-        '<div class="mc-val" style="color:'+m.color+'">'+m.val+'</div>';
-      sumEl.appendChild(card);
-    });
-  }
-
-  // Filter
-  var filtered=actions.filter(function(a){
-    var s=getActionStatus(a);
-    if(statusFilter==='Overdue' && s!=='overdue') return false;
-    if(statusFilter==='Open' && s!=='open') return false;
-    if(statusFilter==='In Progress' && s!=='inprogress') return false;
-    if(statusFilter==='Closed' && s!=='closed') return false;
-    if(priorityFilter && a.priority!==priorityFilter) return false;
-    return true;
-  });
-
-  var tb=document.getElementById('actions-body');
-  if(!tb) return;
-  while(tb.firstChild) tb.removeChild(tb.firstChild);
-
-  if(!filtered.length){
-    var tr0=document.createElement('tr');
-    var td0=document.createElement('td');
-    td0.colSpan=7;
-    td0.style.cssText='padding:48px 20px;text-align:center';
-    if(!actions.length){
-      var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:12px';ei.textContent='✅';
-      var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px';et.textContent='No actions or issues logged';
-      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:18px';es.textContent='When an audit finding, control failure or incident occurs, log it here and track it to closure.';
-      var eb=document.createElement('button');eb.className='btn btn-primary';eb.style.margin='0 auto';eb.textContent='+ Log first action';
-      eb.onclick=function(){openPanel('action-panel');};
-      td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);td0.appendChild(eb);
-    } else {
-      var ei2=document.createElement('div');ei2.style.cssText='font-size:28px;margin-bottom:8px';ei2.textContent='🔍';
-      var es2=document.createElement('div');es2.style.cssText='font-size:13px;color:var(--text3)';es2.textContent='No items match this filter';
-      td0.appendChild(ei2);td0.appendChild(es2);
-    }
-    tr0.appendChild(td0);tb.appendChild(tr0);
-
-    // Update badge
-    updateActionsBadge();
-    return;
-  }
-
-  filtered.forEach(function(a){
-    var s=getActionStatus(a);
-    var isOverdue=s==='overdue';
-    var isClosed=s==='closed';
-
-    var tr=document.createElement('tr');
-    tr.className='item-row';
-    tr.style.height='58px';
-    if(isOverdue && !isClosed) tr.style.background='rgba(239,68,68,.03)';
-    if(isClosed) tr.style.opacity='0.75';
-
-    // Col 1: Title + source
-    var td1=document.createElement('td');
-    td1.style.paddingLeft='16px';
-    var titleDiv=document.createElement('div');
-    titleDiv.style.cssText='font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px'+(isClosed?';text-decoration:line-through;color:var(--text3)':'');
-    titleDiv.textContent=a.title||'—';
-    titleDiv.title=a.title||'';
-    var srcDiv=document.createElement('div');
-    srcDiv.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
-    srcDiv.textContent=(a.category||'')+(a.source?' · '+a.source:'');
-    td1.appendChild(titleDiv);td1.appendChild(srcDiv);
-
-    // Col 2: Priority badge
-    var td2=document.createElement('td');
-    var pColors={Critical:['#fee2e2','#dc2626'],High:['#fff7ed','#ea580c'],Medium:['#fef9c3','#ca8a04'],Low:['#f0fdf4','#16a34a']};
-    var pDark={Critical:['rgba(239,68,68,.2)','#f87171'],High:['rgba(234,88,12,.2)','#fb923c'],Medium:['rgba(202,138,4,.2)','#fde047'],Low:['rgba(22,163,74,.2)','#4ade80']};
-    var pc=(a.priority in pColors)?pColors[a.priority]:pColors.Medium;
-    td2.innerHTML='<span class="badge" style="background:'+pc[0]+';color:'+pc[1]+'">'+(a.priority||'Medium')+'</span>';
-
-    // Col 3: Owner
-    var td3=document.createElement('td');
-    var ownerDiv=document.createElement('div');
-    ownerDiv.style.cssText='font-weight:500;color:var(--text)';
-    ownerDiv.textContent=a.owner||'—';
-    var deptDiv=document.createElement('div');
-    deptDiv.style.cssText='font-size:11px;color:var(--text3)';
-    deptDiv.textContent=a.department||'';
-    td3.appendChild(ownerDiv);if(a.department)td3.appendChild(deptDiv);
-
-    // Col 4: Due date
-    var td4=document.createElement('td');
-    if(a.due_date){
-      var daysLeft=Math.ceil((new Date(a.due_date)-new Date(today()))/86400000);
-      var dColor=isOverdue&&!isClosed?'var(--danger)':!isClosed&&daysLeft<=3?'var(--warning)':'var(--text2)';
-      td4.innerHTML='<div style="font-size:12px;font-weight:'+(isOverdue&&!isClosed?'700':'400')+';color:'+dColor+'">'+a.due_date+'</div>'+
-        (isOverdue&&!isClosed?'<div style="font-size:10px;color:var(--danger);font-weight:700">'+Math.abs(daysLeft)+'d overdue</div>':
-         (!isClosed&&daysLeft<=3&&daysLeft>=0?'<div style="font-size:10px;color:var(--warning);font-weight:600">'+daysLeft+'d left</div>':''));
-    } else {
-      td4.innerHTML='<span style="color:var(--text3)">—</span>';
-    }
-
-    // Col 5: Status
-    var td5=document.createElement('td');
-    var sConfig={
-      open:   {bg:'var(--primary-light)',c:'var(--primary)',lbl:'Open'},
-      inprogress:{bg:'var(--warning-light)',c:'var(--warning)',lbl:'In Progress'},
-      overdue:{bg:'var(--danger-light)',c:'var(--danger)',lbl:'Overdue'},
-      closed: {bg:'var(--success-light)',c:'var(--success)',lbl:'✓ Closed'}
-    };
-    var sc=sConfig[s]||sConfig.open;
-    var sBadge=document.createElement('span');
-    sBadge.className='badge';
-    sBadge.style.cssText='background:'+sc.bg+';color:'+sc.c+';cursor:pointer';
-    sBadge.title='Click to change status';
-    sBadge.textContent=sc.lbl;
-    var statusList=['Open','In Progress','Closed'];
-    (function(aid,curS){
-      sBadge.onclick=async function(e){
-        e.stopPropagation();
-        var cur=curS==='overdue'?'Open':curS==='inprogress'?'In Progress':curS==='closed'?'Closed':'Open';
-        var nextIdx=(statusList.indexOf(cur)+1)%statusList.length;
-        var next=statusList[nextIdx];
-        var upd={status:next};
-        if(next==='Closed') upd.closed_date=today();
-        await api('grc_actions?id=eq.'+aid,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});
-        await loadAll();
-      };
-    })(a.id,s);
-    td5.appendChild(sBadge);
-    if(isClosed&&a.closed_date){
-      var cdDiv=document.createElement('div');
-      cdDiv.style.cssText='font-size:10px;color:var(--success);margin-top:3px;font-weight:500';
-      cdDiv.textContent='Closed '+a.closed_date;
-      td5.appendChild(cdDiv);
-    }
-
-    // Col 6: Category
-    var td6=document.createElement('td');
-    td6.style.cssText='font-size:12px;color:var(--text2)';
-    td6.textContent=a.category||'—';
-
-    // Col 7: Actions
-    var td7=document.createElement('td');
-    var wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;gap:5px;flex-wrap:wrap;align-items:center';
-
-    if(!isClosed){
-      var closeBtn=document.createElement('button');
-      closeBtn.className='btn btn-sm';
-      closeBtn.style.cssText='background:var(--success-light);border-color:rgba(16,185,129,.3);color:var(--success);font-weight:600;font-size:11px';
-      closeBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Close';
-      closeBtn.title='Mark this action as closed/resolved';
-      (function(aid){ closeBtn.onclick=async function(e){ e.stopPropagation(); await closeAction(aid); }; })(a.id);
-      wrap.appendChild(closeBtn);
-    }
-
-    var editBtn=document.createElement('button');
-    editBtn.className='btn btn-sm';
-    editBtn.style.fontSize='11px';
-    editBtn.textContent='Edit';
-    (function(act){ editBtn.onclick=function(e){ e.stopPropagation(); editAction(act); }; })(a);
-    wrap.appendChild(editBtn);
-
-    if(can('delete')){
-      var delBtn=document.createElement('button');
-      delBtn.className='btn btn-sm';
-      delBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';
-      delBtn.textContent='Del';
-      (function(aid){ delBtn.onclick=async function(e){ e.stopPropagation(); if(!confirm('Delete this action?'))return; await api('grc_actions?id=eq.'+aid,{method:'DELETE',extra:{'Prefer':'return=minimal'}}); await loadAll(); }; })(a.id);
-      wrap.appendChild(delBtn);
-    }
-
-    td7.appendChild(wrap);
-
-    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
-    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);
-
-    // Expand row for details
-    tr.addEventListener('click', function(){
-      var existing=document.getElementById('action-detail-'+a.id);
-      var isOpen=tr.classList.contains('expanded');
-      tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
-      tb.querySelectorAll('.action-detail-row').forEach(function(d){d.remove();});
-      if(!isOpen){
-        tr.classList.add('expanded');
-        var dtr=document.createElement('tr');
-        dtr.className='action-detail-row';
-        dtr.id='action-detail-'+a.id;
-        var dtd=document.createElement('td');
-        dtd.colSpan=7;
-        dtd.style.cssText='padding:0;white-space:normal;overflow:visible';
-        var bc=s==='overdue'?'var(--danger)':s==='closed'?'var(--success)':s==='inprogress'?'var(--warning)':'var(--primary)';
-        dtd.innerHTML=
-          '<div style="background:var(--surface2);border-left:3px solid '+bc+';padding:16px 20px">'+
-          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px">'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Owner</div><div style="font-weight:600;color:var(--text)">'+(a.owner||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Department</div><div style="color:var(--text)">'+(a.department||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Source / Ref</div><div style="color:var(--text)">'+(a.source||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Due date</div><div style="color:var(--text)">'+(a.due_date||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Priority</div><div style="color:var(--text)">'+(a.priority||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Created</div><div style="font-size:12px;color:var(--text2)">'+(a.created_at?a.created_at.split('T')[0]:'—')+'</div></div>'+
-          '</div>'+
-          (a.description?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Description / What happened</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+a.description+'</div></div>':'')+
-          (a.action_plan?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Corrective action plan</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+a.action_plan+'</div></div>':'')+
-          (a.closure_notes?'<div><div style="font-size:10px;font-weight:700;color:var(--success);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Closure notes</div><div style="font-size:13px;color:var(--text);background:var(--success-light);padding:10px 12px;border-radius:8px;border:1px solid rgba(16,185,129,.2);line-height:1.7">'+a.closure_notes+'</div></div>':'')+
-          '</div>';
-        dtr.appendChild(dtd);
-        tr.parentNode.insertBefore(dtr, tr.nextSibling);
-      }
-    });
-
-    tb.appendChild(tr);
-  });
-
-  updateActionsBadge();
-}
-
-async function closeAction(id){
-  if(!can('actions')){noPermission();return;}
-  var notes=prompt('Add closure notes (optional — describe how this was resolved):');
-  if(notes===null) return; // cancelled
-  var upd={status:'Closed',closed_date:today()};
-  if(notes) upd.closure_notes=notes;
-  await api('grc_actions?id=eq.'+id,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});
-  showDueDateToast('','✅ Action closed and recorded!');
-  await loadAll();
-}
-
-function editAction(a){
-  document.getElementById('action-panel-title').textContent='Edit action / issue';
-  document.getElementById('action-edit-id').value=a.id;
-  document.getElementById('action-title').value=a.title||'';
-  document.getElementById('action-category').value=a.category||'Audit Finding';
-  document.getElementById('action-priority').value=a.priority||'Medium';
-  document.getElementById('action-desc').value=a.description||'';
-  document.getElementById('action-owner').value=a.owner||'';
-  document.getElementById('action-dept').value=a.department||'';
-  document.getElementById('action-due').value=a.due_date||'';
-  document.getElementById('action-source').value=a.source||'';
-  document.getElementById('action-plan').value=a.action_plan||'';
-  document.getElementById('action-status').value=a.status||'Open';
-  document.getElementById('action-closure').value=a.closure_notes||'';
-  var cw=document.getElementById('action-closure-wrap');
-  if(cw) cw.style.display=(a.status==='Closed')?'flex':'none';
-  openPanel('action-panel');
-}
-
-async function saveAction(){
-  if(!can('actions')){noPermission('Only admin and manager can add or edit actions.');return;}
-  var editId=document.getElementById('action-edit-id').value;
-  var title=document.getElementById('action-title').value.trim();
-  var owner=document.getElementById('action-owner').value.trim();
-  var due=document.getElementById('action-due').value;
-  if(!title){alert('Please enter a title for the action.');return;}
-  if(!owner){alert('Please assign an owner.');return;}
-  if(!due){alert('Please set a due date.');return;}
-
-  var status=document.getElementById('action-status').value;
-  var body={
-    title:title,
-    category:document.getElementById('action-category').value,
-    priority:document.getElementById('action-priority').value,
-    description:document.getElementById('action-desc').value.trim(),
-    owner:owner,
-    department:document.getElementById('action-dept').value.trim(),
-    due_date:due,
-    source:document.getElementById('action-source').value.trim(),
-    action_plan:document.getElementById('action-plan').value.trim(),
-    status:status,
-    closure_notes:document.getElementById('action-closure').value.trim()
-  };
-  if(status==='Closed'&&!editId) body.closed_date=today();
-
-  var res;
-  if(editId){
-    res=await api('grc_actions?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}});
-  } else {
-    res=await api('grc_actions',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  }
-
-  if(res&&res.ok){
-    closePanel();
-    // Reset panel
-    document.getElementById('action-panel-title').textContent='Add action / issue';
-    document.getElementById('action-edit-id').value='';
-    ['action-title','action-desc','action-owner','action-dept','action-due',
-     'action-source','action-plan','action-closure'].forEach(function(id){
-      var el=document.getElementById(id);if(el)el.value='';
-    });
-    document.getElementById('action-status').value='Open';
-    var cw=document.getElementById('action-closure-wrap');if(cw)cw.style.display='none';
-    showDueDateToast('',editId?'Action updated!':'New action logged!');
-    await loadAll();
-  } else {
-    alert('Error saving action. Make sure the grc_actions table exists in Supabase.');
-  }
-}
-
-function updateActionsBadge(){
-  var openCount=actions.filter(function(a){
-    var s=getActionStatus(a);return s==='open'||s==='overdue'||s==='inprogress';
-  }).length;
-  var badge=document.getElementById('actions-badge');
-  if(badge){badge.textContent=openCount;badge.style.display=openCount>0?'inline-block':'none';}
-}
-
-// Show/hide closure notes when status changes
-safeOn('action-status','change',function(){
-  var val=document.getElementById('action-status').value;
-  var wrap=document.getElementById('action-closure-wrap');
-  if(wrap) wrap.style.display=val==='Closed'?'flex':'none';
-});
-
-
-
-// ══════════════════════════════════════
-// EVIDENCE COLLECTION MODULE
-// ══════════════════════════════════════
-
-function getEvidenceStatus(e){
-  if(e.status==='Approved') return 'approved';
-  if(e.status==='Submitted') return 'submitted';
-  if(e.status==='Rejected') return 'rejected';
-  if(e.deadline && e.deadline < today()) return 'overdue';
-  return 'pending';
-}
-
-function renderEvidence(){
-  var auditFilter=(document.getElementById('ev-filter-audit')||{}).value||'';
-  var statusFilter=(document.getElementById('ev-filter-status')||{}).value||'';
-
-  // Populate audit dropdown
-  var auditSel=document.getElementById('ev-filter-audit');
-  if(auditSel){
-    var prev=auditSel.value;
-    auditSel.innerHTML='<option value="">All audits</option>';
-    audits.forEach(function(a){
-      var opt=document.createElement('option');
-      opt.value=a.id;opt.textContent=a.name;
-      auditSel.appendChild(opt);
-    });
-    if(prev) auditSel.value=prev;
-  }
-
-  // Populate ev-audit select in panel
-  var panelSel=document.getElementById('ev-audit');
-  if(panelSel){
-    var pv=panelSel.value;
-    panelSel.innerHTML='<option value="">-- select audit --</option>';
-    audits.forEach(function(a){
-      var opt=document.createElement('option');
-      opt.value=a.id;opt.textContent=a.name+' ('+a.audit_type+')';
-      panelSel.appendChild(opt);
-    });
-    if(pv) panelSel.value=pv;
-  }
-
-  // Summary counts
-  var pending=0,submitted=0,approved=0,overdue=0;
-  evidenceItems.forEach(function(e){
-    var s=getEvidenceStatus(e);
-    if(s==='approved') approved++;
-    else if(s==='submitted') submitted++;
-    else if(s==='overdue') overdue++;
-    else pending++;
-  });
-
-  var sumEl=document.getElementById('evidence-summary');
-  if(sumEl){
-    sumEl.innerHTML='';
-    [{l:'Pending',v:pending,c:'var(--primary)',t:'#5b5ef4'},
-     {l:'Submitted',v:submitted,c:'var(--warning)',t:'#f59e0b'},
-     {l:'Approved',v:approved,c:'var(--success)',t:'#10b981'},
-     {l:'Overdue',v:overdue,c:'var(--danger)',t:'#ef4444'}
-    ].forEach(function(m){
-      var card=document.createElement('div');
-      card.className='metric-card';
-      card.innerHTML='<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
-        '<div class="mc-label" style="margin-top:4px">'+m.l+'</div>'+
-        '<div class="mc-val" style="color:'+m.c+'">'+m.v+'</div>';
-      sumEl.appendChild(card);
-    });
-  }
-
-  // Audit tab pills
-  var tabsEl=document.getElementById('ev-audit-tabs');
-  if(tabsEl){
-    tabsEl.innerHTML='';
-    var allBtn=document.createElement('button');
-    allBtn.className='filter-tag'+(auditFilter===''?' active':'');
-    allBtn.textContent='All audits';
-    allBtn.onclick=function(){
-      document.getElementById('ev-filter-audit').value='';
-      renderEvidence();
-    };
-    tabsEl.appendChild(allBtn);
-    audits.forEach(function(a){
-      var btn=document.createElement('button');
-      btn.className='filter-tag'+(auditFilter===a.id?' active':'');
-      var cnt=evidenceItems.filter(function(e){return e.audit_id===a.id;}).length;
-      btn.textContent=a.name+' ('+cnt+')';
-      btn.onclick=function(){
-        document.getElementById('ev-filter-audit').value=a.id;
-        renderEvidence();
-      };
-      tabsEl.appendChild(btn);
-    });
-  }
-
-  // Filter items
-  var filtered=evidenceItems.filter(function(e){
-    var s=getEvidenceStatus(e);
-    if(auditFilter && e.audit_id!==auditFilter) return false;
-    if(statusFilter==='Pending' && s!=='pending') return false;
-    if(statusFilter==='Submitted' && s!=='submitted') return false;
-    if(statusFilter==='Approved' && s!=='approved') return false;
-    if(statusFilter==='Rejected' && s!=='rejected') return false;
-    if(statusFilter==='Overdue' && s!=='overdue') return false;
-    return true;
-  });
-
-  var tb=document.getElementById('evidence-body');
-  if(!tb) return;
-  while(tb.firstChild) tb.removeChild(tb.firstChild);
-
-  if(!filtered.length){
-    var tr0=document.createElement('tr');
-    var td0=document.createElement('td');
-    td0.colSpan=7;
-    td0.style.cssText='padding:48px 20px;text-align:center';
-    if(!evidenceItems.length){
-      var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:12px';ei.textContent='📁';
-      var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px';et.textContent='No evidence requests yet';
-      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:6px';es.textContent='First create an audit, then request evidence from your teams.';
-      var eb1=document.createElement('button');eb1.className='btn';eb1.style.cssText='margin:8px 4px 0';eb1.textContent='+ Create audit';
-      eb1.onclick=function(){openPanel('audit-panel');};
-      var eb2=document.createElement('button');eb2.className='btn btn-primary';eb2.style.cssText='margin:8px 4px 0';eb2.textContent='+ Request evidence';
-      eb2.onclick=function(){openPanel('evidence-panel');};
-      td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);td0.appendChild(eb1);td0.appendChild(eb2);
-    } else {
-      var fi=document.createElement('div');fi.style.cssText='font-size:28px;margin-bottom:8px';fi.textContent='🔍';
-      var fs=document.createElement('div');fs.style.cssText='font-size:13px;color:var(--text3)';fs.textContent='No items match this filter';
-      td0.appendChild(fi);td0.appendChild(fs);
-    }
-    tr0.appendChild(td0);tb.appendChild(tr0);
-    updateEvidenceBadge();
-    return;
-  }
-
-  // Get audit name map
-  var auditMap={};
-  audits.forEach(function(a){auditMap[a.id]=a.name;});
-
-  filtered.forEach(function(ev){
-    var s=getEvidenceStatus(ev);
-    var sConfig={
-      pending:  {bg:'var(--primary-light)',c:'var(--primary)',lbl:'Pending'},
-      submitted:{bg:'var(--warning-light)',c:'var(--warning)',lbl:'⬆ Submitted'},
-      approved: {bg:'var(--success-light)',c:'var(--success)',lbl:'✓ Approved'},
-      rejected: {bg:'var(--danger-light)',c:'var(--danger)',lbl:'✗ Rejected'},
-      overdue:  {bg:'var(--danger-light)',c:'var(--danger)',lbl:'⚠ Overdue'}
-    };
-    var sc=sConfig[s]||sConfig.pending;
-
-    var isOverdue=s==='overdue';
-    var tr=document.createElement('tr');
-    tr.className='item-row';
-    tr.style.height='58px';
-    if(isOverdue) tr.style.background='rgba(239,68,68,.03)';
-
-    // Col 1: Title + type
-    var td1=document.createElement('td');
-    td1.style.paddingLeft='16px';
-    var tDiv=document.createElement('div');
-    tDiv.style.cssText='font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px';
-    tDiv.textContent=ev.title||'—';tDiv.title=ev.title||'';
-    var tyDiv=document.createElement('div');
-    tyDiv.style.cssText='font-size:11px;color:var(--text3);margin-top:2px';
-    tyDiv.textContent=(ev.evidence_type||'')+(ev.control_ref?' · '+ev.control_ref:'');
-    td1.appendChild(tDiv);td1.appendChild(tyDiv);
-
-    // Col 2: Stakeholder
-    var td2=document.createElement('td');
-    var owDiv=document.createElement('div');owDiv.style.cssText='font-weight:500;color:var(--text)';owDiv.textContent=ev.owner||'—';
-    var emDiv=document.createElement('div');emDiv.style.cssText='font-size:11px;color:var(--text3)';emDiv.textContent=ev.email||'';
-    td2.appendChild(owDiv);if(ev.email)td2.appendChild(emDiv);
-
-    // Col 3: Team
-    var td3=document.createElement('td');
-    td3.innerHTML='<span style="font-size:12px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text2)">'+(ev.department||'—')+'</span>';
-
-    // Col 4: Audit name
-    var td4=document.createElement('td');
-    td4.style.cssText='font-size:12px;color:var(--text2)';
-    td4.textContent=auditMap[ev.audit_id]||'—';
-
-    // Col 5: Deadline
-    var td5=document.createElement('td');
-    if(ev.deadline){
-      var dLeft=Math.ceil((new Date(ev.deadline)-new Date(today()))/86400000);
-      var dColor=isOverdue?'var(--danger)':dLeft<=3&&s==='pending'?'var(--warning)':'var(--text2)';
-      td5.innerHTML='<div style="font-size:12px;font-weight:'+(isOverdue?'700':'400')+';color:'+dColor+'">'+ev.deadline+'</div>'+
-        (isOverdue?'<div style="font-size:10px;color:var(--danger);font-weight:700">'+Math.abs(dLeft)+'d overdue</div>':
-         (dLeft<=3&&dLeft>=0&&s==='pending'?'<div style="font-size:10px;color:var(--warning);font-weight:600">'+dLeft+'d left</div>':''));
-    } else {
-      td5.innerHTML='<span style="color:var(--text3)">—</span>';
-    }
-
-    // Col 6: Status
-    var td6=document.createElement('td');
-    var sBadge=document.createElement('span');
-    sBadge.className='badge';
-    sBadge.style.cssText='background:'+sc.bg+';color:'+sc.c;
-    sBadge.textContent=sc.lbl;
-    td6.appendChild(sBadge);
-    if(ev.submitted_at){
-      var stDiv=document.createElement('div');
-      stDiv.style.cssText='font-size:10px;color:var(--text3);margin-top:3px';
-      stDiv.textContent='on '+ev.submitted_at.split('T')[0];
-      td6.appendChild(stDiv);
-    }
-
-    // Col 7: Actions
-    var td7=document.createElement('td');
-    var wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;gap:4px;flex-wrap:wrap;align-items:center';
-
-    if((s==='pending'||s==='overdue')&&can('actions')){
-      // Send reminder via email
-      var remBtn=document.createElement('button');
-      remBtn.className='btn btn-sm btn-primary';remBtn.style.fontSize='11px';
-      remBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Remind';
-      remBtn.title='Open Gmail to send a reminder';
-      (function(itev){
-        remBtn.onclick=function(e){
-          e.stopPropagation();
-          var auditName=auditMap[itev.audit_id]||'Audit';
-          var sub=encodeURIComponent('Evidence required: '+itev.title+' — '+auditName);
-          var body=encodeURIComponent('Dear '+itev.owner+',\n\nThis is a reminder that we require the following evidence for our '+auditName+'.\n\nEvidence: '+itev.title+'\nDeadline: '+itev.deadline+'\n'+(itev.description?'\nDetails: '+itev.description+'\n':'')+'\nPlease upload your evidence to the shared link and inform us once done.\n\nThank you,\nCompliance Team');
-          window.open('https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(itev.email||'')+'&su='+sub+'&body='+body,'_blank');
-        };
-      })(ev);
-      wrap.appendChild(remBtn);
-
-      // Mark submitted (admin marks on behalf)
-      var subBtn=document.createElement('button');
-      subBtn.className='btn btn-sm';subBtn.style.fontSize='11px';
-      subBtn.textContent='Submit';subBtn.title='Open submit panel for this evidence';
-      (function(itev){
-        subBtn.onclick=function(e){
-          e.stopPropagation();
-          openEvidenceSubmitPanel(itev);
-        };
-      })(ev);
-      wrap.appendChild(subBtn);
-    }
-
-    if(s==='submitted'&&can('actions')){
-      // Approve button
-      var appBtn=document.createElement('button');
-      appBtn.className='btn btn-sm';
-      appBtn.style.cssText='font-size:11px;background:var(--success-light);border-color:rgba(16,185,129,.3);color:var(--success);font-weight:700';
-      appBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Approve';
-      (function(eid){ appBtn.onclick=async function(e){
-        e.stopPropagation();
-        await api('grc_evidence?id=eq.'+eid,{method:'PATCH',body:{status:'Approved',approved_by:currentUser?currentUser.name:'Admin',approved_date:today()},extra:{'Prefer':'return=minimal'}});
-        showDueDateToast('','✅ Evidence approved!');
-        await loadAll();
-      };})(ev.id);
-      wrap.appendChild(appBtn);
-
-      // Reject button
-      var rejBtn=document.createElement('button');
-      rejBtn.className='btn btn-sm';
-      rejBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.3);color:var(--danger)';
-      rejBtn.textContent='Reject';
-      (function(eid){ rejBtn.onclick=async function(e){
-        e.stopPropagation();
-        var reason=prompt('Reason for rejection (will be recorded):');
-        if(reason===null) return;
-        await api('grc_evidence?id=eq.'+eid,{method:'PATCH',body:{status:'Rejected',rejection_reason:reason},extra:{'Prefer':'return=minimal'}});
-        showDueDateToast('','Evidence rejected and noted.');
-        await loadAll();
-      };})(ev.id);
-      wrap.appendChild(rejBtn);
-
-      // View link
-      if(ev.evidence_link){
-        var viewBtn=document.createElement('a');
-        viewBtn.href=ev.evidence_link;viewBtn.target='_blank';
-        viewBtn.className='btn btn-sm';
-        viewBtn.style.cssText='font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:4px';
-        viewBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> View';
-        wrap.appendChild(viewBtn);
-      }
-    }
-
-    if(s==='approved'&&ev.evidence_link){
-      var vBtn=document.createElement('a');
-      vBtn.href=ev.evidence_link;vBtn.target='_blank';
-      vBtn.className='btn btn-sm';
-      vBtn.style.cssText='font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:4px';
-      vBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> View';
-      wrap.appendChild(vBtn);
-    }
-
-    // Edit button - only admin/manager
-    if(can('actions')){
-      var editBtn=document.createElement('button');
-      editBtn.className='btn btn-sm';editBtn.style.fontSize='11px';editBtn.textContent='Edit';
-      (function(itev){ editBtn.onclick=function(e){ e.stopPropagation(); editEvidence(itev); }; })(ev);
-      wrap.appendChild(editBtn);
-    }
-
-    // Delete button
-    if(can('delete')){
-      var delBtn=document.createElement('button');
-      delBtn.className='btn btn-sm';
-      delBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';
-      delBtn.textContent='Del';
-      (function(eid){ delBtn.onclick=async function(e){
-        e.stopPropagation();
-        if(!confirm('Delete this evidence request?')) return;
-        await api('grc_evidence?id=eq.'+eid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
-        await loadAll();
-      };})(ev.id);
-      wrap.appendChild(delBtn);
-    }
-
-    td7.appendChild(wrap);
-    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
-    tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);
-
-    // Expand row for full details
-    tr.addEventListener('click', function(){
-      var existing=document.getElementById('ev-detail-'+ev.id);
-      var isOpen=tr.classList.contains('expanded');
-      tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
-      tb.querySelectorAll('.ev-detail-row').forEach(function(d){d.remove();});
-      if(!isOpen){
-        tr.classList.add('expanded');
-        var dtr=document.createElement('tr');dtr.className='ev-detail-row';dtr.id='ev-detail-'+ev.id;
-        var dtd=document.createElement('td');dtd.colSpan=7;dtd.style.cssText='padding:0;white-space:normal;overflow:visible';
-        var bc=s==='approved'?'var(--success)':s==='overdue'||s==='rejected'?'var(--danger)':s==='submitted'?'var(--warning)':'var(--primary)';
-        var detailHtml=
-          '<div style="background:var(--surface2);border-left:3px solid '+bc+';padding:16px 20px">'+
-          '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:12px">'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Owner</div><div style="font-weight:600;color:var(--text)">'+(ev.owner||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Team</div><div style="color:var(--text)">'+(ev.department||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Evidence type</div><div style="color:var(--text)">'+(ev.evidence_type||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Control reference</div><div style="color:var(--text)">'+(ev.control_ref||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Priority</div><div style="color:var(--text)">'+(ev.priority||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Audit</div><div style="color:var(--text)">'+(auditMap[ev.audit_id]||'—')+'</div></div>'+
-          '</div>'+
-          (ev.description?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">What is required</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+ev.description+'</div></div>':'')+
-          (ev.notes?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes for stakeholder</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+ev.notes+'</div></div>':'')+
-          (ev.evidence_link?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Submitted evidence link</div><a href="'+ev.evidence_link+'" target="_blank" style="font-size:13px;color:var(--primary);word-break:break-all">'+ev.evidence_link+'</a></div>':'')+
-          (ev.submission_notes?'<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Submission notes from stakeholder</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+ev.submission_notes+'</div></div>':'')+
-          (ev.rejection_reason?'<div><div style="font-size:10px;font-weight:700;color:var(--danger);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Rejection reason</div><div style="font-size:13px;color:var(--danger);background:var(--danger-light);padding:10px 12px;border-radius:8px;border:1px solid rgba(239,68,68,.2)">'+ev.rejection_reason+'</div></div>':'')+
-          '</div>';
-        dtd.innerHTML=detailHtml;
-        dtr.appendChild(dtd);tr.parentNode.insertBefore(dtr,tr.nextSibling);
-      }
-    });
-    tb.appendChild(tr);
-  });
-
-  updateEvidenceBadge();
-}
-
-// Open submit panel
-function openEvidenceSubmitPanel(ev){
-  document.getElementById('ev-submit-id').value=ev.id;
-  var subEl=document.getElementById('ev-submit-sub');
-  if(subEl) subEl.textContent='For: '+ev.title+' ('+ev.owner+')';
-  var descBox=document.getElementById('ev-submit-desc-box');
-  if(descBox) descBox.innerHTML='<strong>What is required:</strong> '+(ev.description||ev.title||'—')+(ev.deadline?'<br><strong>Deadline:</strong> '+ev.deadline:'');
-  document.getElementById('ev-link').value='';
-  document.getElementById('ev-submit-notes').value='';
-  openPanel('ev-submit-panel');
-}
-
-async function submitEvidence(){
-  var id=document.getElementById('ev-submit-id').value;
-  var link=document.getElementById('ev-link').value.trim();
-  var notes=document.getElementById('ev-submit-notes').value.trim();
-  if(!link){alert('Please provide the evidence link (Google Drive, SharePoint etc.)');return;}
-  var res=await api('grc_evidence?id=eq.'+id,{method:'PATCH',
-    body:{status:'Submitted',evidence_link:link,submission_notes:notes,submitted_at:new Date().toISOString()},
-    extra:{'Prefer':'return=minimal'}});
-  if(res&&res.ok){
-    closePanel();
-    showDueDateToast('','⬆ Evidence submitted successfully!');
-    await loadAll();
-  }
-}
-
-async function saveAudit(){
-  if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}
-  var name=document.getElementById('audit-name').value.trim();
-  if(!name){alert('Please enter an audit name.');return;}
-  var body={
-    name:name,
-    audit_type:document.getElementById('audit-type').value,
-    start_date:document.getElementById('audit-start').value||null,
-    end_date:document.getElementById('audit-end').value||null,
-    auditor:document.getElementById('audit-auditor').value.trim(),
-    description:document.getElementById('audit-desc').value.trim()
-  };
-  var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  if(res&&res.ok){
-    closePanel();
-    ['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){
-      var el=document.getElementById(id);if(el)el.value='';
-    });
-    showDueDateToast('','Audit created!');
-    await loadAll();
-  } else {
-    alert('Error saving audit. Make sure grc_audits table exists in Supabase.');
-  }
-}
-
-async function saveEvidence(){
-  if(!can('actions')){noPermission('Only admin and manager can manage evidence requests.');return;}
-  var editId=document.getElementById('ev-edit-id').value;
-  var title=document.getElementById('ev-title').value.trim();
-  var owner=document.getElementById('ev-owner').value.trim();
-  var dept=document.getElementById('ev-dept').value.trim();
-  var deadline=document.getElementById('ev-deadline').value;
-  var auditId=document.getElementById('ev-audit').value;
-  if(!title){alert('Please enter an evidence title.');return;}
-  if(!owner){alert('Please assign an owner.');return;}
-  if(!dept){alert('Please enter the team/department.');return;}
-  if(!deadline){alert('Please set a deadline.');return;}
-  if(!auditId){alert('Please select an audit. Create an audit first if none exists.');return;}
-  var body={
-    title:title,
-    description:document.getElementById('ev-desc').value.trim(),
-    audit_id:auditId,
-    evidence_type:document.getElementById('ev-type').value,
-    owner:owner,
-    department:dept,
-    email:document.getElementById('ev-email').value.trim(),
-    deadline:deadline,
-    priority:document.getElementById('ev-priority').value,
-    control_ref:document.getElementById('ev-control').value.trim(),
-    notes:document.getElementById('ev-notes').value.trim(),
-    status:'Pending'
-  };
-  var res;
-  if(editId){
-    res=await api('grc_evidence?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}});
-  } else {
-    res=await api('grc_evidence',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  }
-  if(res&&res.ok){
-    closePanel();
-    document.getElementById('ev-edit-id').value='';
-    ['ev-title','ev-desc','ev-owner','ev-dept','ev-email','ev-deadline','ev-control','ev-notes'].forEach(function(id){
-      var el=document.getElementById(id);if(el)el.value='';
-    });
-    showDueDateToast('',editId?'Evidence request updated!':'Evidence request created!');
-    await loadAll();
-  } else {
-    alert('Error saving. Make sure grc_evidence table exists in Supabase.');
-  }
-}
-
-function editEvidence(ev){
-  document.getElementById('evidence-panel-title').textContent='Edit evidence request';
-  document.getElementById('ev-edit-id').value=ev.id;
-  document.getElementById('ev-title').value=ev.title||'';
-  document.getElementById('ev-desc').value=ev.description||'';
-  document.getElementById('ev-audit').value=ev.audit_id||'';
-  document.getElementById('ev-type').value=ev.evidence_type||'Screenshot';
-  document.getElementById('ev-owner').value=ev.owner||'';
-  document.getElementById('ev-dept').value=ev.department||'';
-  document.getElementById('ev-email').value=ev.email||'';
-  document.getElementById('ev-deadline').value=ev.deadline||'';
-  document.getElementById('ev-priority').value=ev.priority||'Medium';
-  document.getElementById('ev-control').value=ev.control_ref||'';
-  document.getElementById('ev-notes').value=ev.notes||'';
-  openPanel('evidence-panel');
-}
-
-function updateEvidenceBadge(){
-  var cnt=evidenceItems.filter(function(e){
-    var s=getEvidenceStatus(e);return s==='pending'||s==='overdue'||s==='submitted';
-  }).length;
-  var b=document.getElementById('evidence-badge');
-  if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}
-}
-
-
-// ── EXPORT BUTTON WIRING ──
-function wireExportButtons(){
-  function bindExport(id, fn){
-    var el=document.getElementById(id);
-    if(!el) return;
-    el.onclick=function(){
-      if(!can('export')){ noPermission('Your role cannot export data.'); return; }
-      fn();
-    };
-  }
-
-  bindExport('export-items-xlsx', function(){
-    exportToXLSX('Clarix_Items_'+getDateStr()+'.xlsx','All Items',itemsToRows(items));
-  });
-  bindExport('export-items-csv', function(){
-    exportToCSV('Clarix_Items_'+getDateStr()+'.csv',itemsToRows(items));
-  });
-  bindExport('export-overdue-xlsx', function(){
-    var ov=items.filter(function(it){return getStatus(it)==='overdue';});
-    exportToXLSX('Clarix_Overdue_'+getDateStr()+'.xlsx','Overdue Items',itemsToRows(ov));
-  });
-  bindExport('export-overdue-csv', function(){
-    var ov=items.filter(function(it){return getStatus(it)==='overdue';});
-    exportToCSV('Clarix_Overdue_'+getDateStr()+'.csv',itemsToRows(ov));
-  });
-  bindExport('export-logs-xlsx', function(){
-    exportToXLSX('Clarix_Logs_'+getDateStr()+'.xlsx','Follow-up Log',logsToRows(logs));
-  });
-  bindExport('export-logs-csv', function(){
-    exportToCSV('Clarix_Logs_'+getDateStr()+'.csv',logsToRows(logs));
-  });
-  bindExport('export-risks-xlsx', function(){
-    exportToXLSX('Clarix_Risks_'+getDateStr()+'.xlsx','Risk Register',risksToRows(risks));
-  });
-  bindExport('export-risks-csv', function(){
-    exportToCSV('Clarix_Risks_'+getDateStr()+'.csv',risksToRows(risks));
-  });
-  bindExport('export-highrisks-xlsx', function(){
-    var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
-    exportToXLSX('Clarix_HighRisks_'+getDateStr()+'.xlsx','High Risks',risksToRows(hr));
-  });
-  bindExport('export-highrisks-csv', function(){
-    var hr=risks.filter(function(r){return r.likelihood*r.impact>=15;});
-    exportToCSV('Clarix_HighRisks_'+getDateStr()+'.csv',risksToRows(hr));
-  });
-  bindExport('export-full-report', function(){
-    if(typeof XLSX==='undefined'){alert('Excel library loading. Please wait 3 seconds and try again.');return;}
-    var wb=XLSX.utils.book_new();
-    var summary=[
-      ['Clarix GRC Report — '+getDateStr()],
-      [],
-      ['Total items',items.length],
-      ['Completed',items.filter(function(it){return getStatus(it)==='done';}).length],
-      ['Overdue',items.filter(function(it){return getStatus(it)==='overdue';}).length],
-      ['Pending',items.filter(function(it){return getStatus(it)==='pending';}).length],
-      [],
-      ['Total risks',risks.length],
-      ['High risks',risks.filter(function(r){return r.likelihood*r.impact>=15;}).length],
-      [],
-      ['Follow-ups sent',logs.length],
-      ['Generated by','Clarix — Compliance Intelligence']
-    ];
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),'Summary');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(itemsToRows(items)),'Compliance Items');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(risksToRows(risks)),'Risk Register');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(logsToRows(logs)),'Follow-up Log');
-    XLSX.writeFile(wb,'Clarix_Full_Report_'+getDateStr()+'.xlsx');
-  });
-
-  // Download template button
-  var tBtn=document.getElementById('download-template-btn');
-  if(tBtn) tBtn.onclick=function(){
-    if(!can('import')){noPermission('Only admin and manager can download the import template.');return;}
-    var rows=[['Task name','Stakeholder','Email','Department','Frequency','Due date (YYYY-MM-DD)','Category','Notes']];
-    exportToXLSX('Clarix_Import_Template.xlsx','Template',rows);
-  };
-}
-
-
-// ── IMPORT / EXPORT PERMISSION WRAPPERS ──
-function guardedImport(){
-  if(!can('import')){noPermission('Only admin and manager can import data.');return;}
-  document.getElementById('import-file-input').click();
-}
-
-// Wire import confirm button with permission check
-(function(){
-  var cb=document.getElementById('confirm-import-btn');
-  if(cb){
-    var origClick=cb.onclick;
-    cb.addEventListener('click',function(e){
-      if(!can('import')){
-        e.preventDefault();e.stopImmediatePropagation();
-        noPermission('Only admin and manager can import data.');
-      }
-    },true);
-  }
-})();
-
-
-// ══════════════════════════════════════════
-// CONTROL FRAMEWORK DATA
-// ══════════════════════════════════════════
-
-var FRAMEWORKS = {
-
-  iso27001: {
-    name: 'ISO 27001:2022',
-    short: 'ISO 27001',
-    domains: [
-      {id:'org',    name:'Organisational'},
-      {id:'people', name:'People'},
-      {id:'phys',   name:'Physical'},
-      {id:'tech',   name:'Technological'}
-    ],
-    controls: [
-      {id:'A.5.1', name:'Policies for information security', domain:'org', desc:'Policies for information security and topic-specific policies shall be defined, approved by management, published, communicated to relevant personnel and acknowledged.'},
-      {id:'A.5.2', name:'Information security roles and responsibilities', domain:'org', desc:'Information security roles and responsibilities shall be defined and allocated according to the organization needs.'},
-      {id:'A.5.3', name:'Segregation of duties', domain:'org', desc:'Conflicting duties and conflicting areas of responsibility shall be segregated.'},
-      {id:'A.5.4', name:'Management responsibilities', domain:'org', desc:'Management shall require all personnel to apply information security in accordance with the established policies.'},
-      {id:'A.5.9', name:'Inventory of information and assets', domain:'org', desc:'An inventory of information and other associated assets shall be developed and maintained.'},
-      {id:'A.5.10', name:'Acceptable use of assets', domain:'org', desc:'Rules for the acceptable use and procedures for handling information and other associated assets shall be identified, documented and implemented.'},
-      {id:'A.5.14', name:'Information transfer', domain:'org', desc:'Information transfer rules, procedures, or agreements shall be in place for all types of transfer facilities within the organisation.'},
-      {id:'A.5.15', name:'Access control', domain:'org', desc:'Rules to control physical and logical access to information and other associated assets shall be established and implemented.'},
-      {id:'A.5.16', name:'Identity management', domain:'org', desc:'The full life cycle of identities shall be managed.'},
-      {id:'A.5.17', name:'Authentication information', domain:'org', desc:'Allocation and management of authentication information shall be controlled by a management process.'},
-      {id:'A.5.18', name:'Access rights', domain:'org', desc:'Access rights to information and other associated assets shall be provisioned, reviewed, modified and removed in accordance with the organization information security access control policy.'},
-      {id:'A.5.23', name:'Information security for cloud services', domain:'org', desc:'Processes for acquisition, use, management and exit from cloud services shall be established.'},
-      {id:'A.5.24', name:'Information security incident management planning', domain:'org', desc:'The organisation shall plan and prepare for managing information security incidents.'},
-      {id:'A.5.25', name:'Assessment and decision on incidents', domain:'org', desc:'The organisation shall be able to assess information security events and decide if they are to be categorised as incidents.'},
-      {id:'A.5.26', name:'Response to information security incidents', domain:'org', desc:'Information security incidents shall be responded to in accordance with documented procedures.'},
-      {id:'A.5.27', name:'Learning from incidents', domain:'org', desc:'Knowledge gained from information security incidents shall be used to strengthen and improve information security controls.'},
-      {id:'A.5.29', name:'Information security during disruption', domain:'org', desc:'The organisation shall plan how to maintain information security at an appropriate level during disruption.'},
-      {id:'A.5.30', name:'ICT readiness for business continuity', domain:'org', desc:'ICT readiness shall be planned, implemented, maintained and tested based on business continuity objectives.'},
-      {id:'A.5.33', name:'Protection of records', domain:'org', desc:'Records shall be protected from loss, destruction, falsification, unauthorised access and unauthorised release.'},
-      {id:'A.5.34', name:'Privacy and protection of PII', domain:'org', desc:'The organisation shall identify and meet the requirements regarding the preservation of privacy and protection of PII.'},
-      {id:'A.5.35', name:'Independent review of information security', domain:'org', desc:'The organisation approach to managing information security shall be reviewed independently at planned intervals.'},
-      {id:'A.5.36', name:'Compliance with policies', domain:'org', desc:'Compliance with the information security policy, topic-specific policies and standards shall be regularly reviewed.'},
-      {id:'A.5.37', name:'Documented operating procedures', domain:'org', desc:'Operating procedures for information processing facilities shall be documented and made available to personnel.'},
-      {id:'A.6.1', name:'Screening', domain:'people', desc:'Background verification checks on all candidates shall be carried out prior to joining the organisation.'},
-      {id:'A.6.2', name:'Terms and conditions of employment', domain:'people', desc:'Employment contractual agreements shall state the personnel responsibilities for information security.'},
-      {id:'A.6.3', name:'Information security awareness and training', domain:'people', desc:'Personnel shall receive appropriate information security awareness, education and training.'},
-      {id:'A.6.4', name:'Disciplinary process', domain:'people', desc:'A disciplinary process shall be formalized and communicated to take actions against personnel who have committed an information security policy violation.'},
-      {id:'A.6.5', name:'Responsibilities after termination', domain:'people', desc:'Information security responsibilities and duties that remain valid after termination shall be defined, enforced and communicated.'},
-      {id:'A.6.6', name:'Confidentiality or NDA agreements', domain:'people', desc:'Confidentiality or non-disclosure agreements reflecting the organization needs for the protection of information shall be identified, documented, regularly reviewed and signed by personnel.'},
-      {id:'A.6.7', name:'Remote working', domain:'people', desc:'Security measures shall be implemented when personnel are working remotely to protect information accessed, processed or stored outside the organization premises.'},
-      {id:'A.6.8', name:'Information security event reporting', domain:'people', desc:'Personnel shall be able to report observed or suspected information security events through appropriate channels in a timely manner.'},
-      {id:'A.7.1', name:'Physical security perimeters', domain:'phys', desc:'Security perimeters shall be defined and used to protect areas that contain information and other associated assets.'},
-      {id:'A.7.2', name:'Physical entry', domain:'phys', desc:'Secure areas shall be protected by appropriate entry controls and access points.'},
-      {id:'A.7.4', name:'Physical security monitoring', domain:'phys', desc:'Premises shall be continuously monitored for unauthorized physical access.'},
-      {id:'A.7.6', name:'Working in secure areas', domain:'phys', desc:'Security measures for working in secure areas shall be designed and implemented.'},
-      {id:'A.7.9', name:'Security of assets off-premises', domain:'phys', desc:'Off-site assets shall be protected.'},
-      {id:'A.7.10', name:'Storage media', domain:'phys', desc:'Storage media shall be managed through their life cycle of acquisition, use, transportation and disposal.'},
-      {id:'A.7.11', name:'Supporting utilities', domain:'phys', desc:'Information processing facilities shall be protected from power failures and other disruptions.'},
-      {id:'A.7.14', name:'Secure disposal or reuse of equipment', domain:'phys', desc:'Items of equipment containing storage media shall be verified to ensure that any sensitive data and licensed software has been erased or securely overwritten.'},
-      {id:'A.8.1', name:'User end point devices', domain:'tech', desc:'Information stored on, processed by or accessible via user end point devices shall be protected.'},
-      {id:'A.8.2', name:'Privileged access rights', domain:'tech', desc:'The allocation and use of privileged access rights shall be restricted and managed.'},
-      {id:'A.8.3', name:'Information access restriction', domain:'tech', desc:'Access to information and other associated assets shall be restricted in accordance with the established access control policy.'},
-      {id:'A.8.4', name:'Access to source code', domain:'tech', desc:'Read and write access to source code, development tools and software libraries shall be appropriately managed.'},
-      {id:'A.8.5', name:'Secure authentication', domain:'tech', desc:'Secure authentication technologies and procedures shall be implemented based on information access restrictions.'},
-      {id:'A.8.6', name:'Capacity management', domain:'tech', desc:'The use of resources shall be monitored and adjusted in line with current and expected capacity requirements.'},
-      {id:'A.8.7', name:'Protection against malware', domain:'tech', desc:'Protection against malware shall be implemented and supported by appropriate user awareness.'},
-      {id:'A.8.8', name:'Management of technical vulnerabilities', domain:'tech', desc:'Information about technical vulnerabilities of information systems shall be obtained, the organization exposure to such vulnerabilities shall be evaluated.'},
-      {id:'A.8.9', name:'Configuration management', domain:'tech', desc:'Configurations including security configurations of hardware, software, services and networks shall be established, documented, implemented, monitored and reviewed.'},
-      {id:'A.8.12', name:'Data leakage prevention', domain:'tech', desc:'Data leakage prevention measures shall be applied to systems, networks and any other devices that process, store or transmit sensitive information.'},
-      {id:'A.8.15', name:'Logging', domain:'tech', desc:'Logs that record activities, exceptions, faults and other relevant events shall be produced, stored, protected and analysed.'},
-      {id:'A.8.16', name:'Monitoring activities', domain:'tech', desc:'Networks, systems and applications shall be monitored for anomalous behaviour and appropriate actions taken to evaluate potential information security incidents.'},
-      {id:'A.8.20', name:'Networks security', domain:'tech', desc:'Networks and network devices shall be secured, managed and controlled to protect information in systems and applications.'},
-      {id:'A.8.21', name:'Security of network services', domain:'tech', desc:'Security mechanisms, service levels and service requirements of network services shall be identified, implemented and monitored.'},
-      {id:'A.8.23', name:'Web filtering', domain:'tech', desc:'Access to external websites shall be managed to reduce exposure to malicious content.'},
-      {id:'A.8.24', name:'Use of cryptography', domain:'tech', desc:'Rules for the effective use of cryptography, including cryptographic key management, shall be defined and implemented.'},
-      {id:'A.8.25', name:'Secure development life cycle', domain:'tech', desc:'Rules for the secure development of software and systems shall be established and applied.'},
-      {id:'A.8.28', name:'Secure coding', domain:'tech', desc:'Secure coding principles shall be applied to software development.'},
-      {id:'A.8.29', name:'Security testing in development and acceptance', domain:'tech', desc:'Security testing processes shall be defined and implemented in the development life cycle.'},
-      {id:'A.8.32', name:'Change management', domain:'tech', desc:'Changes to information processing facilities and information systems shall be subject to change management procedures.'},
-      {id:'A.8.33', name:'Test information', domain:'tech', desc:'Test information shall be appropriately selected, protected and managed.'},
-      {id:'A.8.34', name:'Protection during audit testing', domain:'tech', desc:'Audit tests and other assurance activities involving assessment of operational systems shall be planned and agreed between the tester and appropriate management.'}
-    ]
-  },
-
-  soc2: {
-    name: 'SOC 2 Type 2',
-    short: 'SOC 2',
-    domains: [
-      {id:'cc', name:'Common Criteria'},
-      {id:'a',  name:'Availability'},
-      {id:'pi', name:'Processing Integrity'},
-      {id:'c',  name:'Confidentiality'},
-      {id:'p',  name:'Privacy'}
-    ],
-    controls: [
-      {id:'CC1.1', name:'Control environment — commitment to integrity', domain:'cc', desc:'The entity demonstrates a commitment to integrity and ethical values.'},
-      {id:'CC1.2', name:'Board oversight of controls', domain:'cc', desc:'The board of directors demonstrates independence from management and exercises oversight of internal controls.'},
-      {id:'CC1.3', name:'Management structure and reporting lines', domain:'cc', desc:'Management establishes structures, reporting lines, and appropriate authorities and responsibilities.'},
-      {id:'CC1.4', name:'Commitment to competence', domain:'cc', desc:'The entity demonstrates a commitment to attract, develop, and retain competent individuals.'},
-      {id:'CC1.5', name:'Accountability for controls', domain:'cc', desc:'The entity holds individuals accountable for their internal control responsibilities.'},
-      {id:'CC2.1', name:'Information and communication', domain:'cc', desc:'The entity obtains or generates and uses relevant, quality information to support the functioning of internal control.'},
-      {id:'CC2.2', name:'Internal communication', domain:'cc', desc:'The entity internally communicates information, including objectives and responsibilities for internal control.'},
-      {id:'CC2.3', name:'External communication', domain:'cc', desc:'The entity communicates with external parties regarding matters affecting the functioning of internal control.'},
-      {id:'CC3.1', name:'Risk assessment objectives', domain:'cc', desc:'The entity specifies objectives with sufficient clarity to enable the identification and assessment of risks.'},
-      {id:'CC3.2', name:'Risk identification and analysis', domain:'cc', desc:'The entity identifies risks to the achievement of its objectives and analyses risks as a basis for determining how the risks should be managed.'},
-      {id:'CC3.3', name:'Fraud risk assessment', domain:'cc', desc:'The entity considers the potential for fraud in assessing risks to the achievement of objectives.'},
-      {id:'CC3.4', name:'Significant change identification', domain:'cc', desc:'The entity identifies and assesses changes that could significantly impact the system of internal control.'},
-      {id:'CC4.1', name:'Control monitoring', domain:'cc', desc:'The entity selects, develops, and performs ongoing evaluations to ascertain whether the components of internal control are present and functioning.'},
-      {id:'CC4.2', name:'Deficiency evaluation and remediation', domain:'cc', desc:'The entity evaluates and communicates internal control deficiencies in a timely manner.'},
-      {id:'CC5.1', name:'Control selection and development', domain:'cc', desc:'The entity selects and develops control activities that contribute to the mitigation of risks.'},
-      {id:'CC5.2', name:'Technology controls', domain:'cc', desc:'The entity also selects and develops general control activities over technology.'},
-      {id:'CC5.3', name:'Policies and procedures', domain:'cc', desc:'The entity deploys control activities through policies that establish what is expected and procedures that put policies into action.'},
-      {id:'CC6.1', name:'Logical and physical access controls', domain:'cc', desc:'The entity implements logical access security software, infrastructure, and architectures over protected information assets.'},
-      {id:'CC6.2', name:'New access provisioning', domain:'cc', desc:'Prior to issuing system credentials and granting system access, the entity registers and authorizes new internal and external users.'},
-      {id:'CC6.3', name:'Access removal on termination', domain:'cc', desc:'The entity authorizes, modifies, or removes access to data, software, functions, and other protected information assets.'},
-      {id:'CC6.6', name:'Security against threats', domain:'cc', desc:'The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software.'},
-      {id:'CC6.7', name:'Data transmission security', domain:'cc', desc:'The entity restricts the transmission, movement, and removal of information to authorized internal and external users.'},
-      {id:'CC6.8', name:'Prevention of unauthorized software', domain:'cc', desc:'The entity implements controls to prevent or detect and act upon the introduction of unauthorized or malicious software.'},
-      {id:'CC7.1', name:'Vulnerability detection', domain:'cc', desc:'To meet its objectives, the entity uses detection and monitoring procedures to identify changes to configurations or the introduction of new vulnerabilities.'},
-      {id:'CC7.2', name:'Anomaly monitoring', domain:'cc', desc:'The entity monitors system components and the operation of those components for anomalies that are indicative of malicious acts.'},
-      {id:'CC7.3', name:'Incident evaluation', domain:'cc', desc:'The entity evaluates security events to determine whether they could or have resulted in a failure of the entity to meet its objectives.'},
-      {id:'CC7.4', name:'Incident response', domain:'cc', desc:'The entity responds to identified security incidents by executing a defined incident response program.'},
-      {id:'CC7.5', name:'Incident remediation', domain:'cc', desc:'The entity identifies, develops, and implements activities to recover from identified security incidents.'},
-      {id:'CC8.1', name:'Change management', domain:'cc', desc:'The entity authorizes, designs, develops or acquires, configures, documents, tests, approves, and implements changes to infrastructure, data, software, and procedures.'},
-      {id:'CC9.1', name:'Risk mitigation', domain:'cc', desc:'The entity identifies, selects, and develops risk mitigation activities for risks arising from potential business disruptions.'},
-      {id:'CC9.2', name:'Vendor and business partner risk management', domain:'cc', desc:'The entity assesses and manages risks associated with vendors and business partners.'},
-      {id:'A1.1', name:'Capacity planning', domain:'a', desc:'The entity maintains, monitors, and evaluates current processing capacity.'},
-      {id:'A1.2', name:'Environmental threats', domain:'a', desc:'The entity authorizes, designs, develops or acquires, implements, operates, approves, maintains, and monitors environmental protections.'},
-      {id:'A1.3', name:'Recovery testing', domain:'a', desc:'The entity tests recovery plan procedures to determine that systems recovery meets the objectives.'},
-      {id:'PI1.1', name:'Processing completeness', domain:'pi', desc:'The entity obtains or generates, uses, and communicates relevant, quality information to support the functioning of internal control.'},
-      {id:'PI1.2', name:'System inputs', domain:'pi', desc:'The entity implements policies and procedures over system inputs.'},
-      {id:'PI1.3', name:'System processing', domain:'pi', desc:'The entity implements policies and procedures over system processing.'},
-      {id:'PI1.4', name:'System outputs', domain:'pi', desc:'The entity implements policies and procedures to make available or deliver output completely, accurately, and timely.'},
-      {id:'C1.1', name:'Confidential information identification', domain:'c', desc:'The entity identifies and maintains confidential information to meet the entity objectives.'},
-      {id:'C1.2', name:'Confidential information disposal', domain:'c', desc:'The entity disposes of confidential information to meet the entity objectives.'},
-      {id:'P1.1', name:'Privacy notice', domain:'p', desc:'The entity provides notice to data subjects about its privacy practices.'},
-      {id:'P2.1', name:'Consent and choice', domain:'p', desc:'The entity communicates choices available regarding the collection, use, retention, disclosure, and disposal of personal information.'},
-      {id:'P3.1', name:'Personal information collection', domain:'p', desc:'Personal information is collected consistent with the entity objectives.'},
-      {id:'P4.1', name:'Personal information use and retention', domain:'p', desc:'The entity limits the use of personal information to the purposes identified in the notice.'},
-      {id:'P6.1', name:'Personal information disclosure', domain:'p', desc:'The entity discloses personal information to third parties with the explicit consent of data subjects.'},
-      {id:'P7.1', name:'Personal information quality', domain:'p', desc:'The entity collects and maintains accurate, up-to-date, complete, and relevant personal information.'},
-      {id:'P8.1', name:'Personal information access', domain:'p', desc:'The entity provides data subjects with access to their personal information.'}
-    ]
-  },
-
-  gdpr: {
-    name: 'GDPR',
-    short: 'GDPR',
-    domains: [
-      {id:'principles', name:'Principles'},
-      {id:'rights',     name:'Data subject rights'},
-      {id:'controller', name:'Controller obligations'},
-      {id:'security',   name:'Security'},
-      {id:'transfers',  name:'Transfers'}
-    ],
-    controls: [
-      {id:'Art.5', name:'Principles of processing', domain:'principles', desc:'Personal data must be processed lawfully, fairly and transparently. Collected for specified, explicit and legitimate purposes. Adequate, relevant and limited to what is necessary.'},
-      {id:'Art.6', name:'Lawfulness of processing', domain:'principles', desc:'Processing shall be lawful only if at least one of the legal bases applies: consent, contract, legal obligation, vital interests, public task, or legitimate interests.'},
-      {id:'Art.7', name:'Conditions for consent', domain:'principles', desc:'Where processing is based on consent, the controller shall be able to demonstrate that the data subject has consented.'},
-      {id:'Art.9', name:'Special categories of data', domain:'principles', desc:'Processing of special categories of personal data (health, biometric, racial origin) is prohibited unless an explicit exception applies.'},
-      {id:'Art.12', name:'Transparent information to data subjects', domain:'rights', desc:'The controller shall take appropriate measures to provide any information in a concise, transparent, intelligible and easily accessible form.'},
-      {id:'Art.13', name:'Information to be provided at collection', domain:'rights', desc:'Where personal data are collected, the controller shall provide the data subject with specific information at the time of collection.'},
-      {id:'Art.15', name:'Right of access', domain:'rights', desc:'The data subject shall have the right to obtain from the controller confirmation as to whether personal data concerning them is being processed.'},
-      {id:'Art.16', name:'Right to rectification', domain:'rights', desc:'The data subject shall have the right to obtain from the controller rectification of inaccurate personal data.'},
-      {id:'Art.17', name:'Right to erasure', domain:'rights', desc:'The data subject shall have the right to obtain erasure of personal data where the data is no longer necessary.'},
-      {id:'Art.18', name:'Right to restriction of processing', domain:'rights', desc:'The data subject shall have the right to obtain from the controller restriction of processing.'},
-      {id:'Art.20', name:'Right to data portability', domain:'rights', desc:'The data subject shall have the right to receive personal data in a structured, commonly used and machine-readable format.'},
-      {id:'Art.21', name:'Right to object', domain:'rights', desc:'The data subject shall have the right to object to processing of personal data including profiling.'},
-      {id:'Art.24', name:'Responsibility of the controller', domain:'controller', desc:'The controller shall implement appropriate technical and organisational measures to ensure processing is in accordance with GDPR.'},
-      {id:'Art.25', name:'Data protection by design', domain:'controller', desc:'The controller shall implement appropriate technical and organisational measures for data protection by design and default.'},
-      {id:'Art.26', name:'Joint controllers', domain:'controller', desc:'Where two or more controllers jointly determine the purposes and means of processing, they shall be joint controllers.'},
-      {id:'Art.28', name:'Processor requirements', domain:'controller', desc:'Where processing is carried out on behalf of a controller, the controller shall only use processors providing sufficient guarantees.'},
-      {id:'Art.30', name:'Records of processing activities', domain:'controller', desc:'Each controller shall maintain a record of processing activities under its responsibility.'},
-      {id:'Art.32', name:'Security of processing', domain:'security', desc:'The controller and processor shall implement appropriate technical and organisational measures to ensure a level of security appropriate to the risk.'},
-      {id:'Art.33', name:'Notification of personal data breach', domain:'security', desc:'In the case of a personal data breach, the controller shall notify the supervisory authority within 72 hours.'},
-      {id:'Art.34', name:'Communication to data subject of a breach', domain:'security', desc:'When the personal data breach is likely to result in a high risk, the controller shall communicate the breach to the data subject without undue delay.'},
-      {id:'Art.35', name:'Data protection impact assessment', domain:'security', desc:'Where processing is likely to result in a high risk, the controller shall carry out a DPIA prior to processing.'},
-      {id:'Art.37', name:'Designation of DPO', domain:'controller', desc:'The controller and processor shall designate a data protection officer where required.'},
-      {id:'Art.44', name:'General principle for transfers', domain:'transfers', desc:'A transfer of personal data to a third country or international organisation may take place only if the controller complies with the conditions laid down.'},
-      {id:'Art.46', name:'Transfers with appropriate safeguards', domain:'transfers', desc:'A controller may transfer personal data to a third country only if appropriate safeguards are in place.'}
-    ]
-  },
-
-  nist: {
-    name: 'NIST CSF 2.0',
-    short: 'NIST',
-    domains: [
-      {id:'GV', name:'Govern'},
-      {id:'ID', name:'Identify'},
-      {id:'PR', name:'Protect'},
-      {id:'DE', name:'Detect'},
-      {id:'RS', name:'Respond'},
-      {id:'RC', name:'Recover'}
-    ],
-    controls: [
-      {id:'GV.OC-1', name:'Organisational context', domain:'GV', desc:'The organisational mission is understood and informs cybersecurity risk management decisions.'},
-      {id:'GV.OC-2', name:'Internal stakeholders', domain:'GV', desc:'Internal and external stakeholders are understood, and their needs and expectations regarding cybersecurity risk management are understood.'},
-      {id:'GV.RM-1', name:'Risk management strategy', domain:'GV', desc:'Risk management objectives are established and agreed to by organizational stakeholders.'},
-      {id:'GV.RM-2', name:'Risk tolerance', domain:'GV', desc:'Risk appetite and risk tolerance statements are established, communicated, and maintained.'},
-      {id:'GV.RR-1', name:'Roles and responsibilities', domain:'GV', desc:'Organizational leadership is responsible and accountable for cybersecurity risk and fosters a culture that is risk-aware, ethical, and continually improving.'},
-      {id:'GV.PO-1', name:'Policy established', domain:'GV', desc:'Policy for managing cybersecurity risks is established based on organizational context, cybersecurity strategy, and priorities.'},
-      {id:'GV.SC-1', name:'Supply chain risk management', domain:'GV', desc:'A cybersecurity supply chain risk management program is established, approved by organisational leadership.'},
-      {id:'ID.AM-1', name:'Asset inventory', domain:'ID', desc:'Assets (data, hardware, software, systems, facilities, services, people) that enable the organization to achieve business purposes are identified and managed.'},
-      {id:'ID.AM-2', name:'Software inventory', domain:'ID', desc:'Inventories of software, services, and systems managed by the organization and the potential data flows are maintained.'},
-      {id:'ID.AM-3', name:'Network representation', domain:'ID', desc:'Representations of the organization authorization architecture are maintained.'},
-      {id:'ID.RA-1', name:'Vulnerability identification', domain:'ID', desc:'Vulnerabilities in assets are identified, validated, and recorded.'},
-      {id:'ID.RA-2', name:'Cyber threat intelligence', domain:'ID', desc:'Cyber threat intelligence is received from information sharing forums and sources.'},
-      {id:'ID.RA-3', name:'Internal and external threats', domain:'ID', desc:'Internal and external threats to the organization are identified and recorded.'},
-      {id:'ID.RA-6', name:'Risk response', domain:'ID', desc:'Risk responses are chosen, prioritised, planned, tracked, and communicated.'},
-      {id:'ID.IM-1', name:'Improvements identified', domain:'ID', desc:'Improvements are identified from evaluations, incidents, and other sources.'},
-      {id:'PR.AA-1', name:'Identity management', domain:'PR', desc:'Identities and credentials for authorised users, services, and hardware are managed.'},
-      {id:'PR.AA-2', name:'Physical access control', domain:'PR', desc:'Physical access to assets is managed, monitored, and enforced commensurate with risk.'},
-      {id:'PR.AA-3', name:'Remote access', domain:'PR', desc:'Remote access is managed.'},
-      {id:'PR.AA-4', name:'Access permissions', domain:'PR', desc:'Access permissions, entitlements, and authorisations are managed.'},
-      {id:'PR.AA-5', name:'Least privilege', domain:'PR', desc:'Access is based on least privilege and separation of duties principles.'},
-      {id:'PR.AT-1', name:'Awareness and training', domain:'PR', desc:'Personnel are provided with awareness and training so that they possess the knowledge and skills to perform general tasks with cybersecurity risks in mind.'},
-      {id:'PR.DS-1', name:'Data at rest protection', domain:'PR', desc:'The confidentiality, integrity, and availability of data-at-rest are protected.'},
-      {id:'PR.DS-2', name:'Data in transit protection', domain:'PR', desc:'The confidentiality, integrity, and availability of data-in-transit are protected.'},
-      {id:'PR.DS-10', name:'Data in use protection', domain:'PR', desc:'The confidentiality, integrity, and availability of data-in-use are protected.'},
-      {id:'PR.IR-1', name:'Secure configuration', domain:'PR', desc:'Networks and environments are protected from unauthorized logical access and usage.'},
-      {id:'PR.PS-1', name:'Configuration management', domain:'PR', desc:'Configuration management practices are established and applied.'},
-      {id:'PR.PS-4', name:'Log generation', domain:'PR', desc:'Logs of events are generated and retained.'},
-      {id:'DE.CM-1', name:'Networks monitored', domain:'DE', desc:'Networks and network services are monitored to find potentially adverse events.'},
-      {id:'DE.CM-3', name:'Personnel activity monitored', domain:'DE', desc:'Personnel activity and technology usage are monitored to find potentially adverse events.'},
-      {id:'DE.CM-6', name:'External service providers monitored', domain:'DE', desc:'External service provider activities and services are monitored to find potentially adverse events.'},
-      {id:'DE.CM-9', name:'Computing hardware monitored', domain:'DE', desc:'Computing hardware and software are monitored to find potentially adverse events.'},
-      {id:'DE.AE-2', name:'Events analysed', domain:'DE', desc:'Potentially adverse events are analysed to better understand associated activities.'},
-      {id:'DE.AE-4', name:'Impact estimated', domain:'DE', desc:'The estimated impact and scope of adverse events are understood.'},
-      {id:'DE.AE-6', name:'Incident declared', domain:'DE', desc:'Information on adverse events is provided to authorised staff and tools.'},
-      {id:'RS.MA-1', name:'Incident investigation', domain:'RS', desc:'The incident response plan is executed in coordination with relevant third parties once an incident is declared.'},
-      {id:'RS.MA-2', name:'Incident selected', domain:'RS', desc:'Incidents are triaged to support response prioritisation.'},
-      {id:'RS.AN-3', name:'Forensic analysis', domain:'RS', desc:'Forensic analysis is performed on impacted systems to support response and recovery.'},
-      {id:'RS.AN-8', name:'Threat intelligence', domain:'RS', desc:'The root causes of an incident are established through post-incident analysis.'},
-      {id:'RS.CO-2', name:'Internal reporting', domain:'RS', desc:'Internal and external stakeholders are notified of incidents in a timely manner.'},
-      {id:'RS.CO-3', name:'Information sharing', domain:'RS', desc:'Information is shared with designated internal and external stakeholders as authorised.'},
-      {id:'RS.MI-1', name:'Incident containment', domain:'RS', desc:'Incidents are contained.'},
-      {id:'RS.MI-2', name:'Incident eradication', domain:'RS', desc:'Incidents are eradicated.'},
-      {id:'RC.RP-1', name:'Recovery planning', domain:'RC', desc:'The recovery portion of the incident response plan is executed once initiated from the incident response process.'},
-      {id:'RC.RP-3', name:'Recovery verification', domain:'RC', desc:'The integrity of backups and other restoration assets is verified before using them for restoration.'},
-      {id:'RC.RP-5', name:'Restoration completeness', domain:'RC', desc:'The integrity of restored assets is verified, systems and services are restored, and normal operating status is confirmed.'},
-      {id:'RC.CO-3', name:'Recovery communications', domain:'RC', desc:'Recovery activities and progress in restoring operational capabilities are communicated to designated internal and external stakeholders.'}
-    ]
-  }
-};
-
-
-// ══════════════════════════════════════════
-// CONTROL FRAMEWORK MAPPING — LOGIC
-// ══════════════════════════════════════════
-
-var activeFwDomain = '';
-
-function getControlMapping(frameworkId, controlId){
-  return controlMappings.find(function(m){
-    return m.framework_id===frameworkId && m.control_id===controlId;
-  });
-}
-
-function getCoverageStatus(frameworkId, controlId){
-  var m=getControlMapping(frameworkId, controlId);
-  if(!m) return 'gap';
-  return m.coverage_status||'gap';
-}
-
-function renderFrameworks(){
-  var fwId = (document.getElementById('fw-select')||{}).value||'iso27001';
-  var fw = FRAMEWORKS[fwId];
-  if(!fw) return;
-
-  // Populate domain tabs
-  var tabsEl = document.getElementById('fw-domain-tabs');
-  if(tabsEl){
-    tabsEl.innerHTML='';
-    var allBtn=document.createElement('button');
-    allBtn.className='filter-tag'+(activeFwDomain===''?' active':'');
-    allBtn.textContent='All domains';
-    allBtn.onclick=function(){ activeFwDomain=''; renderFrameworks(); };
-    tabsEl.appendChild(allBtn);
-    fw.domains.forEach(function(d){
-      var btn=document.createElement('button');
-      btn.className='filter-tag'+(activeFwDomain===d.id?' active':'');
-      var cnt=fw.controls.filter(function(c){ return c.domain===d.id; }).length;
-      btn.textContent=d.name+' ('+cnt+')';
-      btn.onclick=function(){ activeFwDomain=d.id; renderFrameworks(); };
-      tabsEl.appendChild(btn);
-    });
-  }
-
-  // Calculate stats
-  var allControls=fw.controls;
-  var filtered=activeFwDomain?allControls.filter(function(c){return c.domain===activeFwDomain;}):allControls;
-  var covered=0, partial=0, gap=0, na=0;
-  allControls.forEach(function(c){
-    var s=getCoverageStatus(fwId,c.id);
-    if(s==='covered') covered++;
-    else if(s==='partial') partial++;
-    else if(s==='na') na++;
-    else gap++;
-  });
-  var applicable=allControls.length-na;
-  var pct=applicable>0?Math.round((covered+partial*0.5)/applicable*100):0;
-
-  // Summary cards
-  var sumEl=document.getElementById('fw-summary');
-  if(sumEl){
-    sumEl.innerHTML='';
-    var mets=[
-      {l:'Total controls', v:allControls.length, c:'var(--text)',      t:'#5b5ef4'},
-      {l:'Covered',        v:covered,            c:'var(--success)',   t:'#10b981'},
-      {l:'Partial',        v:partial,            c:'var(--warning)',   t:'#f59e0b'},
-      {l:'Gaps',           v:gap,                c:'var(--danger)',    t:'#ef4444'}
-    ];
-    mets.forEach(function(m){
-      var card=document.createElement('div');
-      card.className='metric-card';
-      card.innerHTML='<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
-        '<div class="mc-label" style="margin-top:4px">'+m.l+'</div>'+
-        '<div class="mc-val" style="color:'+m.c+'">'+m.v+'</div>';
-      sumEl.appendChild(card);
-    });
-  }
-
-  // Coverage bar
-  var bar=document.getElementById('fw-coverage-bar');
-  var txt=document.getElementById('fw-coverage-text');
-  if(bar) bar.style.width=pct+'%';
-  if(bar){
-    var barColor=pct>=80?'linear-gradient(90deg,var(--success),#059669)':pct>=50?'linear-gradient(90deg,var(--warning),#d97706)':'linear-gradient(90deg,var(--danger),#dc2626)';
-    bar.style.background=barColor;
-  }
-  if(txt) txt.textContent=pct+'% coverage ('+covered+' fully covered, '+partial+' partial, '+gap+' gaps, '+na+' not applicable) across '+applicable+' applicable controls';
-
-  // Controls table
-  var tb=document.getElementById('fw-controls-body');
-  if(!tb) return;
-  while(tb.firstChild) tb.removeChild(tb.firstChild);
-
-  if(!filtered.length){
-    var tr0=document.createElement('tr');
-    var td0=document.createElement('td');
-    td0.colSpan=6; td0.className='empty';
-    td0.textContent='No controls in this domain.';
-    tr0.appendChild(td0); tb.appendChild(tr0);
-    return;
-  }
-
-  filtered.forEach(function(ctrl){
-    var mapping=getControlMapping(fwId, ctrl.id);
-    var status=getCoverageStatus(fwId, ctrl.id);
-    var domainObj=fw.domains.find(function(d){return d.id===ctrl.domain;})||{name:ctrl.domain};
-
-    // Count mapped items
-    var mappedItems=mapping?JSON.parse(mapping.item_ids||'[]'):[];
-    var mappedRisks=mapping?JSON.parse(mapping.risk_ids||'[]'):[];
-    var totalMapped=mappedItems.length+mappedRisks.length;
-
-    var statusConfig={
-      covered:  {bg:'var(--success-light)',c:'var(--success)',  lbl:'✓ Covered'},
-      partial:  {bg:'var(--warning-light)',c:'var(--warning)',  lbl:'~ Partial'},
-      gap:      {bg:'var(--danger-light)', c:'var(--danger)',   lbl:'✗ Gap'},
-      na:       {bg:'var(--border)',       c:'var(--text3)',    lbl:'N/A'}
-    };
-    var sc=statusConfig[status]||statusConfig.gap;
+    var score=r.likelihood*r.impact;
+    var lv=riskLevel(score);
+    var lvColors={high:['var(--danger-light)','var(--danger)'],medium:['var(--warning-light)','var(--warning)'],low:['var(--success-light)','var(--success)']};
+    var lvc=lvColors[lv]||lvColors.low;
+    var scoreColor=lv==='high'?'var(--danger)':lv==='medium'?'var(--warning)':'var(--success)';
 
     var tr=document.createElement('tr');
     tr.className='item-row';
     tr.style.height='52px';
-    if(status==='gap') tr.style.background='rgba(239,68,68,.02)';
 
-    // Col 1: Control ID
+    // Risk name
     var td1=document.createElement('td');
     td1.style.paddingLeft='16px';
-    td1.innerHTML='<div style="font-family:monospace;font-size:12px;font-weight:700;color:var(--primary)">'+ctrl.id+'</div>';
+    td1.innerHTML='<div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px" title="'+r.name+'">'+r.name+'</div>';
 
-    // Col 2: Control name
+    // Category
     var td2=document.createElement('td');
-    td2.innerHTML='<div style="font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:190px" title="'+ctrl.name+'">'+ctrl.name+'</div>';
+    td2.innerHTML='<span style="font-size:12px;color:var(--text2)">'+( r.category||'—')+'</span>';
 
-    // Col 3: Domain
+    // Likelihood
     var td3=document.createElement('td');
-    td3.innerHTML='<span style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text2);white-space:nowrap">'+domainObj.name+'</span>';
+    td3.style.textAlign='center';
+    td3.innerHTML='<div style="display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text)">'+r.likelihood+'</div>';
 
-    // Col 4: Coverage status badge
+    // Impact
     var td4=document.createElement('td');
-    var sBadge=document.createElement('span');
-    sBadge.className='badge';
-    sBadge.style.cssText='background:'+sc.bg+';color:'+sc.c+';cursor:pointer;white-space:nowrap';
-    sBadge.textContent=sc.lbl;
-    if(can('add')){
-      sBadge.title='Click to change coverage';
-      var statusOrder=['gap','partial','covered','na'];
-      (function(fid,cid){
-        sBadge.onclick=async function(e){
-          e.stopPropagation();
-          var cur=getCoverageStatus(fid,cid);
-          var next=statusOrder[(statusOrder.indexOf(cur)+1)%statusOrder.length];
-          var m2=getControlMapping(fid,cid);
-          if(m2){
-            await api('grc_control_mappings?framework_id=eq.'+fid+'&control_id=eq.'+cid,{method:'PATCH',body:{coverage_status:next},extra:{'Prefer':'return=minimal'}});
-          } else {
-            await api('grc_control_mappings',{method:'POST',body:{framework_id:fid,control_id:cid,coverage_status:next,item_ids:'[]',risk_ids:'[]'},extra:{'Prefer':'return=representation'}});
-          }
-          await loadAll();
-        };
-      })(fwId,ctrl.id);
-    }
-    td4.appendChild(sBadge);
+    td4.style.textAlign='center';
+    td4.innerHTML='<div style="display:inline-flex;width:28px;height:28px;border-radius:50%;background:var(--surface2);border:2px solid var(--border);align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--text)">'+r.impact+'</div>';
 
-    // Col 5: Mapped items count
+    // Score
     var td5=document.createElement('td');
-    if(totalMapped>0){
-      td5.innerHTML='<span style="font-size:12px;color:var(--text2)">'+mappedItems.length+' item'+(mappedItems.length!==1?'s':'')+
-        (mappedRisks.length>0?', '+mappedRisks.length+' risk'+(mappedRisks.length!==1?'s':''):'')+
-        '</span>';
-    } else {
-      td5.innerHTML='<span style="font-size:12px;color:var(--text3)">None mapped</span>';
-    }
+    td5.style.textAlign='center';
+    td5.innerHTML='<div style="display:inline-flex;width:36px;height:36px;border-radius:50%;background:'+scoreColor+';align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff">'+score+'</div>';
 
-    // Col 6: Actions
+    // Level
     var td6=document.createElement('td');
-    var wrap=document.createElement('div');
-    wrap.style.cssText='display:flex;gap:5px;flex-wrap:wrap;align-items:center';
+    td6.innerHTML='<span class="badge" style="background:'+lvc[0]+';color:'+lvc[1]+'">'+lv.charAt(0).toUpperCase()+lv.slice(1)+'</span>';
 
-    if(can('add')){
-      var mapBtn=document.createElement('button');
-      mapBtn.className='btn btn-sm btn-primary';
-      mapBtn.style.fontSize='11px';
-      mapBtn.textContent='Map items';
-      mapBtn.title='Map compliance items and risks to this control';
-      (function(c2,fid){
-        mapBtn.onclick=function(e){
-          e.stopPropagation();
-          openMapControlPanel(fid, c2);
-        };
-      })(ctrl, fwId);
-      wrap.appendChild(mapBtn);
+    // Owner
+    var td7=document.createElement('td');
+    td7.innerHTML='<span style="font-size:12px;color:var(--text)">'+( r.owner||'—')+'</span>';
+
+    // Status - clickable
+    var td8=document.createElement('td');
+    var stSpan=document.createElement('span');
+    stSpan.className='badge';
+    var stColors={'Open':['var(--danger-light)','var(--danger)'],'In progress':['var(--warning-light)','var(--warning)'],'Closed':['var(--success-light)','var(--success)']};
+    var stc=stColors[r.status||'Open']||stColors['Open'];
+    stSpan.style.cssText='background:'+stc[0]+';color:'+stc[1]+';cursor:pointer';
+    stSpan.textContent=r.status||'Open';stSpan.title='Click to change status';
+    var statusList=['Open','In progress','Closed'];
+    (function(rid,curSt){stSpan.onclick=async function(){
+      var next=statusList[(statusList.indexOf(curSt)+1)%statusList.length];
+      await api('grc_risks?id=eq.'+rid,{method:'PATCH',body:{status:next},extra:{'Prefer':'return=minimal'}});
+      await loadAll();
+    };})(r.id,r.status||'Open');
+    td8.appendChild(stSpan);
+
+    // Actions
+    var td9=document.createElement('td');
+    var wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:5px;flex-wrap:wrap';
+    if(can('delete')){
+      var del=document.createElement('button');del.className='btn btn-sm';
+      del.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';del.textContent='Delete';
+      (function(rid){del.onclick=async function(){
+        if(!confirm('Delete this risk?')) return;
+        await api('grc_risks?id=eq.'+rid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+        await loadAll();
+      };})(r.id);
+      wrap.appendChild(del);
     }
+    td9.appendChild(wrap);
 
-    if(mapping&&mapping.evidence_link){
-      var evLink=document.createElement('a');
-      evLink.href=mapping.evidence_link;
-      evLink.target='_blank';
-      evLink.className='btn btn-sm';
-      evLink.style.cssText='font-size:11px;text-decoration:none;display:inline-flex;align-items:center;gap:3px';
-      evLink.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg> Evidence';
-      wrap.appendChild(evLink);
-    }
-
-    td6.appendChild(wrap);
-
-    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
-    tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);
-
-    // Expand row for details + notes
-    tr.addEventListener('click',function(){
-      var existing=document.getElementById('fw-detail-'+ctrl.id.replace('.','_'));
-      var isOpen=tr.classList.contains('expanded');
-      tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
-      tb.querySelectorAll('.fw-detail-row').forEach(function(d){d.remove();});
-      if(!isOpen){
-        tr.classList.add('expanded');
-        var dtr=document.createElement('tr');
-        dtr.className='fw-detail-row';
-        dtr.id='fw-detail-'+ctrl.id.replace('.','_');
-        var dtd=document.createElement('td');
-        dtd.colSpan=6;
-        dtd.style.cssText='padding:0;white-space:normal;overflow:visible';
-
-        // Build mapped items list
-        var mappedHtml='';
-        if(mappedItems.length>0){
-          mappedHtml+='<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Mapped compliance items</div>';
-          mappedItems.forEach(function(iid){
-            var it=items.find(function(x){return x.id==iid;});
-            if(it) mappedHtml+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)"><span class="badge b-'+( getStatus(it)==='done'?'done':getStatus(it)==='overdue'?'overdue':'pending')+'">'+getStatus(it)+'</span><span style="font-size:13px;color:var(--text)">'+it.name+'</span><span style="font-size:11px;color:var(--text3);margin-left:auto">'+it.stakeholder+'</span></div>';
-          });
-          mappedHtml+='</div>';
-        }
-        if(mappedRisks.length>0){
-          mappedHtml+='<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Mapped risks</div>';
-          mappedRisks.forEach(function(rid){
-            var r=risks.find(function(x){return x.id==rid;});
-            if(r) mappedHtml+='<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border2)"><span class="badge b-'+(r.likelihood*r.impact>=15?'overdue':r.likelihood*r.impact>=8?'pending':'done')+'">Score: '+r.likelihood*r.impact+'</span><span style="font-size:13px;color:var(--text)">'+r.name+'</span></div>';
-          });
-          mappedHtml+='</div>';
-        }
-        if(!mappedItems.length&&!mappedRisks.length){
-          mappedHtml='<div style="font-size:13px;color:var(--text3);margin-bottom:10px">No items or risks mapped yet. Click "Map items" to link compliance evidence to this control.</div>';
-        }
-
-        dtd.innerHTML='<div style="background:var(--surface2);border-left:3px solid '+sc.c+';padding:16px 20px">'+
-          '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Control requirement</div>'+
-          '<div style="font-size:13px;color:var(--text);line-height:1.7;margin-bottom:14px;padding:10px 14px;background:var(--surface);border-radius:8px;border:1px solid var(--border)">'+ctrl.desc+'</div>'+
-          mappedHtml+
-          (mapping&&mapping.notes?'<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Implementation notes</div><div style="font-size:13px;color:var(--text);background:var(--info-light);padding:10px 14px;border-radius:8px;border:1px solid rgba(59,130,246,.15);line-height:1.7">'+mapping.notes+'</div></div>':'')+
-          '</div>';
-        dtr.appendChild(dtd);
-        tr.parentNode.insertBefore(dtr,tr.nextSibling);
-      }
-    });
-
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
+    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);tr.appendChild(td9);
     tb.appendChild(tr);
   });
-
-  updateFrameworksBadge();
 }
 
-function openMapControlPanel(fwId, ctrl){
-  document.getElementById('map-panel-title').textContent='Map: '+ctrl.id+' — '+ctrl.name;
-  document.getElementById('map-panel-sub').textContent=FRAMEWORKS[fwId]?FRAMEWORKS[fwId].name:'';
-  document.getElementById('map-control-id').value=ctrl.id;
-  document.getElementById('map-framework-id').value=fwId;
-  document.getElementById('map-control-desc').textContent=ctrl.desc;
-
-  var mapping=getControlMapping(fwId, ctrl.id);
-  var savedItemIds=mapping?JSON.parse(mapping.item_ids||'[]'):[];
-  var savedRiskIds=mapping?JSON.parse(mapping.risk_ids||'[]'):[];
-  document.getElementById('map-status').value=mapping?mapping.coverage_status:'gap';
-  document.getElementById('map-notes').value=mapping?mapping.notes||'':'';
-  document.getElementById('map-evidence-link').value=mapping?mapping.evidence_link||'':'';
-
-  // Populate items list
-  var itemsList=document.getElementById('map-items-list');
-  if(itemsList){
-    itemsList.innerHTML='';
-    if(!items.length){
-      itemsList.innerHTML='<div style="padding:12px;font-size:12px;color:var(--text3)">No compliance items yet. Add items first.</div>';
-    } else {
-      items.forEach(function(it){
-        var row=document.createElement('label');
-        row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border2);transition:background .1s';
-        row.onmouseenter=function(){row.style.background='var(--hover)';};
-        row.onmouseleave=function(){row.style.background='';};
-        var cb=document.createElement('input');
-        cb.type='checkbox';
-        cb.value=it.id;
-        cb.checked=savedItemIds.indexOf(it.id)>-1||savedItemIds.indexOf(String(it.id))>-1;
-        cb.style.cssText='width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--primary)';
-        var nameDiv=document.createElement('div');
-        nameDiv.style.cssText='flex:1;min-width:0';
-        var n=document.createElement('div');
-        n.style.cssText='font-size:13px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-        n.textContent=it.name;
-        var m=document.createElement('div');
-        m.style.cssText='font-size:11px;color:var(--text3);margin-top:1px';
-        m.textContent=it.stakeholder+(it.dept?' · '+it.dept:'');
-        nameDiv.appendChild(n);nameDiv.appendChild(m);
-        var s=document.createElement('span');
-        s.className='badge b-'+(getStatus(it)==='done'?'done':getStatus(it)==='overdue'?'overdue':'pending');
-        s.style.fontSize='10px';
-        s.textContent=getStatus(it);
-        row.appendChild(cb);row.appendChild(nameDiv);row.appendChild(s);
-        itemsList.appendChild(row);
-      });
-    }
-  }
-
-  // Populate risks list
-  var risksList=document.getElementById('map-risks-list');
-  if(risksList){
-    risksList.innerHTML='';
-    if(!risks.length){
-      risksList.innerHTML='<div style="padding:12px;font-size:12px;color:var(--text3)">No risks yet. Add risks first.</div>';
-    } else {
-      risks.forEach(function(r){
-        var score=r.likelihood*r.impact;
-        var row=document.createElement('label');
-        row.style.cssText='display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid var(--border2);transition:background .1s';
-        row.onmouseenter=function(){row.style.background='var(--hover)';};
-        row.onmouseleave=function(){row.style.background='';};
-        var cb=document.createElement('input');
-        cb.type='checkbox';
-        cb.value=r.id;
-        cb.checked=savedRiskIds.indexOf(r.id)>-1||savedRiskIds.indexOf(String(r.id))>-1;
-        cb.style.cssText='width:16px;height:16px;cursor:pointer;flex-shrink:0;accent-color:var(--primary)';
-        var nameDiv=document.createElement('div');
-        nameDiv.style.cssText='flex:1;min-width:0';
-        var n=document.createElement('div');
-        n.style.cssText='font-size:13px;color:var(--text);font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-        n.textContent=r.name;
-        var m=document.createElement('div');
-        m.style.cssText='font-size:11px;color:var(--text3);margin-top:1px';
-        m.textContent=r.category+(r.owner?' · '+r.owner:'');
-        nameDiv.appendChild(n);nameDiv.appendChild(m);
-        var lv=score>=15?'High':score>=8?'Medium':'Low';
-        var lvColor=score>=15?'var(--danger)':score>=8?'var(--warning)':'var(--success)';
-        var s=document.createElement('span');
-        s.style.cssText='font-size:11px;font-weight:700;color:'+lvColor;
-        s.textContent=lv+' ('+score+')';
-        row.appendChild(cb);row.appendChild(nameDiv);row.appendChild(s);
-        risksList.appendChild(row);
-      });
-    }
-  }
-
-  openPanel('map-control-panel');
+function renderRisks(){
+  if(riskView==='heatmap') renderHeatMap();
+  else renderRiskTable();
 }
 
-async function saveControlMapping(){
-  if(!can('add')){noPermission();return;}
-  var fwId=document.getElementById('map-framework-id').value;
-  var ctrlId=document.getElementById('map-control-id').value;
-  var status=document.getElementById('map-status').value;
-  var notes=document.getElementById('map-notes').value.trim();
-  var evLink=document.getElementById('map-evidence-link').value.trim();
-
-  // Collect checked items
-  var checkedItems=[];
-  document.querySelectorAll('#map-items-list input[type=checkbox]:checked').forEach(function(cb){
-    checkedItems.push(cb.value);
-  });
-
-  // Collect checked risks
-  var checkedRisks=[];
-  document.querySelectorAll('#map-risks-list input[type=checkbox]:checked').forEach(function(cb){
-    checkedRisks.push(cb.value);
-  });
-
-  // Auto-suggest status if not manually set
-  if(status==='gap'&&checkedItems.length>0){
-    status='partial';
-  }
-
-  var body={
-    framework_id:fwId,
-    control_id:ctrlId,
-    coverage_status:status,
-    item_ids:JSON.stringify(checkedItems),
-    risk_ids:JSON.stringify(checkedRisks),
-    notes:notes,
-    evidence_link:evLink
-  };
-
-  var existing=getControlMapping(fwId, ctrlId);
-  var res;
-  if(existing){
-    res=await api('grc_control_mappings?framework_id=eq.'+fwId+'&control_id=eq.'+ctrlId,
-      {method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}});
-  } else {
-    res=await api('grc_control_mappings',
-      {method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  }
-
-  if(res&&res.ok){
-    closePanel();
-    showDueDateToast('','Control mapping saved!');
-    await loadAll();
-  } else {
-    alert('Error saving. Make sure grc_control_mappings table exists in Supabase. Run the SQL shown in the setup guide.');
-  }
-}
-
-function updateFrameworksBadge(){
-  var fwId=(document.getElementById('fw-select')||{}).value||'iso27001';
-  var fw=FRAMEWORKS[fwId];
-  if(!fw) return;
-  var gaps=fw.controls.filter(function(c){
-    return getCoverageStatus(fwId,c.id)==='gap';
-  }).length;
-  var b=document.getElementById('frameworks-badge');
-  if(b){b.textContent=gaps;b.style.display=gaps>0?'inline-block':'none';}
-}
-
-
-// ── DARK / LIGHT MODE ──
-function toggleTheme(){
-  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
-  var newTheme = isDark ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', newTheme);
-  localStorage.setItem('grc-theme', newTheme);
-  updateThemeBtn(newTheme);
-}
-
-function updateThemeBtn(theme){
-  var sun = document.getElementById('theme-icon-sun');
-  var moon = document.getElementById('theme-icon-moon');
-  var lbl = document.getElementById('theme-label');
-  if(!sun||!moon||!lbl) return;
-  if(theme === 'dark'){
-    sun.style.display = 'none';
-    moon.style.display = 'block';
-    lbl.textContent = 'Light';
-  } else {
-    sun.style.display = 'block';
-    moon.style.display = 'none';
-    lbl.textContent = 'Dark';
-  }
-}
-
-// Apply saved theme on load
-(function(){
-  var saved = localStorage.getItem('grc-theme') || 'light';
-  document.documentElement.setAttribute('data-theme', saved);
-  updateThemeBtn(saved);
-})();
 
 </script>
 </body>
