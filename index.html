@@ -1153,43 +1153,125 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
       <!-- DASHBOARD -->
       <div id="s-dash" class="sec active">
-        <!-- Metric cards -->
-        <div class="dash-grid" id="dash-metrics">
-          <div class="metric-card mc-total"><div class="mc-icon" style="background:rgba(79,82,217,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4f52d9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg></div><div class="mc-label">Total items</div><div class="mc-val" id="d-total">—</div><div class="mc-sub" id="d-total-sub">Loading...</div></div>
-          <div class="metric-card mc-done"><div class="mc-icon" style="background:rgba(13,158,126,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0d9e7e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="mc-label">Completed</div><div class="mc-val" style="color:#0d9e7e" id="d-done">—</div><div class="mc-sub" id="d-done-sub">Loading...</div></div>
-          <div class="metric-card mc-over"><div class="mc-icon" style="background:rgba(217,63,63,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#d93f3f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div><div class="mc-label">Overdue</div><div class="mc-val" style="color:#d93f3f" id="d-over">—</div><div class="mc-sub" id="d-over-sub">Loading...</div></div>
-          <div class="metric-card mc-pct"><div class="mc-icon" style="background:rgba(224,125,26,.12)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#e07d1a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div><div class="mc-label">Progress</div><div class="mc-val" style="color:#e07d1a" id="d-pct">—</div><div class="mc-sub" id="d-pct-sub">Loading...</div></div>
+
+        <!-- Row 1: 6 metric cards -->
+        <div style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px;margin-bottom:14px" id="dash-metrics-row">
+
+          <div class="metric-card" id="mc-total">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:#5b5ef4"></div>
+            <div class="mc-label" style="margin-top:4px">Total items</div>
+            <div class="mc-val" id="d-total" style="color:#5b5ef4">—</div>
+            <div class="mc-sub" id="d-total-sub">Loading...</div>
+          </div>
+
+          <div class="metric-card" id="mc-done">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:#10b981"></div>
+            <div class="mc-label" style="margin-top:4px">Completed</div>
+            <div class="mc-val" id="d-done" style="color:#10b981">—</div>
+            <div class="mc-sub" id="d-done-sub">Loading...</div>
+          </div>
+
+          <div class="metric-card" id="mc-over">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:#ef4444"></div>
+            <div class="mc-label" style="margin-top:4px">Overdue</div>
+            <div class="mc-val" id="d-over" style="color:#ef4444">—</div>
+            <div class="mc-sub" id="d-over-sub">Loading...</div>
+          </div>
+
+          <div class="metric-card" id="mc-risk">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:#f59e0b"></div>
+            <div class="mc-label" style="margin-top:4px">High risks</div>
+            <div class="mc-val" id="d-risks" style="color:#f59e0b">—</div>
+            <div class="mc-sub" id="d-risks-sub">Loading...</div>
+          </div>
+
+          <div class="metric-card" id="mc-actions">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:#7c3aed"></div>
+            <div class="mc-label" style="margin-top:4px">Open actions</div>
+            <div class="mc-val" id="d-actions" style="color:#7c3aed">—</div>
+            <div class="mc-sub" id="d-actions-sub">Loading...</div>
+          </div>
+
+          <div class="metric-card" id="mc-pct">
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:#e07d1a"></div>
+            <div class="mc-label" style="margin-top:4px">Compliance score</div>
+            <div class="mc-val" id="d-pct" style="color:#e07d1a">—</div>
+            <div class="mc-sub" id="d-pct-sub">Loading...</div>
+          </div>
+
         </div>
-        <!-- Charts row -->
-        <div class="dash-charts">
-          <div class="chart-card">
-            <div class="chart-title">Overall compliance <span class="chart-sub">all items</span></div>
-            <div class="ring-wrap">
-              <div class="ring-container">
-                <svg class="ring-svg" width="140" height="140" viewBox="0 0 140 140">
-                  <circle cx="70" cy="70" r="54" fill="none" stroke="var(--border)" stroke-width="14"/>
-                  <circle id="ring-done" cx="70" cy="70" r="54" fill="none" stroke="#0d9e7e" stroke-width="14" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1)"/>
-                  <circle id="ring-over" cx="70" cy="70" r="54" fill="none" stroke="#d93f3f" stroke-width="14" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1) .2s"/>
-                </svg>
-                <div class="ring-center"><div class="ring-pct" id="ring-pct-val">0%</div><div class="ring-lbl">Done</div></div>
-              </div>
-              <div class="ring-legend">
-                <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#0d9e7e"></div>Completed<span class="ring-leg-val" id="leg-done">0</span></div>
-                <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#d93f3f"></div>Overdue<span class="ring-leg-val" id="leg-over">0</span></div>
-                <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#e07d1a"></div>Pending<span class="ring-leg-val" id="leg-pend">0</span></div>
+
+        <!-- Row 2: Ring chart + Dept bars + Activity feed -->
+        <div style="display:grid;grid-template-columns:200px 1fr 280px;gap:14px;margin-bottom:14px">
+
+          <!-- Ring chart -->
+          <div class="chart-card" style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px 14px">
+            <div class="chart-title" style="margin-bottom:12px;text-align:center">Compliance</div>
+            <div class="ring-container" style="position:relative">
+              <svg class="ring-svg" width="130" height="130" viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="54" fill="none" stroke="var(--border)" stroke-width="14"/>
+                <circle id="ring-done" cx="70" cy="70" r="54" fill="none" stroke="#10b981" stroke-width="14" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);transform:rotate(-90deg);transform-origin:70px 70px"/>
+                <circle id="ring-over" cx="70" cy="70" r="54" fill="none" stroke="#ef4444" stroke-width="14" stroke-linecap="round" stroke-dasharray="339.3" stroke-dashoffset="339.3" style="transition:stroke-dashoffset 1s cubic-bezier(.4,0,.2,1) .15s;transform-origin:70px 70px"/>
+              </svg>
+              <div class="ring-center">
+                <div class="ring-pct" id="ring-pct-val" style="font-size:22px;font-weight:800;color:var(--text)">0%</div>
+                <div class="ring-lbl" style="font-size:11px;color:var(--text3)">Done</div>
               </div>
             </div>
+            <div style="display:flex;flex-direction:column;gap:5px;margin-top:12px;width:100%">
+              <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#10b981"></div><span style="font-size:12px;color:var(--text2)">Done</span><span class="ring-leg-val" id="leg-done">0</span></div>
+              <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#ef4444"></div><span style="font-size:12px;color:var(--text2)">Overdue</span><span class="ring-leg-val" id="leg-over">0</span></div>
+              <div class="ring-leg-item"><div class="ring-leg-dot" style="background:#e07d1a"></div><span style="font-size:12px;color:var(--text2)">Pending</span><span class="ring-leg-val" id="leg-pend">0</span></div>
+            </div>
           </div>
+
+          <!-- Dept bar chart -->
           <div class="chart-card">
-            <div class="chart-title">Compliance by department <span class="chart-sub">% completed</span></div>
-            <div class="dept-bar-wrap" id="dept-bars"><div style="color:var(--text3);font-size:13px;padding:20px 0">Loading...</div></div>
+            <div class="chart-title">By department <span class="chart-sub">% completed</span></div>
+            <div class="dept-bar-wrap" id="dept-bars"></div>
           </div>
+
+          <!-- Activity / alerts feed -->
+          <div class="chart-card" style="overflow:hidden">
+            <div class="chart-title">Attention needed</div>
+            <div id="dash-alerts" style="display:flex;flex-direction:column;gap:0;overflow-y:auto;max-height:220px"></div>
+          </div>
+
         </div>
-        <!-- Freq progress -->
-        <div class="chart-card" style="margin-bottom:14px"><div class="chart-title">Progress by frequency</div><div id="freq-progress"><div style="color:var(--text3);font-size:13px">Loading...</div></div></div>
+
+        <!-- Row 3: Freq progress + Risk snapshot + Upcoming deadlines -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px">
+
+          <!-- Frequency progress -->
+          <div class="chart-card">
+            <div class="chart-title">By frequency</div>
+            <div id="freq-progress"></div>
+          </div>
+
+          <!-- Risk snapshot -->
+          <div class="chart-card">
+            <div class="chart-title">Risk snapshot <span class="chart-sub">by level</span></div>
+            <div id="dash-risk-snap"></div>
+          </div>
+
+          <!-- Upcoming deadlines (next 14 days) -->
+          <div class="chart-card">
+            <div class="chart-title">Due in 14 days</div>
+            <div id="dash-upcoming" style="display:flex;flex-direction:column;gap:0;overflow-y:auto;max-height:220px"></div>
+          </div>
+
+        </div>
+
+        <!-- Row 4: Module status strip -->
+        <div class="chart-card" style="margin-bottom:0">
+          <div class="chart-title">GRC module status <span class="chart-sub">across all modules</span></div>
+          <div id="dash-module-strip" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-top:10px"></div>
+        </div>
+
       </div>
 
       <!-- ALL ITEMS -->
+      <div <!-- ALL ITEMS -->
       <div id="s-items" class="sec">
         <div class="items-table-wrap">
           <div class="items-table-header">
@@ -3070,115 +3152,275 @@ function renderItems(){
 function goEmail(id){document.getElementById('nav-email').onclick();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
 
 function renderDash(){
-  var total=items.length;
-  var done=items.filter(function(it){return getStatus(it)==='done';}).length;
-  var ov=items.filter(function(it){return getStatus(it)==='overdue';}).length;
-  var pend=total-done-ov;
-  var pct=total?Math.round(done/total*100):0;
-  var circ=339.3;
+  var total = items.length;
+  var done  = items.filter(function(it){ return getStatus(it)==='done'; }).length;
+  var ov    = items.filter(function(it){ return getStatus(it)==='overdue'; }).length;
+  var pend  = total - done - ov;
+  var pct   = total ? Math.round(done/total*100) : 0;
 
-  // Metric cards
-  var el=document.getElementById('d-total');if(el)el.textContent=total;
-  el=document.getElementById('d-done');if(el)el.textContent=done;
-  el=document.getElementById('d-over');if(el)el.textContent=ov;
-  el=document.getElementById('d-pct');if(el)el.textContent=pct+'%';
+  // ── High risks (score >= 15) ──
+  var highRisks = risks.filter(function(r){ return (r.likelihood||1)*(r.impact||1)>=15 && r.status!=='Closed'; });
 
-  // Metric sub labels
-  el=document.getElementById('d-total-sub');if(el)el.textContent=total===1?'1 compliance task':total+' compliance tasks';
-  el=document.getElementById('d-done-sub');if(el){
-    el.innerHTML=total?'<span class="trend-up">↑ '+pct+'% completion rate</span>':'No items yet';
-  }
-  el=document.getElementById('d-over-sub');if(el){
-    el.innerHTML=ov>0?'<span class="trend-down">'+ov+' need'+( ov===1?' attention':' attention')+'</span>':'<span class="trend-up">All on track</span>';
-  }
-  el=document.getElementById('d-pct-sub');if(el){
-    el.innerHTML=pct>=80?'<span class="trend-up">Excellent</span>':pct>=50?'<span style="color:#e07d1a">On track</span>':'<span class="trend-down">Needs attention</span>';
-  }
+  // ── Open actions ──
+  var openActions = actions.filter(function(a){ return a.status!=='Closed'; });
+  var overdueActions = actions.filter(function(a){ return getActionStatus(a)==='overdue'; });
 
-  // Ring chart - done arc
-  var ringDone=document.getElementById('ring-done');
-  var ringOver=document.getElementById('ring-over');
-  if(ringDone&&ringOver&&total>0){
-    var donePct=done/total;
-    var ovPct=ov/total;
-    var doneOffset=circ-(donePct*circ);
-    var overOffset=circ-(ovPct*circ);
-    // Position overdue arc after done arc
-    ringDone.style.strokeDashoffset=doneOffset;
-    ringOver.style.strokeDashoffset=overOffset;
-    ringOver.style.strokeDasharray=(ovPct*circ)+' '+(circ-ovPct*circ);
-    var rotDeg = donePct*360;
-    ringOver.style.transform='rotate('+rotDeg+'deg)';
-    ringOver.style.transformOrigin='70px 70px';
-  } else if(ringDone){
-    ringDone.style.strokeDashoffset=circ;
-    if(ringOver) ringOver.style.strokeDashoffset=circ;
-  }
-  el=document.getElementById('ring-pct-val');if(el)el.textContent=pct+'%';
-  el=document.getElementById('leg-done');if(el)el.textContent=done;
-  el=document.getElementById('leg-over');if(el)el.textContent=ov;
-  el=document.getElementById('leg-pend');if(el)el.textContent=pend;
+  // ── Evidence pending ──
+  var pendingEv = evidenceItems.filter(function(e){ return e.status==='Pending'||e.status==='Submitted'; });
 
-  // Department bar chart
+  // ── Policies due for review ──
+  var polDue = policies.filter(function(p){ var s=getPolicyStatus(p); return s==='due-soon'||s==='expired'; });
+
+  // ════ ROW 1: 6 metric cards ════
+  function setEl(id,val){ var e=document.getElementById(id);if(e)e.textContent=val; }
+  setEl('d-total', total);
+  setEl('d-done',  done);
+  setEl('d-over',  ov);
+  setEl('d-risks', highRisks.length);
+  setEl('d-actions', openActions.length);
+  setEl('d-pct',   pct+'%');
+
+  setEl('d-total-sub',   total+' compliance task'+(total!==1?'s':''));
+  var doneSubEl = document.getElementById('d-done-sub');
+  if(doneSubEl) doneSubEl.innerHTML = pct+'% completion rate';
+  var overSubEl = document.getElementById('d-over-sub');
+  if(overSubEl) overSubEl.innerHTML = ov>0?'<span style="color:#ef4444;font-weight:600">'+ov+' need attention</span>':'<span style="color:#10b981">All on track</span>';
+  var riskSubEl = document.getElementById('d-risks-sub');
+  if(riskSubEl) riskSubEl.innerHTML = highRisks.length>0?'<span style="color:#f59e0b;font-weight:600">'+highRisks.length+' critical</span>':'<span style="color:#10b981">No critical risks</span>';
+  var actSubEl = document.getElementById('d-actions-sub');
+  if(actSubEl) actSubEl.innerHTML = overdueActions.length>0?'<span style="color:#ef4444;font-weight:600">'+overdueActions.length+' overdue</span>':'<span style="color:#10b981">All on time</span>';
+  var pctSubEl = document.getElementById('d-pct-sub');
+  if(pctSubEl) pctSubEl.innerHTML = pct>=80?'<span style="color:#10b981;font-weight:600">Excellent ✓</span>':pct>=60?'<span style="color:#e07d1a;font-weight:600">On track</span>':'<span style="color:#ef4444;font-weight:600">Needs focus</span>';
+
+  // ════ Ring chart ════
+  var circ = 339.3;
+  var ringDone = document.getElementById('ring-done');
+  var ringOver = document.getElementById('ring-over');
+  if(ringDone) ringDone.style.strokeDashoffset = total>0 ? circ-(done/total*circ) : circ;
+  if(ringOver && total>0){
+    var ovArc = ov/total*circ;
+    var doneDeg = done/total*360;
+    ringOver.style.strokeDasharray  = ovArc+' '+(circ-ovArc);
+    ringOver.style.strokeDashoffset = circ-ovArc;
+    ringOver.style.transform = 'rotate('+(doneDeg-90)+'deg)';
+  } else if(ringOver){
+    ringOver.style.strokeDashoffset = circ;
+  }
+  setEl('ring-pct-val', pct+'%');
+  setEl('leg-done', done);
+  setEl('leg-over', ov);
+  setEl('leg-pend', pend);
+
+  // ════ Dept bar chart ════
   var depts={};
   items.forEach(function(it){
-    var d=it.dept||'Unknown';
-    if(!depts[d])depts[d]={done:0,total:0};
+    var d=it.dept||'Unassigned';
+    if(!depts[d]) depts[d]={done:0,total:0};
     depts[d].total++;
-    if(getStatus(it)==='done')depts[d].done++;
+    if(getStatus(it)==='done') depts[d].done++;
   });
   var deptKeys=Object.keys(depts).sort(function(a,b){
-    return(depts[b].done/depts[b].total)-(depts[a].done/depts[a].total);
-  }).slice(0,6);
+    return (depts[b].done/depts[b].total)-(depts[a].done/depts[a].total);
+  }).slice(0,7);
   var deptEl=document.getElementById('dept-bars');
   if(deptEl){
+    while(deptEl.firstChild) deptEl.removeChild(deptEl.firstChild);
     if(!deptKeys.length){
-      deptEl.innerHTML='<div style="color:var(--text3);font-size:13px;padding:12px 0">No items with department assigned yet.</div>';
+      var nd=document.createElement('div');nd.style.cssText='color:var(--text3);font-size:13px;padding:20px 0;text-align:center';nd.textContent='No items assigned to departments yet.';deptEl.appendChild(nd);
     } else {
-      var html='';
       deptKeys.forEach(function(d){
         var p=Math.round(depts[d].done/depts[d].total*100);
-        var barColor=p>=80?'#0d9e7e':p>=50?'#e07d1a':'#d93f3f';
-        html+='<div class="dept-bar-row">'+
-          '<div class="dept-bar-top"><span class="dept-bar-name">'+d+'</span><span class="dept-bar-pct" style="color:'+barColor+'">'+p+'%</span></div>'+
-          '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:0%;background:'+barColor+'" data-width="'+p+'"></div></div>'+
-          '<div class="dept-bar-counts">'+depts[d].done+' of '+depts[d].total+' tasks completed</div>'+
-        '</div>';
+        var barC=p>=80?'#10b981':p>=50?'#e07d1a':'#ef4444';
+        var row=document.createElement('div');row.className='dept-bar-row';
+        row.innerHTML='<div class="dept-bar-top"><span class="dept-bar-name">'+escHtml(d)+'</span><span class="dept-bar-pct" style="color:'+barC+'">'+p+'%</span></div>'+
+          '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:0%;background:'+barC+'" data-width="'+p+'"></div></div>'+
+          '<div class="dept-bar-counts">'+depts[d].done+' of '+depts[d].total+' done</div>';
+        deptEl.appendChild(row);
       });
-      deptEl.innerHTML=html;
-      // Animate bars
       setTimeout(function(){
-        deptEl.querySelectorAll('.dept-bar-fill').forEach(function(bar){
-          bar.style.width=bar.getAttribute('data-width')+'%';
-        });
-      },100);
+        deptEl.querySelectorAll('.dept-bar-fill').forEach(function(b){ b.style.width=b.getAttribute('data-width')+'%'; });
+      },120);
     }
   }
 
+  // ════ Attention feed ════
+  var alertEl=document.getElementById('dash-alerts');
+  if(alertEl){
+    while(alertEl.firstChild) alertEl.removeChild(alertEl.firstChild);
+    var alertItems=[];
+    // Overdue compliance items
+    items.filter(function(it){ return getStatus(it)==='overdue'; }).slice(0,3).forEach(function(it){
+      alertItems.push({color:'#ef4444',icon:'⚠',title:it.name,meta:'Compliance · '+it.stakeholder,nav:'nav-overdue'});
+    });
+    // High risks
+    highRisks.slice(0,2).forEach(function(r){
+      alertItems.push({color:'#f59e0b',icon:'🔴',title:r.name,meta:'Risk · Score '+(r.likelihood*r.impact),nav:'nav-risks'});
+    });
+    // Overdue actions
+    overdueActions.slice(0,2).forEach(function(a){
+      alertItems.push({color:'#7c3aed',icon:'!',title:a.title,meta:'Action · '+a.owner,nav:'nav-actions'});
+    });
+    // Pending evidence
+    pendingEv.slice(0,2).forEach(function(e){
+      alertItems.push({color:'#e07d1a',icon:'📎',title:e.title,meta:'Evidence · '+e.owner,nav:'nav-evidence'});
+    });
+    // Policies due
+    polDue.slice(0,1).forEach(function(p){
+      alertItems.push({color:'#5b5ef4',icon:'📋',title:p.name,meta:'Policy review due',nav:'nav-policy'});
+    });
 
-  // Freq progress bars
+    if(!alertItems.length){
+      var ok=document.createElement('div');
+      ok.style.cssText='text-align:center;padding:30px 10px;color:var(--text3)';
+      ok.innerHTML='<div style="font-size:28px;margin-bottom:6px">✅</div><div style="font-size:12px">All clear — nothing needs attention!</div>';
+      alertEl.appendChild(ok);
+    } else {
+      alertItems.slice(0,7).forEach(function(al){
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .1s';
+        row.onmouseenter=function(){row.style.background='var(--hover)';};
+        row.onmouseleave=function(){row.style.background='';};
+        var dot=document.createElement('div');
+        dot.style.cssText='width:8px;height:8px;border-radius:50%;flex-shrink:0;background:'+al.color;
+        var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
+        var t=document.createElement('div');t.style.cssText='font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';t.textContent=al.title;
+        var m=document.createElement('div');m.style.cssText='font-size:10px;color:var(--text3)';m.textContent=al.meta;
+        info.appendChild(t);info.appendChild(m);
+        row.appendChild(dot);row.appendChild(info);
+        (function(navId){row.onclick=function(){var b=document.getElementById(navId);if(b)b.click();};})(al.nav);
+        alertEl.appendChild(row);
+      });
+    }
+  }
+
+  // ════ Risk snapshot ════
+  var rsnap=document.getElementById('dash-risk-snap');
+  if(rsnap){
+    while(rsnap.firstChild) rsnap.removeChild(rsnap.firstChild);
+    var crit=risks.filter(function(r){return (r.likelihood||1)*(r.impact||1)>=15&&r.status!=='Closed';}).length;
+    var high=risks.filter(function(r){var s=(r.likelihood||1)*(r.impact||1);return s>=8&&s<15&&r.status!=='Closed';}).length;
+    var low =risks.filter(function(r){return (r.likelihood||1)*(r.impact||1)<8&&r.status!=='Closed';}).length;
+    var closed=risks.filter(function(r){return r.status==='Closed';}).length;
+    if(!risks.length){
+      var nr=document.createElement('div');nr.style.cssText='text-align:center;padding:30px 10px;color:var(--text3);font-size:12px';nr.textContent='No risks logged yet.';rsnap.appendChild(nr);
+    } else {
+      [
+        {l:'Critical',v:crit,c:'#ef4444',bg:'rgba(239,68,68,.1)',nav:'nav-risks'},
+        {l:'High',    v:high,c:'#f59e0b',bg:'rgba(245,158,11,.1)',nav:'nav-risks'},
+        {l:'Low',     v:low, c:'#10b981',bg:'rgba(16,185,129,.1)',nav:'nav-risks'},
+        {l:'Closed',  v:closed,c:'#9ca3af',bg:'var(--surface2)',nav:'nav-risks'}
+      ].forEach(function(r){
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:8px;margin-bottom:6px;background:'+r.bg+';cursor:pointer;transition:opacity .15s';
+        row.onmouseenter=function(){row.style.opacity='.75';};
+        row.onmouseleave=function(){row.style.opacity='1';};
+        (function(n){row.onclick=function(){var b=document.getElementById(n);if(b)b.click();};})(r.nav);
+        var lbl=document.createElement('div');lbl.style.cssText='font-size:13px;font-weight:600;color:'+r.c;lbl.textContent=r.l;
+        var val=document.createElement('div');val.style.cssText='font-size:20px;font-weight:800;color:'+r.c;val.textContent=r.v;
+        row.appendChild(lbl);row.appendChild(val);rsnap.appendChild(row);
+      });
+    }
+  }
+
+  // ════ Upcoming deadlines — next 14 days ════
+  var upEl=document.getElementById('dash-upcoming');
+  if(upEl){
+    while(upEl.firstChild) upEl.removeChild(upEl.firstChild);
+    var tod=today();
+    var in14=new Date();in14.setDate(in14.getDate()+14);
+    var in14Str=in14.toISOString().split('T')[0];
+    var upcoming=[];
+    items.forEach(function(it){
+      if(it.due_date&&it.due_date>=tod&&it.due_date<=in14Str&&getStatus(it)!=='done')
+        upcoming.push({date:it.due_date,title:it.name,meta:it.stakeholder,color:'#5b5ef4',nav:'nav-items'});
+    });
+    evidenceItems.forEach(function(e){
+      if(e.deadline&&e.deadline>=tod&&e.deadline<=in14Str&&e.status!=='Approved')
+        upcoming.push({date:e.deadline,title:e.title,meta:'Evidence · '+e.owner,color:'#f59e0b',nav:'nav-evidence'});
+    });
+    actions.forEach(function(a){
+      if(a.due_date&&a.due_date>=tod&&a.due_date<=in14Str&&a.status!=='Closed')
+        upcoming.push({date:a.due_date,title:a.title,meta:'Action · '+a.owner,color:'#7c3aed',nav:'nav-actions'});
+    });
+    upcoming.sort(function(a,b){return a.date.localeCompare(b.date);});
+    if(!upcoming.length){
+      var nu=document.createElement('div');nu.style.cssText='text-align:center;padding:30px 10px;color:var(--text3)';
+      nu.innerHTML='<div style="font-size:24px;margin-bottom:6px">🗓</div><div style="font-size:12px">Nothing due in the next 14 days</div>';
+      upEl.appendChild(nu);
+    } else {
+      upcoming.slice(0,8).forEach(function(u){
+        var dL=Math.ceil((new Date(u.date)-new Date(tod))/86400000);
+        var row=document.createElement('div');
+        row.style.cssText='display:flex;align-items:center;gap:8px;padding:7px 8px;border-bottom:1px solid var(--border2);cursor:pointer;transition:background .1s';
+        row.onmouseenter=function(){row.style.background='var(--hover)';};
+        row.onmouseleave=function(){row.style.background='';};
+        var dateDiv=document.createElement('div');
+        dateDiv.style.cssText='min-width:36px;text-align:center;padding:4px 5px;border-radius:6px;background:'+u.color+'22';
+        dateDiv.innerHTML='<div style="font-size:10px;font-weight:800;color:'+u.color+'">'+dL+'d</div>';
+        var info=document.createElement('div');info.style.cssText='flex:1;min-width:0';
+        var t=document.createElement('div');t.style.cssText='font-size:12px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap';t.textContent=u.title;
+        var m=document.createElement('div');m.style.cssText='font-size:10px;color:var(--text3)';m.textContent=u.meta+' · '+u.date;
+        info.appendChild(t);info.appendChild(m);
+        row.appendChild(dateDiv);row.appendChild(info);
+        (function(n){row.onclick=function(){var b=document.getElementById(n);if(b)b.click();};})(u.nav);
+        upEl.appendChild(row);
+      });
+    }
+  }
+
+  // ════ Freq progress bars ════
   var freqs=['daily','weekly','monthly','quarterly','halfyearly','yearly'];
   var fpEl=document.getElementById('freq-progress');
   if(fpEl){
-    var fpHtml='<div style="display:flex;flex-direction:column;gap:10px">';
+    while(fpEl.firstChild) fpEl.removeChild(fpEl.firstChild);
+    var wrap=document.createElement('div');wrap.style.cssText='display:flex;flex-direction:column;gap:10px';
+    var hasAny=false;
     freqs.forEach(function(f){
       var grp=items.filter(function(it){return it.freq===f;});
-      if(!grp.length)return;
-      var gdone=grp.filter(function(it){return getStatus(it)==='done';}).length;
-      var gp=Math.round(gdone/grp.length*100);
-      var barColor=gp>=80?'#0d9e7e':gp>=50?'#e07d1a':'#d93f3f';
-      fpHtml+='<div class="dept-bar-row">'+
-        '<div class="dept-bar-top"><span class="dept-bar-name">'+FL[f]+'</span><span class="dept-bar-pct" style="color:'+barColor+'">'+gdone+'/'+grp.length+' &nbsp;'+gp+'%</span></div>'+
-        '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:0%;background:'+barColor+'" data-width="'+gp+'"></div></div>'+
-      '</div>';
+      if(!grp.length) return;
+      hasAny=true;
+      var gd=grp.filter(function(it){return getStatus(it)==='done';}).length;
+      var gp=Math.round(gd/grp.length*100);
+      var bc=gp>=80?'#10b981':gp>=50?'#e07d1a':'#ef4444';
+      var row=document.createElement('div');row.className='dept-bar-row';
+      row.innerHTML='<div class="dept-bar-top"><span class="dept-bar-name">'+FL[f]+'</span><span class="dept-bar-pct" style="color:'+bc+'">'+gd+'/'+grp.length+' · '+gp+'%</span></div>'+
+        '<div class="dept-bar-track"><div class="dept-bar-fill" style="width:0%;background:'+bc+'" data-width="'+gp+'"></div></div>';
+      wrap.appendChild(row);
     });
-    fpHtml+='</div>';
-    fpEl.innerHTML=fpHtml;
-    setTimeout(function(){
-      fpEl.querySelectorAll('.dept-bar-fill').forEach(function(bar){
-        bar.style.width=bar.getAttribute('data-width')+'%';
-      });
-    },150);
+    if(!hasAny){
+      var nf=document.createElement('div');nf.style.cssText='color:var(--text3);font-size:12px;padding:20px 0;text-align:center';nf.textContent='No items yet.';wrap.appendChild(nf);
+    }
+    fpEl.appendChild(wrap);
+    setTimeout(function(){fpEl.querySelectorAll('.dept-bar-fill').forEach(function(b){b.style.width=b.getAttribute('data-width')+'%';});},120);
+  }
+
+  // ════ Module status strip ════
+  var modEl=document.getElementById('dash-module-strip');
+  if(modEl){
+    while(modEl.firstChild) modEl.removeChild(modEl.firstChild);
+    var openEv=evidenceItems.filter(function(e){return e.status==='Pending';}).length;
+    var modules=[
+      {icon:'📋',label:'Policies',  val:policies.length,  sub:polDue.length>0?polDue.length+' due for review':'All current',  ok:polDue.length===0, nav:'nav-policy'},
+      {icon:'🛡',label:'Risks',     val:risks.length,     sub:highRisks.length>0?highRisks.length+' critical':'No critical risks', ok:highRisks.length===0, nav:'nav-risks'},
+      {icon:'✅',label:'Actions',   val:openActions.length, sub:overdueActions.length>0?overdueActions.length+' overdue':'All on time',  ok:overdueActions.length===0, nav:'nav-actions'},
+      {icon:'📁',label:'Evidence',  val:pendingEv.length, sub:openEv>0?openEv+' pending':'All submitted',   ok:openEv===0, nav:'nav-evidence'},
+      {icon:'🗓',label:'Audits',    val:audits.length,    sub:audits.length+' audit'+(audits.length!==1?'s':''),            ok:audits.length>0, nav:'nav-evidence'},
+      {icon:'🗺',label:'Controls',  val:controlMappings.length, sub:controlMappings.length+' mapped',               ok:controlMappings.length>0,nav:'nav-frameworks'},
+    ];
+    modules.forEach(function(m){
+      var card=document.createElement('div');
+      card.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:all .15s;text-align:center';
+      card.onmouseenter=function(){card.style.borderColor='var(--primary)';card.style.background='var(--primary-light)';};
+      card.onmouseleave=function(){card.style.borderColor='var(--border)';card.style.background='var(--surface2)';};
+      (function(n){card.onclick=function(){var b=document.getElementById(n);if(b)b.click();};})(m.nav);
+      var statusDot='<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+(m.ok?'#10b981':'#f59e0b')+';margin-right:4px"></span>';
+      card.innerHTML=
+        '<div style="font-size:22px;margin-bottom:4px">'+m.icon+'</div>'+
+        '<div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px">'+m.val+'</div>'+
+        '<div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:4px">'+m.label+'</div>'+
+        '<div style="font-size:10px;color:var(--text3);display:flex;align-items:center;justify-content:center">'+statusDot+m.sub+'</div>';
+      modEl.appendChild(card);
+    });
   }
 }
 
