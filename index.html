@@ -1732,23 +1732,45 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <textarea id="policy-desc" placeholder="Briefly describe what this policy covers and its purpose..." style="min-height:60px;resize:vertical"></textarea>
     </div>
 
-    <!-- Policy content stored in tool -->
+    <!-- Policy content — PDF upload OR text -->
     <div class="pf">
-      <label>Policy content *
-        <span style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px">Stored directly in Clarix — all employees can read this</span>
+      <label>Policy document
+        <span style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px">Upload PDF or write text — stored in Clarix, visible to all employees</span>
       </label>
-      <textarea id="policy-content" placeholder="Write the full policy text here. This is stored in Clarix and visible to all employees.
 
-Example:
-1. Purpose
-This policy establishes the requirements for...
+      <!-- Tab toggle -->
+      <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden;margin-bottom:10px;width:fit-content">
+        <button type="button" id="pol-tab-pdf" onclick="polSwitchTab('pdf')" style="padding:6px 16px;font-size:12px;font-weight:600;font-family:inherit;border:none;background:var(--primary);color:#fff;cursor:pointer;transition:all .15s">PDF Upload</button>
+        <button type="button" id="pol-tab-text" onclick="polSwitchTab('text')" style="padding:6px 16px;font-size:12px;font-weight:500;font-family:inherit;border:none;background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s">Write text</button>
+      </div>
 
-2. Scope
-This policy applies to all employees, contractors...
+      <!-- PDF upload area -->
+      <div id="pol-pdf-area">
+        <div id="pol-drop-zone" ondragover="event.preventDefault();this.style.borderColor='var(--primary)'" ondragleave="this.style.borderColor='var(--border)'" ondrop="polHandleDrop(event)" style="border:2px dashed var(--border);border-radius:10px;padding:28px 20px;text-align:center;cursor:pointer;transition:border-color .2s;background:var(--surface2)" onclick="document.getElementById('pol-pdf-input').click()">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="12" y2="12"/><line x1="15" y1="15" x2="12" y2="12"/></svg>
+          <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:4px">Drop PDF here or click to upload</div>
+          <div style="font-size:12px;color:var(--text3)">PDF files only · Max 4 MB (stored directly in Clarix)</div>
+        </div>
+        <input type="file" id="pol-pdf-input" accept=".pdf,application/pdf" style="display:none" onchange="polHandleFile(this.files[0])">
 
-3. Policy statements
-3.1 All users must...
-3.2 Passwords must be..." style="min-height:200px;resize:vertical;font-family:inherit;line-height:1.7;font-size:13px"></textarea>
+        <!-- PDF preview / selected file -->
+        <div id="pol-pdf-selected" style="display:none;margin-top:10px">
+          <div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:var(--success-light);border:1px solid rgba(16,185,129,.25);border-radius:8px;margin-bottom:8px">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--success)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <div style="flex:1;min-width:0">
+              <div id="pol-pdf-name" style="font-weight:600;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+              <div id="pol-pdf-size" style="font-size:11px;color:var(--text3);margin-top:2px"></div>
+            </div>
+            <button type="button" onclick="polClearPdf()" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:18px;padding:0 4px;line-height:1" title="Remove PDF">×</button>
+          </div>
+        </div>
+        <textarea id="policy-pdf-b64" style="display:none"></textarea>
+      </div>
+
+      <!-- Text area -->
+      <div id="pol-text-area" style="display:none">
+        <textarea id="policy-content" placeholder="Write the full policy text here. Visible to all employees.&#10;&#10;Example:&#10;1. Purpose — This policy establishes...&#10;2. Scope — Applies to all employees...&#10;3. Policy statements&#10;   3.1 All users must..." style="min-height:200px;resize:vertical;font-family:inherit;line-height:1.7;font-size:13px;width:100%"></textarea>
+      </div>
     </div>
 
     <div class="p2">
@@ -1806,7 +1828,27 @@ This policy applies to all employees, contractors...
   <div class="panel-body">
     <!-- Meta row -->
     <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px" id="pvp-meta"></div>
-    <!-- Policy text -->
+    <!-- PDF viewer or text content -->
+    <div id="pvp-pdf-wrap" style="display:none">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;color:var(--text3);display:flex;align-items:center;gap:6px">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+          <span id="pvp-pdf-filename" style="font-weight:600;color:var(--text)"></span>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button id="pvp-download-btn" onclick="downloadPolicyPdf()" class="btn btn-sm" style="font-size:11px;display:inline-flex;align-items:center;gap:4px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>
+          <button onclick="openPdfFullscreen()" class="btn btn-sm" style="font-size:11px;display:inline-flex;align-items:center;gap:4px">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+            Full screen
+          </button>
+        </div>
+      </div>
+      <embed id="pvp-pdf-embed" type="application/pdf" style="width:100%;height:65vh;border-radius:8px;border:1px solid var(--border)">
+    </div>
+    <!-- Text content -->
     <div id="pvp-content" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:20px 22px;font-size:13px;line-height:1.85;color:var(--text);white-space:pre-wrap;word-break:break-word;max-height:65vh;overflow-y:auto"></div>
     <!-- Change notes -->
     <div id="pvp-notes-wrap" style="display:none;margin-top:14px">
@@ -6199,6 +6241,128 @@ function wireExportButtons(){
   };
 }
 
+
+// ════════════════════════════════════════════════
+// POLICY PDF UPLOAD HELPERS
+// ════════════════════════════════════════════════
+
+// Switch between PDF and text tabs in the add/edit panel
+function polSwitchTab(tab){
+  var pdfArea  = document.getElementById('pol-pdf-area');
+  var textArea = document.getElementById('pol-text-area');
+  var pdfBtn   = document.getElementById('pol-tab-pdf');
+  var textBtn  = document.getElementById('pol-tab-text');
+  if(!pdfArea||!textArea) return;
+  if(tab==='pdf'){
+    pdfArea.style.display  = '';
+    textArea.style.display = 'none';
+    if(pdfBtn){ pdfBtn.style.background='var(--primary)';pdfBtn.style.color='#fff';pdfBtn.style.fontWeight='600'; }
+    if(textBtn){ textBtn.style.background='var(--surface)';textBtn.style.color='var(--text2)';textBtn.style.fontWeight='500'; }
+  } else {
+    pdfArea.style.display  = 'none';
+    textArea.style.display = '';
+    if(textBtn){ textBtn.style.background='var(--primary)';textBtn.style.color='#fff';textBtn.style.fontWeight='600'; }
+    if(pdfBtn){ pdfBtn.style.background='var(--surface)';pdfBtn.style.color='var(--text2)';pdfBtn.style.fontWeight='500'; }
+  }
+}
+
+// Handle drag-and-drop
+function polHandleDrop(event){
+  event.preventDefault();
+  var dropZone = document.getElementById('pol-drop-zone');
+  if(dropZone) dropZone.style.borderColor = 'var(--border)';
+  var file = event.dataTransfer.files[0];
+  if(file) polHandleFile(file);
+}
+
+// Process the selected/dropped file
+function polHandleFile(file){
+  if(!file) return;
+  if(file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')){
+    showDueDateToast('err','Only PDF files are supported.');
+    return;
+  }
+  // 4 MB limit (base64 will be ~33% larger, so raw limit is ~3 MB to stay under Supabase column limits)
+  var MB4 = 4 * 1024 * 1024;
+  if(file.size > MB4){
+    showDueDateToast('err','PDF is too large. Maximum size is 4 MB.');
+    return;
+  }
+  var reader = new FileReader();
+  reader.onload = function(e){
+    var dataUrl = e.target.result;
+    // dataUrl is "data:application/pdf;base64,XXXXX" — extract just base64
+    var b64 = dataUrl.split(',')[1];
+    document.getElementById('policy-pdf-b64').value = b64;
+    // Show selected file info
+    var nameEl = document.getElementById('pol-pdf-name');
+    var sizeEl = document.getElementById('pol-pdf-size');
+    var selEl  = document.getElementById('pol-pdf-selected');
+    var dropEl = document.getElementById('pol-drop-zone');
+    if(nameEl) nameEl.textContent = file.name;
+    if(sizeEl) sizeEl.textContent = (file.size/1024).toFixed(0)+' KB · PDF';
+    if(selEl)  selEl.style.display = '';
+    if(dropEl) dropEl.style.display = 'none';
+    showDueDateToast('','PDF loaded — ready to save!');
+  };
+  reader.readAsDataURL(file);
+}
+
+// Clear the selected PDF
+function polClearPdf(){
+  document.getElementById('policy-pdf-b64').value = '';
+  var nameEl = document.getElementById('pol-pdf-name');
+  var selEl  = document.getElementById('pol-pdf-selected');
+  var dropEl = document.getElementById('pol-drop-zone');
+  if(nameEl) nameEl.textContent = '';
+  if(selEl)  selEl.style.display  = 'none';
+  if(dropEl) dropEl.style.display = '';
+}
+
+// Download PDF from the view panel
+function downloadPolicyPdf(){
+  var embed = document.getElementById('pvp-pdf-embed');
+  if(!embed) return;
+  var b64      = embed.getAttribute('data-b64');
+  var filename = embed.getAttribute('data-filename') || 'policy.pdf';
+  if(!b64){ showDueDateToast('err','No PDF found to download.'); return; }
+  try{
+    var byteChars = atob(b64);
+    var byteArr   = new Uint8Array(byteChars.length);
+    for(var i=0;i<byteChars.length;i++) byteArr[i]=byteChars.charCodeAt(i);
+    var blob = new Blob([byteArr],{type:'application/pdf'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function(){ URL.revokeObjectURL(url); a.remove(); },1000);
+    showDueDateToast('','Downloading '+filename+'...');
+  } catch(err){
+    showDueDateToast('err','Download failed: '+err.message);
+  }
+}
+
+// Open PDF in a new tab fullscreen
+function openPdfFullscreen(){
+  var embed = document.getElementById('pvp-pdf-embed');
+  if(!embed) return;
+  var b64 = embed.getAttribute('data-b64');
+  if(!b64){ showDueDateToast('err','No PDF to open.'); return; }
+  try{
+    var byteChars = atob(b64);
+    var byteArr   = new Uint8Array(byteChars.length);
+    for(var i=0;i<byteChars.length;i++) byteArr[i]=byteChars.charCodeAt(i);
+    var blob = new Blob([byteArr],{type:'application/pdf'});
+    var url  = URL.createObjectURL(blob);
+    window.open(url,'_blank');
+  } catch(err){
+    showDueDateToast('err','Could not open PDF: '+err.message);
+  }
+}
+
+
 // ════════════════════════════════════════════════
 // AUDIT CALENDAR
 // ════════════════════════════════════════════════
@@ -6997,18 +7161,37 @@ function viewPolicy(p){
     }
   }
 
-  // Policy content
-  if(contentEl){
-    if(p.content&&p.content.trim()){
+  // Policy content — PDF or text
+  var pdfWrap=document.getElementById('pvp-pdf-wrap');
+  if(pdfWrap&&contentEl){
+    if(p.pdf_data&&p.pdf_data.trim()){
+      // Show PDF inline
+      pdfWrap.style.display='';
+      contentEl.style.display='none';
+      var embed=document.getElementById('pvp-pdf-embed');
+      if(embed) embed.src='data:application/pdf;base64,'+p.pdf_data;
+      var fnEl=document.getElementById('pvp-pdf-filename');
+      if(fnEl) fnEl.textContent=p.pdf_filename||'policy.pdf';
+      // Store for download
+      embed.setAttribute('data-b64',p.pdf_data);
+      embed.setAttribute('data-filename',p.pdf_filename||'policy.pdf');
+    } else if(p.content&&p.content.trim()){
+      // Show text content
+      pdfWrap.style.display='none';
       contentEl.style.display='';
       contentEl.textContent=p.content;
     } else {
+      // Nothing uploaded yet
+      pdfWrap.style.display='none';
       contentEl.style.display='';
-      contentEl.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--text3)">'+
-        '<div style="font-size:30px;margin-bottom:10px">📄</div>'+
-        '<div style="font-size:13px">No policy content stored yet.</div>'+
-        (canEditPolicy(p)?'<div style="font-size:12px;margin-top:6px">Click Edit to add policy content.</div>':'<div style="font-size:12px;margin-top:6px">The policy owner has not uploaded content yet.</div>')+
-        '</div>';
+      var noContent=document.createElement('div');
+      noContent.style.cssText='text-align:center;padding:40px 20px;color:var(--text3)';
+      var ni=document.createElement('div');ni.style.cssText='font-size:30px;margin-bottom:10px';ni.textContent='📄';
+      var nt=document.createElement('div');nt.style.cssText='font-size:13px';nt.textContent='No policy document uploaded yet.';
+      var ns=document.createElement('div');ns.style.cssText='font-size:12px;margin-top:6px';
+      ns.textContent=canEditPolicy(p)?'Click Edit to upload a PDF or write the policy text.':'The policy owner has not uploaded content yet.';
+      noContent.appendChild(ni);noContent.appendChild(nt);noContent.appendChild(ns);
+      contentEl.innerHTML='';contentEl.appendChild(noContent);
     }
   }
 
@@ -7097,6 +7280,8 @@ async function savePolicy(){
     status:document.getElementById('policy-status').value,
     description:document.getElementById('policy-desc').value.trim(),
     content:document.getElementById('policy-content').value.trim(),
+    pdf_data:document.getElementById('policy-pdf-b64').value||null,
+    pdf_filename:document.getElementById('pol-pdf-name').textContent||null,
     owner:owner,
     owner_email:document.getElementById('policy-owner-email-input').value.trim().toLowerCase(),
     approver:document.getElementById('policy-approver').value.trim(),
@@ -7115,6 +7300,8 @@ async function savePolicy(){
     closePanel();
     document.getElementById('policy-edit-id').value='';
     document.getElementById('policy-panel-title').textContent='Add policy';
+    polClearPdf();
+    polSwitchTab('pdf');
     ['policy-name','policy-desc','policy-content','policy-owner','policy-owner-email-input',
      'policy-approver','policy-version','policy-effective','policy-review-date',
      'policy-link','policy-controls','policy-notes'].forEach(function(id){
@@ -7144,6 +7331,19 @@ function editPolicy(p){
   document.getElementById('policy-status').value=p.status||'Active';
   document.getElementById('policy-desc').value=p.description||'';
   document.getElementById('policy-content').value=p.content||'';
+  // Restore PDF state
+  if(p.pdf_data&&p.pdf_data.trim()){
+    document.getElementById('policy-pdf-b64').value=p.pdf_data;
+    var nm=document.getElementById('pol-pdf-name');
+    if(nm) nm.textContent=p.pdf_filename||'policy.pdf';
+    document.getElementById('pol-pdf-selected').style.display='';
+    document.getElementById('pol-drop-zone').style.display='none';
+    polSwitchTab('pdf');
+  } else {
+    polClearPdf();
+    if(p.content&&p.content.trim()) polSwitchTab('text');
+    else polSwitchTab('pdf');
+  }
   document.getElementById('policy-owner').value=p.owner||'';
   document.getElementById('policy-owner-email-input').value=p.owner_email||'';
   document.getElementById('policy-approver').value=p.approver||'';
