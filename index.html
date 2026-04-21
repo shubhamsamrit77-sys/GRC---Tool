@@ -2477,6 +2477,7 @@ function openPanel(id){
     'evidence-panel': can('actions'),
     'ev-submit-panel': can('actions'),
     'policy-panel': can('add'),
+    'policy-view-panel': true,
     'policy-view-panel': true
   };
   if(id in panelPerms && !panelPerms[id]){
@@ -5037,8 +5038,8 @@ function setupAppUI(){
     // Stakeholder: ONLY dashboard + their own items
     hideNavs=['nav-overdue','nav-import','nav-export','nav-email','nav-emailtracker',
               'nav-response','nav-risks','nav-scorecard','nav-portal','nav-admin',
-              'nav-actions','nav-evidence','nav-frameworks','nav-calendar','nav-policy'];
-    hideGrps=['grp-comm','grp-risk','grp-stake','grp-actions','grp-admin','grp-frameworks','grp-calendar','grp-policy'];
+              'nav-actions','nav-evidence','nav-frameworks','nav-calendar'];
+    hideGrps=['grp-comm','grp-risk','grp-stake','grp-actions','grp-admin','grp-frameworks','grp-calendar'];
     hideEls=['admin-sec','add-item-card','add-risk-card'];
   }
   else if(r==='viewer'){
@@ -6595,12 +6596,16 @@ function getPolicyStatus(p){
 
 // ── Can current user EDIT this policy? ──
 function canEditPolicy(p){
+  // Rule 1: Not logged in — no
   if(!currentUser) return false;
+  // Rule 2: Admin — full access to all policies
   if(currentUser.role==='admin') return true;
-  // Assigned owner — match by email
-  var ownerEmail=(p.owner_email||'').toLowerCase().trim();
-  var myEmail=(currentUser.email||'').toLowerCase().trim();
-  return ownerEmail && ownerEmail===myEmail;
+  // Rule 3: Assigned owner — matched by email stored in owner_email field
+  var ownerEmail = (p.owner_email||'').toLowerCase().trim();
+  var myEmail    = (currentUser.email||'').toLowerCase().trim();
+  if(ownerEmail && myEmail && ownerEmail===myEmail) return true;
+  // Rule 4: Manager / Viewer / Stakeholder — read only, no edit
+  return false;
 }
 
 // ── Render policy grid ──
@@ -6690,18 +6695,36 @@ function renderPolicies(){
     var empty=document.createElement('div');
     empty.style.cssText='grid-column:1/-1;text-align:center;padding:60px 20px';
     if(!policies.length){
-      empty.innerHTML=
-        '<div style="font-size:42px;margin-bottom:12px">📋</div>'+
-        '<div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">No policies yet</div>'+
-        '<div style="font-size:13px;color:var(--text3);margin-bottom:20px">'+
-          (can('add')?'Start by adding your Information Security Policy — required for ISO 27001 A.5.1':
-                      'No policies have been created yet. Ask your admin to add policies.')+
-        '</div>'+
-        (can('add')?'<button class="btn btn-primary" onclick="openPanel('policy-panel')">+ Add first policy</button>':'');
+      var ei=document.createElement('div');
+      ei.style.cssText='font-size:42px;margin-bottom:12px';
+      ei.textContent='📋';
+      var et=document.createElement('div');
+      et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px';
+      et.textContent='No policies yet';
+      var es=document.createElement('div');
+      es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:20px';
+      es.textContent=can('add')
+        ?'Add your Information Security Policy — required for ISO 27001 A.5.1'
+        :'No policies created yet. Ask your admin to add policies.';
+      empty.appendChild(ei);
+      empty.appendChild(et);
+      empty.appendChild(es);
+      if(can('add')){
+        var eb=document.createElement('button');
+        eb.className='btn btn-primary';
+        eb.textContent='+ Add first policy';
+        eb.onclick=function(){ openPanel('policy-panel'); };
+        empty.appendChild(eb);
+      }
     } else {
-      empty.innerHTML=
-        '<div style="font-size:30px;margin-bottom:10px">🔍</div>'+
-        '<div style="font-size:13px;color:var(--text3)">No policies match this filter</div>';
+      var fi=document.createElement('div');
+      fi.style.cssText='font-size:30px;margin-bottom:10px';
+      fi.textContent='🔍';
+      var fs=document.createElement('div');
+      fs.style.cssText='font-size:13px;color:var(--text3)';
+      fs.textContent='No policies match this filter';
+      empty.appendChild(fi);
+      empty.appendChild(fs);
     }
     grid.appendChild(empty);
     updatePolicyBadge();
@@ -7019,7 +7042,10 @@ function openPolicyEdit(){
 
 // Acknowledge button — just a UI confirmation for now
 function acknowledgePolicy(){
-  showDueDateToast('','✓ Acknowledged — this will be recorded in a future audit trail update.');
+  var pid=document.getElementById('pvp-edit-btn').getAttribute('data-pid');
+  var p=policies.find(function(x){return x.id==pid;});
+  var pname=p?p.name:'this policy';
+  showDueDateToast('','✓ You acknowledged reading: '+pname);
 }
 
 // ── Calculate next review date ──
@@ -7106,7 +7132,11 @@ async function savePolicy(){
 
 // ── Edit — prefill panel ──
 function editPolicy(p){
-  if(!canEditPolicy(p)){noPermission('Only the assigned owner or an admin can edit this policy.');return;}
+  // Access gate: only admin or assigned owner
+  if(!canEditPolicy(p)){
+    noPermission('Only the assigned owner ('+( p.owner||'owner')+') or an admin can edit this policy.');
+    return;
+  }
   document.getElementById('policy-panel-title').textContent='Edit policy';
   document.getElementById('policy-edit-id').value=p.id;
   document.getElementById('policy-name').value=p.name||'';
