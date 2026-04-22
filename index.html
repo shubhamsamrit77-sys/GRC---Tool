@@ -1522,7 +1522,11 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
             <div style="font-size:16px;font-weight:700;color:var(--text)">Risk Register</div>
             <div style="font-size:12px;color:var(--text3);margin-top:2px">Track, score and manage organisational risks — heat map shows your risk posture at a glance</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center">
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <button class="btn" onclick="aiAnalyseRisks()" style="font-size:12px;background:var(--primary-light);border-color:rgba(91,94,244,.3);color:var(--primary);display:inline-flex;align-items:center;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              AI risk analysis
+            </button>
             <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
               <button id="risk-view-heatmap" onclick="setRiskView('heatmap')" style="padding:7px 14px;font-size:12px;font-weight:600;font-family:inherit;border:none;background:var(--primary);color:#fff;cursor:pointer;transition:all .15s">Heat map</button>
               <button id="risk-view-table" onclick="setRiskView('table')" style="padding:7px 14px;font-size:12px;font-weight:500;font-family:inherit;border:none;background:var(--surface);color:var(--text2);cursor:pointer;transition:all .15s">Register</button>
@@ -1636,6 +1640,10 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
             <button class="btn btn-primary" onclick="openPanel('action-panel')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add action / issue
+            </button>
+            <button class="btn" onclick="aiSuggestActions()" style="font-size:12px;background:var(--primary-light);border-color:rgba(91,94,244,.3);color:var(--primary);display:inline-flex;align-items:center;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              AI suggest fixes
             </button>
           </div>
         </div>
@@ -1821,8 +1829,10 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
     <!-- Policy content — PDF upload OR text -->
     <div class="pf">
-      <label>Policy document
-        <span style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px">Upload PDF or write text — stored in Clarix, visible to all employees</span>
+      <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px">
+        <span>Policy document
+          <span style="font-size:10px;font-weight:400;color:var(--text3);margin-left:6px">Upload PDF or write text — stored in Clarix, visible to all employees</span>
+        </span>
       </label>
 
       <!-- Tab toggle -->
@@ -1856,6 +1866,12 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
       <!-- Text area -->
       <div id="pol-text-area" style="display:none">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:6px">
+          <button type="button" id="ai-write-policy-btn" onclick="aiPrefillField('policy-content', 'Write a complete professional policy document for: ' + document.getElementById('policy-name').value + '. Include Purpose, Scope, Policy Statements, Responsibilities, Procedures, Compliance. ISO 27001 aligned.', this)" style="font-size:11px;padding:5px 10px;border:1px solid rgba(91,94,244,.3);border-radius:6px;background:var(--primary-light);color:var(--primary);cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:4px">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            AI write content
+          </button>
+        </div>
         <textarea id="policy-content" placeholder="Write the full policy text here. Visible to all employees.&#10;&#10;Example:&#10;1. Purpose — This policy establishes...&#10;2. Scope — Applies to all employees...&#10;3. Policy statements&#10;   3.1 All users must..." style="min-height:200px;resize:vertical;font-family:inherit;line-height:1.7;font-size:13px;width:100%"></textarea>
       </div>
     </div>
@@ -1986,6 +2002,10 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
               <option value="Compliance">Compliance</option>
               <option value="Other">Other</option>
             </select>
+            <button class="btn" onclick="aiWritePolicy()" style="font-size:12px;background:var(--primary-light);border-color:rgba(91,94,244,.3);color:var(--primary);display:inline-flex;align-items:center;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 015.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+              AI write policy
+            </button>
             <button class="btn btn-primary" onclick="openPanel('policy-panel')">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Add policy
@@ -2483,7 +2503,14 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <div class="pf"><label>Due date *</label><input id="action-due" type="date"></div>
       <div class="pf"><label>Source / Reference</label><input id="action-source" placeholder="e.g. ISO 27001 Audit 2026"></div>
     </div>
-    <div class="pf"><label>Corrective action plan</label><textarea id="action-plan" placeholder="What steps will be taken to fix this issue?" style="min-height:70px;resize:vertical"></textarea></div>
+    <div class="pf">
+      <label style="display:flex;align-items:center;justify-content:space-between">
+        <span>Corrective action plan</span>
+        <button type="button" onclick="aiPrefillField('action-plan', 'Write a corrective action plan for: ' + document.getElementById('action-title').value + '. Include 3-5 concrete steps, owners and timeline.', this)" style="font-size:10px;padding:3px 8px;border:1px solid rgba(91,94,244,.3);border-radius:5px;background:var(--primary-light);color:var(--primary);cursor:pointer;font-family:inherit">
+          ✦ AI suggest plan
+        </button>
+      </label>
+      <textarea id="action-plan" placeholder="What steps will be taken to fix this issue?" style="min-height:70px;resize:vertical"></textarea></div>
     <div class="pf"><label>Status</label>
       <select id="action-status">
         <option value="Open">Open</option>
@@ -2539,6 +2566,15 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <div class="pf"><label>Impact (1-5)</label><select id="r-impact"><option value="1">1 — Negligible</option><option value="2">2 — Minor</option><option value="3" selected>3 — Moderate</option><option value="4">4 — Major</option><option value="5">5 — Critical</option></select></div>
     </div>
     <div class="pf"><label>Risk owner</label><input id="r-owner" placeholder="Person responsible for this risk"></div>
+    <div class="pf">
+      <label style="display:flex;align-items:center;justify-content:space-between">
+        <span>Description / treatment notes</span>
+        <button type="button" onclick="aiPrefillField('r-notes', 'Write a professional 2-sentence risk description and treatment note for this GRC risk: ' + document.getElementById('r-name').value + '. Mention business impact and recommended treatment.', this)" style="font-size:10px;padding:3px 8px;border:1px solid rgba(91,94,244,.3);border-radius:5px;background:var(--primary-light);color:var(--primary);cursor:pointer;font-family:inherit">
+          ✦ AI describe
+        </button>
+      </label>
+      <textarea id="r-notes" placeholder="Describe the risk, its business impact and treatment plan..." style="min-height:60px;resize:vertical"></textarea>
+    </div>
   </div>
   <div class="panel-footer">
     <button class="btn" onclick="closePanel()">Cancel</button>
@@ -2569,19 +2605,24 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   <div style="background:#4f52d9;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
     <div style="display:flex;align-items:center;gap:10px">
       <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,system-ui,sans-serif;font-size:14px;font-weight:800;color:#fff">C</div>
-      <div><div style="font-size:14px;font-weight:600;color:#fff">Clarix AI</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Ask anything about your data</div></div>
+      <div><div style="font-size:14px;font-weight:600;color:#fff">Clarix AI</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Powered by Claude AI</div></div>
     </div>
     <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">×</button>
   </div>
-  <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:280px;max-height:360px;background:#f9fafb">
-    <div class="ai-msg-bot">Hi! I am <strong>Clarix AI</strong> — your compliance assistant.<br><br>Ask me anything:<br>• "How many items are overdue?"<br>• "Who has the lowest compliance rate?"<br>• "Show all high risks"<br>• "Give me a full summary"</div>
+  <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:280px;max-height:380px;background:#f9fafb">
+    <div class="ai-msg-bot">Hi! I am <strong>Clarix AI</strong> — powered by Claude.<br><br>I can help you with:<br>• <strong>Analyse</strong> your compliance data<br>• <strong>Generate</strong> policies, action plans, risk descriptions<br>• <strong>Summarise</strong> audit readiness<br>• <strong>Suggest</strong> what to fix first<br><br>Ask me anything about your GRC data!</div>
+  </div>
+  <div id="ai-thinking" style="display:none;padding:8px 14px;background:#f9fafb;border-top:1px solid #e2e5f0;font-size:12px;color:#5b5ef4;display:flex;align-items:center;gap:6px">
+    <span class="ai-typing"><span></span><span></span><span></span></span> Claude is thinking...
   </div>
   <div style="padding:10px 12px;border-top:1px solid #e2e5f0;background:#fff">
-    <div style="display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap">
-      <button class="ai-quick-btn" onclick="askAI('How many items are overdue?')">Overdue</button>
-      <button class="ai-quick-btn" onclick="askAI('Overall compliance percentage?')">Progress %</button>
-      <button class="ai-quick-btn" onclick="askAI('Show all high risks')">High risks</button>
-      <button class="ai-quick-btn" onclick="askAI('Who has the lowest compliance rate?')">Worst stakeholder</button>
+    <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
+      <button class="ai-quick-btn" onclick="askAI('Give me a full compliance summary')">📊 Summary</button>
+      <button class="ai-quick-btn" onclick="askAI('What should I fix first?')">🎯 Priorities</button>
+      <button class="ai-quick-btn" onclick="aiAuditReadiness('ISO 27001')">🏆 Audit ready?</button>
+      <button class="ai-quick-btn" onclick="askAI('List all high risks and suggest mitigations')">⚠ Risks</button>
+      <button class="ai-quick-btn" onclick="aiWritePolicy()" style="background:rgba(91,94,244,.1);color:var(--primary)">✍ Write policy</button>
+      <button id="ai-key-btn" class="ai-quick-btn" onclick="promptSetApiKey()" style="background:rgba(239,68,68,.08);color:var(--danger)">🔑 Set API key</button>
     </div>
     <div style="display:flex;gap:8px">
       <input id="ai-chat-input" placeholder="Ask about your GRC data..." style="flex:1;border:1px solid #e2e5f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit" onkeydown="if(event.key===&quot;Enter&quot;)sendAIMessage()">
@@ -3663,25 +3704,273 @@ function toggleAIChat(){
   }
 }
 
-function sendAIMessage(){
-  var input=document.getElementById('ai-chat-input');
-  var q=input.value.trim();
-  if(!q) return;
-  input.value='';
+
+// ════════════════════════════════════════════════
+// CLARIX AI — CLAUDE-POWERED AUTOMATION
+// ════════════════════════════════════════════════
+
+var CLAUDE_MODEL = 'claude-sonnet-4-5';
+var _aiChatHistory = [];
+
+// ── Core Claude API call ──
+async function callClaude(systemPrompt, userMessage, maxTokens){
+  maxTokens = maxTokens || 1024;
+  try{
+    var body = {
+      model: CLAUDE_MODEL,
+      max_tokens: maxTokens,
+      system: systemPrompt,
+      messages: _aiChatHistory.concat([{role:'user', content: userMessage}])
+    };
+    var res = await fetch('https://api.anthropic.com/v1/messages',{
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': window.__AK || '',
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify(body)
+    });
+    if(!res.ok){
+      var err = await res.json().catch(function(){ return {}; });
+      throw new Error(err.error && err.error.message ? err.error.message : 'API error '+res.status);
+    }
+    var data = await res.json();
+    return data.content && data.content[0] ? data.content[0].text : '';
+  }catch(e){
+    throw e;
+  }
+}
+
+// ── Build a rich GRC context snapshot from all live data ──
+function buildGRCContext(){
+  var total  = items.length;
+  var done   = items.filter(function(it){ return getStatus(it)==='done'; }).length;
+  var ov     = items.filter(function(it){ return getStatus(it)==='overdue'; }).length;
+  var pct    = total ? Math.round(done/total*100) : 0;
+  var highR  = risks.filter(function(r){ return (r.likelihood||1)*(r.impact||1)>=15 && r.status!=='Closed'; });
+  var openAc = actions.filter(function(a){ return a.status!=='Closed'; });
+  var overdAc= actions.filter(function(a){ return getActionStatus(a)==='overdue'; });
+  var pendEv = evidenceItems.filter(function(e){ return e.status==='Pending'; });
+  var polDue = policies.filter(function(p){ var s=getPolicyStatus(p); return s==='due-soon'||s==='expired'; });
+
+  var depts = {};
+  items.forEach(function(it){
+    var d=it.dept||'Unknown';
+    if(!depts[d]) depts[d]={done:0,total:0};
+    depts[d].total++;
+    if(getStatus(it)==='done') depts[d].done++;
+  });
+
+  var ctx = 'CLARIX GRC LIVE DATA SNAPSHOT\n';
+  ctx += '=====================================\n';
+  ctx += 'Compliance Items: '+total+' total, '+done+' done ('+pct+'%), '+ov+' overdue\n';
+  ctx += 'Risks: '+risks.length+' total, '+highR.length+' critical (score>=15), '+
+         risks.filter(function(r){var s=(r.likelihood||1)*(r.impact||1);return s>=8&&s<15;}).length+' high\n';
+  ctx += 'Actions: '+openAc.length+' open, '+overdAc.length+' overdue\n';
+  ctx += 'Evidence requests: '+evidenceItems.length+' total, '+pendEv.length+' pending\n';
+  ctx += 'Policies: '+policies.length+' total, '+polDue.length+' due for review\n';
+  ctx += 'Audits: '+audits.length+' total\n';
+  ctx += 'Control mappings: '+controlMappings.length+' mapped\n\n';
+
+  if(ov>0){
+    ctx += 'OVERDUE ITEMS (top 5):\n';
+    items.filter(function(it){return getStatus(it)==='overdue';}).slice(0,5).forEach(function(it){
+      ctx += '- '+it.name+' | Owner: '+(it.stakeholder||'—')+' | Due: '+(it.due_date||'—')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  if(highR.length){
+    ctx += 'CRITICAL RISKS:\n';
+    highR.slice(0,5).forEach(function(r){
+      ctx += '- '+r.name+' | Score: '+((r.likelihood||1)*(r.impact||1))+' | Owner: '+(r.owner||'—')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  if(overdAc.length){
+    ctx += 'OVERDUE ACTIONS:\n';
+    overdAc.slice(0,5).forEach(function(a){
+      ctx += '- '+a.title+' | Owner: '+(a.owner||'—')+' | Due: '+(a.due_date||'—')+'\n';
+    });
+    ctx += '\n';
+  }
+
+  if(Object.keys(depts).length){
+    ctx += 'DEPARTMENT COMPLIANCE:\n';
+    Object.keys(depts).forEach(function(d){
+      var p=Math.round(depts[d].done/depts[d].total*100);
+      ctx += '- '+d+': '+p+'% ('+depts[d].done+'/'+depts[d].total+')\n';
+    });
+  }
+
+  return ctx;
+}
+
+// ── System prompt for GRC assistant ──
+function getGRCSystemPrompt(){
+  return 'You are Clarix AI, an expert GRC (Governance, Risk and Compliance) assistant embedded in the Clarix compliance management tool.\n\n'+
+    'You help compliance teams with:\n'+
+    '- Analysing compliance data and identifying risks\n'+
+    '- Writing policies, action plans and risk descriptions\n'+
+    '- Preparing for ISO 27001, SOC 2, GDPR and NIST audits\n'+
+    '- Explaining compliance requirements in plain language\n'+
+    '- Suggesting corrective actions for issues\n\n'+
+    'Always be specific, actionable and concise. Use bullet points for lists.\n'+
+    'Format responses in clean HTML using <strong>, <br>, and bullet points (•).\n'+
+    'Keep responses under 300 words unless generating a full document.\n\n'+
+    'LIVE GRC DATA:\n'+buildGRCContext();
+}
+
+// ── Main AI chat (replaces keyword matcher) ──
+function askAI(question){
+  if(!question) return;
+  addMsg(question, 'user');
+  _aiChatHistory.push({role:'user', content: question});
+
+  // Show thinking indicator
+  var thinkEl = document.getElementById('ai-thinking');
+  if(thinkEl) thinkEl.style.display = 'flex';
+
+  callClaude(getGRCSystemPrompt(), question, 1024)
+    .then(function(answer){
+      if(thinkEl) thinkEl.style.display = 'none';
+      _aiChatHistory.push({role:'assistant', content: answer});
+      // Keep history to last 10 exchanges
+      if(_aiChatHistory.length > 20) _aiChatHistory = _aiChatHistory.slice(-20);
+      addMsg(answer, 'bot');
+      var msgs = document.getElementById('ai-chat-messages');
+      if(msgs) msgs.scrollTop = msgs.scrollHeight;
+    })
+    .catch(function(err){
+      if(thinkEl) thinkEl.style.display = 'none';
+      var errMsg = err.message || 'Unknown error';
+      if(errMsg.indexOf('401') > -1 || errMsg.indexOf('authentication') > -1 || errMsg.indexOf('api_key') > -1){
+        addMsg('⚠ <strong>API key not set.</strong> To enable Claude AI:<br>1. Get a key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>2. Click the <strong>🔑 Set API Key</strong> button above the chat<br><br>Until then, I can still answer basic questions from your data!', 'bot');
+        addMsg(processAIQuestion(question), 'bot');
+      } else {
+        addMsg('Sorry, I hit an error: '+errMsg+'<br>Falling back to local analysis...', 'bot');
+        addMsg(processAIQuestion(question), 'bot');
+      }
+      var msgs = document.getElementById('ai-chat-messages');
+      if(msgs) msgs.scrollTop = msgs.scrollHeight;
+    });
+}
+
+// ── AI Risk Analysis ──
+function aiAnalyseRisks(){
+  if(!risks.length){ showDueDateToast('','No risks to analyse. Add some risks first.'); return; }
+  toggleAIChat();
+  var riskList = risks.slice(0,10).map(function(r){
+    return r.name+' (L:'+r.likelihood+' I:'+r.impact+' Score:'+(r.likelihood*r.impact)+' Status:'+r.status+')';
+  }).join('\n');
+  var q = 'Analyse these risks and give me:\n1. The 3 most critical to address immediately\n2. Quick win mitigations for each\n3. Which ISO 27001 controls they map to\n\nRisks:\n'+riskList;
+  document.getElementById('ai-chat-input').value = '';
   askAI(q);
 }
 
-function askAI(question){
-  addMsg(question,'user');
-  var typing=addMsg('<span class="ai-typing"><span></span><span></span><span></span></span>','loading');
-  setTimeout(function(){
-    var answer=processAIQuestion(question);
-    typing.remove();
-    addMsg(answer,'bot');
-    var msgs=document.getElementById('ai-chat-messages');
-    msgs.scrollTop=msgs.scrollHeight;
-  },600);
+// ── AI Suggest Action Plans ──
+function aiSuggestActions(){
+  var overdueItems = items.filter(function(it){ return getStatus(it)==='overdue'; });
+  var highRisks    = risks.filter(function(r){ return (r.likelihood||1)*(r.impact||1)>=15; });
+  if(!overdueItems.length && !highRisks.length){
+    showDueDateToast('','No overdue items or critical risks to fix!'); return;
+  }
+  toggleAIChat();
+  var context = '';
+  if(overdueItems.length){
+    context += 'OVERDUE COMPLIANCE ITEMS:\n'+overdueItems.slice(0,5).map(function(it){
+      return '- '+it.name+' (Owner: '+it.stakeholder+', Due: '+it.due_date+')';
+    }).join('\n')+'\n\n';
+  }
+  if(highRisks.length){
+    context += 'CRITICAL RISKS:\n'+highRisks.slice(0,5).map(function(r){
+      return '- '+r.name+' (Score: '+(r.likelihood*r.impact)+')';
+    }).join('\n');
+  }
+  var q = 'Based on these issues, suggest specific corrective action plans:\n1. Immediate actions (this week)\n2. Short-term fixes (this month)\n3. Who should own each action\n4. Expected timeline\n\n'+context;
+  document.getElementById('ai-chat-input').value = '';
+  askAI(q);
 }
+
+// ── AI Write Policy ──
+function aiWritePolicy(){
+  // Show a mini prompt to ask what policy to write
+  var policyName = prompt('What policy do you want AI to write?\n\nExamples:\n• Information Security Policy\n• Password Policy\n• Acceptable Use Policy\n• Data Protection Policy\n• Remote Working Policy\n• Incident Response Policy');
+  if(!policyName || !policyName.trim()) return;
+
+  toggleAIChat();
+  var q = 'Write a complete, professional '+policyName+' for our organisation.\n\n'+
+    'Format it as a proper policy document with these sections:\n'+
+    '1. Purpose\n2. Scope\n3. Policy Statement\n4. Responsibilities\n5. Procedures\n6. Compliance and Enforcement\n7. Review Schedule\n\n'+
+    'Make it practical, ISO 27001 aligned, and ready to use.\n'+
+    'Keep it concise but complete (400-600 words).';
+  document.getElementById('ai-chat-input').value = '';
+  askAI(q);
+}
+
+// ── AI Audit Readiness Report ──
+function aiAuditReadiness(framework){
+  framework = framework || 'ISO 27001';
+  toggleAIChat();
+  var q = 'Based on our current GRC data, give me a '+framework+' audit readiness assessment:\n\n'+
+    '1. Overall readiness score (out of 10)\n'+
+    '2. What we are doing well\n'+
+    '3. Critical gaps that will cause audit failures\n'+
+    '4. Top 5 things to fix before the audit\n'+
+    '5. Estimated time to get audit-ready\n\n'+
+    'Be honest and specific. Use our live data.';
+  document.getElementById('ai-chat-input').value = '';
+  askAI(q);
+}
+
+// ── AI inline helper — fill field with AI content ──
+async function aiPrefillField(fieldId, prompt, btnEl){
+  if(!fieldId || !prompt) return;
+  var field = document.getElementById(fieldId);
+  if(!field) return;
+  var origText = btnEl ? btnEl.textContent : '';
+  if(btnEl){ btnEl.textContent='AI writing...'; btnEl.disabled=true; }
+  try{
+    var sys = 'You are a GRC writing assistant. Write concise, professional content for compliance documents. No preamble, no markdown headers — just the content itself.';
+    var answer = await callClaude(sys, prompt, 500);
+    field.value = answer.replace(/<[^>]*>/g,'').trim();
+    if(btnEl){ btnEl.textContent='✓ Done'; setTimeout(function(){ btnEl.textContent=origText; btnEl.disabled=false; }, 1500); }
+  }catch(e){
+    if(btnEl){ btnEl.textContent=origText; btnEl.disabled=false; }
+    showDueDateToast('','AI unavailable. Set your API key first.');
+  }
+}
+
+// ── API Key management ──
+function promptSetApiKey(){
+  var current = window.__AK ? 'Key is set ✓' : 'No key set';
+  var newKey = prompt('Enter your Anthropic API Key:\n('+current+')\n\nGet one free at console.anthropic.com\nKey starts with "sk-ant-..."');
+  if(newKey && newKey.trim().startsWith('sk-ant-')){
+    window.__AK = newKey.trim();
+    sessionStorage.setItem('_ak', btoa(newKey.trim()));
+    showDueDateToast('','✅ API key saved for this session! Claude AI is now active.');
+    _aiChatHistory = [];
+    // Update button
+    var btn = document.getElementById('ai-key-btn');
+    if(btn){ btn.textContent='🔑 Key set ✓'; btn.style.background='var(--success-light)'; btn.style.color='var(--success)'; }
+  } else if(newKey !== null){
+    showDueDateToast('','Invalid key format. Key should start with sk-ant-...');
+  }
+}
+
+function restoreApiKey(){
+  try{
+    var stored = sessionStorage.getItem('_ak');
+    if(stored){ window.__AK = atob(stored); }
+  }catch(e){ window.__AK = ''; }
+}
+
+// Restore key on load
+restoreApiKey();
+
 
 function addMsg(text,type){
   var msgs=document.getElementById('ai-chat-messages');
@@ -6121,6 +6410,39 @@ function renderRisks(){
 }
 
 
+
+
+// ── RISK ADD/EDIT HANDLER ──
+document.addEventListener('DOMContentLoaded', function(){
+  var addRiskBtn = document.getElementById('add-risk-btn');
+  if(addRiskBtn){
+    addRiskBtn.onclick = async function(){
+      if(!can('add')){ noPermission(); return; }
+      var name  = (document.getElementById('r-name')  || {}).value||'';
+      var cat   = (document.getElementById('r-cat')   || {}).value||'Operational';
+      var like  = parseInt((document.getElementById('r-like')  || {}).value||3);
+      var impact= parseInt((document.getElementById('r-impact')|| {}).value||3);
+      var owner = (document.getElementById('r-owner') || {}).value||'';
+      var notes = (document.getElementById('r-notes') || {}).value||'';
+      if(!name){ alert('Please enter a risk name.'); return; }
+      var res = await api('grc_risks', {
+        method:'POST',
+        body:{ name:name, category:cat, likelihood:like, impact:impact,
+               owner:owner, notes:notes, status:'Open' },
+        extra:{'Prefer':'return=minimal'}
+      });
+      if(!res.ok){ var e=await res.json().catch(function(){return{};}); alert('Error: '+(e.message||res.status)); return; }
+      ['r-name','r-owner','r-notes'].forEach(function(id){
+        var el=document.getElementById(id); if(el) el.value='';
+      });
+      var rLike=document.getElementById('r-like'); if(rLike) rLike.value='3';
+      var rImp=document.getElementById('r-impact'); if(rImp) rImp.value='3';
+      closePanel();
+      showDueDateToast('','Risk added!');
+      await loadAll();
+    };
+  }
+});
 
 
 // ── DARK / LIGHT MODE ──
