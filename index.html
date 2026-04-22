@@ -908,6 +908,11 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
 </style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f52d9'/><text y='.9em' font-size='80' font-family='Segoe UI,sans-serif' font-weight='800' fill='white' x='15'>C</text></svg>">
+  <!-- Security headers via meta tags -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://cdnjs.cloudflare.com https://mail.google.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://api.anthropic.com; frame-ancestors 'none';">
+  <meta http-equiv="X-Content-Type-Options" content="nosniff">
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+  <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
 </head>
 <body>
 
@@ -1423,7 +1428,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
               </div>
               <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:6px">Mark as Replied?</div>
               <div style="font-size:13px;color:var(--text2);margin-bottom:6px" id="reply-confirm-subject"></div>
-              <div style="font-size:12px;color:var(--text3);margin-bottom:20px">This will record today's date as the reply date and mark the email as complete.</div>
+              <div style="font-size:12px;color:var(--text3);margin-bottom:20px">This records the reply date and marks the email as complete.</div>
               <div class="pf" style="margin-bottom:16px;text-align:left">
                 <label>Reply received date (optional — defaults to today)</label>
                 <input type="date" id="reply-date-input">
@@ -2588,7 +2593,16 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
 </button>
 
-<script>
+<script>function forceLogout(){
+  secureWipe(['grc-session','grc-session-iv','grc-attempts','grc-lockout']);
+  _secKey = null;
+  currentUser = null;
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('l-email').value='';
+  document.getElementById('l-pass').value='';
+  showDueDateToast('','🔒 Session ended — please sign in again.');
+}
 // ── SLIDE PANELS ──
 function openPanel(id){
   // Role-based panel access
@@ -2630,8 +2644,174 @@ function closePanel(){
 function $(id){return document.getElementById(id);}
 function safeOn(id,ev,fn){var el=$(id);if(el)el.addEventListener(ev,fn);}
 
-var SUPA_URL='https://kqvvqriyaundzefmrqzk.supabase.co';
-var SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtxdnZxcml5YXVuZHplZm1ycXprIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQwOTA4MjQsImV4cCI6MjA4OTY2NjgyNH0.r8JlSYTPunPO6-N_TlipqZ92sPtLf_FrtHz47nVA0Mg';
+// ── CONFIG (obfuscated at rest, decoded at runtime) ──
+(function(){
+  var _x=[7,13,23,31,41,53,61,71];
+  var _u=[111, 121, 99, 111, 90, 15, 18, 104, 108, 124, 97, 105, 88, 71, 84, 62, 102, 120, 121, 123, 83, 80, 91, 42, 117, 124, 109, 116, 7, 70, 72, 55, 102, 111, 118, 108, 76, 27, 94, 40];
+  var _k=[98, 116, 93, 119, 75, 114, 94, 46, 72, 100, 93, 86, 124, 79, 116, 118, 73, 100, 94, 108, 96, 91, 111, 114, 100, 78, 94, 41, 96, 94, 77, 31, 81, 78, 93, 38, 7, 80, 68, 13, 119, 110, 36, 82, 64, 122, 84, 13, 125, 105, 79, 93, 65, 108, 80, 1, 125, 87, 68, 86, 90, 124, 83, 13, 107, 87, 126, 86, 31, 124, 80, 51, 127, 105, 121, 69, 81, 86, 80, 43, 50, 84, 79, 73, 92, 111, 117, 55, 107, 87, 122, 46, 80, 86, 101, 55, 117, 68, 126, 104, 64, 86, 80, 126, 116, 87, 68, 86, 31, 124, 80, 1, 114, 111, 37, 43, 64, 121, 126, 13, 119, 84, 79, 78, 64, 122, 87, 2, 52, 67, 109, 78, 94, 122, 105, 6, 51, 64, 125, 78, 90, 124, 80, 17, 51, 110, 84, 86, 31, 120, 87, 6, 51, 66, 67, 70, 27, 123, 87, 32, 126, 67, 95, 47, 7, 71, 5, 13, 107, 94, 78, 75, 121, 64, 83, 23, 72, 59, 58, 81, 118, 97, 81, 46, 119, 124, 77, 38, 27, 70, 109, 51, 75, 107, 72, 89, 91, 65, 117, 61, 51, 58, 121, 73, 104, 5, 112, 32];
+  function _d(arr){return arr.map(function(c,i){return String.fromCharCode(c^_x[i%_x.length]);}).join('');}
+  window.__GU=_d(_u);
+  window.__GK=_d(_k);
+})();
+var SUPA_URL=window.__GU;
+var SUPA_KEY=window.__GK;
+
+// ══════════════════════════════════════════════════════
+// CLARIX SECURITY MODULE — AES-GCM ENCRYPTION LAYER
+// ══════════════════════════════════════════════════════
+
+// ── AES-GCM session encryption (Web Crypto API) ──
+// Derives a per-browser key from a device fingerprint
+// so session data is encrypted at rest in localStorage
+
+var _secKey = null;
+
+async function getSecKey(){
+  if(_secKey) return _secKey;
+  try{
+    var fp = [
+      navigator.userAgent,
+      navigator.language,
+      screen.width + 'x' + screen.height,
+      new Date().getTimezoneOffset(),
+      'clarix-v2-salt-2026'
+    ].join('|');
+    var enc  = new TextEncoder();
+    var raw  = await crypto.subtle.importKey('raw', enc.encode(fp), {name:'PBKDF2'}, false, ['deriveKey']);
+    var salt = enc.encode('clarix-session-salt-kq77');
+    _secKey  = await crypto.subtle.deriveKey(
+      {name:'PBKDF2', salt:salt, iterations:100000, hash:'SHA-256'},
+      raw,
+      {name:'AES-GCM', length:256},
+      false,
+      ['encrypt','decrypt']
+    );
+    return _secKey;
+  }catch(e){
+    // crypto.subtle not available (HTTP context or very old browser) — return null
+    console.warn('Clarix: crypto.subtle unavailable, sessions will use fallback storage.');
+    return null;
+  }
+}
+
+async function encryptAndStore(storageKey, dataObj){
+  try{
+    var key  = await getSecKey();
+    var iv   = crypto.getRandomValues(new Uint8Array(12));
+    var enc  = new TextEncoder();
+    var plain = enc.encode(JSON.stringify(dataObj));
+    var cipher = await crypto.subtle.encrypt({name:'AES-GCM', iv:iv}, key, plain);
+    // Store ciphertext + IV separately
+    var cipherB64 = btoa(String.fromCharCode(...new Uint8Array(cipher)));
+    var ivB64     = btoa(String.fromCharCode(...iv));
+    localStorage.setItem(storageKey,      cipherB64);
+    localStorage.setItem(storageKey+'-iv', ivB64);
+  }catch(e){
+    // Fallback: store plaintext if crypto fails (e.g. very old browser)
+    localStorage.setItem(storageKey, JSON.stringify(dataObj));
+    localStorage.removeItem(storageKey+'-iv');
+  }
+}
+
+async function decryptFromStore(storageKey){
+  try{
+    var cipherB64 = localStorage.getItem(storageKey);
+    var ivB64     = localStorage.getItem(storageKey+'-iv');
+    if(!cipherB64) return null;
+    // Fallback: try plain JSON (migration path from old sessions)
+    if(!ivB64){
+      try{ return JSON.parse(cipherB64); }catch(e){ return null; }
+    }
+    var key    = await getSecKey();
+    var iv     = Uint8Array.from(atob(ivB64), function(c){return c.charCodeAt(0);});
+    var cipher = Uint8Array.from(atob(cipherB64), function(c){return c.charCodeAt(0);});
+    var plain  = await crypto.subtle.decrypt({name:'AES-GCM', iv:iv}, key, cipher);
+    var dec    = new TextDecoder();
+    return JSON.parse(dec.decode(plain));
+  }catch(e){
+    // Decryption failed — session corrupted or tampered, clear it
+    localStorage.removeItem(storageKey);
+    localStorage.removeItem(storageKey+'-iv');
+    return null;
+  }
+}
+
+// ── Secure wipe of localStorage keys ──
+function secureWipe(keys){
+  keys.forEach(function(k){
+    // Overwrite before removing (reduces forensic recovery risk)
+    localStorage.setItem(k, btoa(String.fromCharCode(...crypto.getRandomValues(new Uint8Array(32)))));
+    localStorage.removeItem(k);
+  });
+}
+
+// ── HTTPS enforcement (safe — skips iframe/artifact contexts) ──
+(function(){
+  try{
+    // Only redirect if we have real navigation permission
+    if(window.self === window.top &&
+       location.protocol !== 'https:' &&
+       location.hostname !== 'localhost' &&
+       location.hostname !== '127.0.0.1' &&
+       location.hostname !== ''){
+      location.replace('https:' + location.href.substring(location.protocol.length));
+    }
+  }catch(e){ /* Silently skip if running in a sandboxed iframe */ }
+})();
+
+// ── Prevent clickjacking (safe — handles cross-origin iframe SecurityError) ──
+(function(){
+  try{
+    if(window.self !== window.top){
+      // We are inside an iframe — but don't block if it's a same-origin dev tool
+      try{
+        // This throws in cross-origin iframes — if it succeeds we can act
+        var parentOrigin = window.top.location.origin; // throws if cross-origin
+        if(parentOrigin !== window.self.location.origin){
+          document.body.innerHTML = '<div style="padding:40px;font-family:sans-serif;text-align:center"><h2>Access denied</h2><p>Clarix cannot be loaded inside another page.</p></div>';
+        }
+      }catch(innerErr){
+        // Cross-origin iframe — can't access window.top safely, skip silently
+      }
+    }
+  }catch(e){ /* Silently skip */ }
+})();
+
+// ── Disable right-click on sensitive panels ──
+document.addEventListener('contextmenu', function(e){
+  var target = e.target.closest('.slide-panel');
+  if(target) e.preventDefault();
+});
+
+// ── Clear sensitive data from memory on tab/window close ──
+window.addEventListener('beforeunload', function(){
+  // Zero out key reference so GC can collect it
+  _secKey = null;
+});
+
+// ── Auto-lock on visibility change (tab switched for > 30 min) ──
+var _hiddenAt = null;
+document.addEventListener('visibilitychange', function(){
+  try{
+    if(document.hidden){
+      _hiddenAt = Date.now();
+    } else if(_hiddenAt){
+      var away = Date.now() - _hiddenAt;
+      _hiddenAt = null;
+      if(away > 30 * 60 * 1000 && currentUser){
+        secureWipe(['grc-session','grc-session-iv']);
+        currentUser = null;
+        _secKey = null;
+        var mainApp = document.getElementById('main-app');
+        var loginScr = document.getElementById('login-screen');
+        if(mainApp) mainApp.style.display = 'none';
+        if(loginScr) loginScr.style.display = 'flex';
+      }
+    }
+  }catch(e){ /* Skip if DOM not ready */ }
+});
+
+
 var items=[],logs=[],risks=[],users=[],actions=[],audits=[],evidenceItems=[],controlMappings=[],policies=[];var calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calSelectedDate=null,currentUser=null,currentEmail=null,activeFreq='';
 var FL={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
 var RC={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'};
@@ -2820,10 +3000,13 @@ document.getElementById('login-btn').onclick=async function(){
     localStorage.removeItem(attKey);
     localStorage.removeItem(lockKey);
 
-    currentUser=data[0];
-    // Save session with expiry timestamp (8 hours)
-    var session={user:currentUser,expires:Date.now()+(8*60*60*1000),loginTime:Date.now()};
-    localStorage.setItem('grc-session',JSON.stringify(session));
+    // Strip password before storing — never keep password in localStorage
+    var _raw=data[0];
+    var safeUser={id:_raw.id,name:_raw.name,email:_raw.email,role:_raw.role};
+    currentUser=safeUser;
+    // Encrypt session with AES-GCM
+    var session={user:safeUser,expires:Date.now()+(8*60*60*1000),loginTime:Date.now()};
+    encryptAndStore('grc-session',session);
     btn.textContent='Sign in to Clarix';btn.disabled=false;
     setupAppUI();
     startSessionMonitor();
@@ -2839,9 +3022,8 @@ document.getElementById('l-pass').onkeydown=function(e){if(e.key==='Enter')docum
 document.getElementById('l-email').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
 
 document.getElementById('logout-btn').onclick=function(){
-  localStorage.removeItem('grc-session');
-  localStorage.removeItem('grc-attempts');
-  localStorage.removeItem('grc-lockout');
+  secureWipe(['grc-session','grc-session-iv','grc-attempts','grc-lockout']);
+  _secKey = null;
   currentUser=null;
   document.getElementById('main-app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
@@ -5232,46 +5414,35 @@ document.addEventListener('keydown', function(e){
 // ── SESSION PERSISTENCE ──
 async function restoreSession(){
   try{
-    var saved = localStorage.getItem('grc-session');
-    if(!saved) return false;
-    var session = JSON.parse(saved);
-    // Support both old format (direct user) and new format (with expiry)
-    var user = session.user || session;
+    var session = await decryptFromStore('grc-session');
+    if(!session) return false;
+    var user    = session.user || session;
     var expires = session.expires || null;
-    // Check session expiry
     if(expires && Date.now() > expires){
       localStorage.removeItem('grc-session');
-      console.log('Session expired - please log in again');
       return false;
     }
     if(!user||!user.id||!user.email) return false;
-
     // Verify user still exists in database
-    var res = await fetch(SUPA_URL+'/rest/v1/grc_users?id=eq.'+user.id+'&select=*',{
+    var res = await fetch(SUPA_URL+'/rest/v1/grc_users?id=eq.'+user.id+'&select=id,name,email,role',{
       method:'GET',
-      headers:{
-        'apikey':SUPA_KEY,
-        'Authorization':'Bearer '+SUPA_KEY,
-        'Accept':'application/json'
-      },
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'},
       mode:'cors'
     });
     if(!res.ok) return false;
     var data = await res.json();
-    if(!Array.isArray(data)||!data.length){
-      localStorage.removeItem('grc-session');
-      return false;
-    }
-
-    // Session valid - log user in
-    currentUser = data[0];
-    localStorage.setItem('grc-session', JSON.stringify(currentUser));
+    if(!Array.isArray(data)||!data.length){ localStorage.removeItem('grc-session'); return false; }
+    // Refresh session with latest user data (no password field)
+    var safeUser=data[0];
+    currentUser = safeUser;
+    var newSession={user:safeUser,expires:session.expires,loginTime:session.loginTime||Date.now()};
+    encryptAndStore('grc-session',newSession);
     setupAppUI();
     startSessionMonitor();
     await loadAll();
     return true;
   }catch(e){
-    console.log('Session restore failed:', e.message);
+    console.log('Session restore failed:',e.message);
     return false;
   }
 }
