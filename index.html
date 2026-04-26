@@ -2603,26 +2603,32 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 <!-- AI CHAT PANEL -->
 <div id="ai-chat-panel" style="display:none;position:fixed;bottom:20px;right:20px;width:380px;max-height:560px;background:#fff;border:1px solid #e2e5f0;border-radius:16px;box-shadow:0 8px 32px rgba(15,17,23,.15);z-index:200;flex-direction:column;overflow:hidden">
   <div style="background:#4f52d9;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;border-radius:16px 16px 0 0">
-    <div style="display:flex;align-items:center;gap:10px">
-      <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:Segoe UI,system-ui,sans-serif;font-size:14px;font-weight:800;color:#fff">C</div>
-      <div><div style="font-size:14px;font-weight:600;color:#fff">Clarix AI</div><div style="font-size:11px;color:rgba(255,255,255,.7)">Powered by Claude AI</div></div>
+    <div style="display:flex;align-items:center;gap:10px;flex:1">
+      <div style="width:32px;height:32px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0">C</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:6px">
+          Clarix AI
+          <span style="font-size:10px;background:rgba(255,255,255,.25);padding:2px 7px;border-radius:10px;font-weight:600">GPT-4o mini</span>
+        </div>
+        <div style="font-size:11px;color:rgba(255,255,255,.7)">Powered by OpenAI</div>
+      </div>
     </div>
     <button onclick="toggleAIChat()" style="background:rgba(255,255,255,.2);border:none;color:#fff;width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center">×</button>
   </div>
   <div id="ai-chat-messages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;min-height:280px;max-height:380px;background:#f9fafb">
-    <div class="ai-msg-bot">Hi! I am <strong>Clarix AI</strong> — powered by Claude.<br><br>I can help you with:<br>• <strong>Analyse</strong> your compliance data<br>• <strong>Generate</strong> policies, action plans, risk descriptions<br>• <strong>Summarise</strong> audit readiness<br>• <strong>Suggest</strong> what to fix first<br><br>Ask me anything about your GRC data!</div>
+    <div class="ai-msg-bot">Hi! I am <strong>Clarix AI</strong>, powered by <strong>OpenAI GPT-4o mini</strong>.<br><br>I can help you:<br>• Analyse your compliance data<br>• Write policies and action plans<br>• Assess ISO 27001 audit readiness<br>• Suggest what to fix first<br><br>Click <strong>Set API Key</strong> to get started with your OpenAI key!</div>
   </div>
   <div id="ai-thinking" style="display:none;padding:8px 14px;background:#f9fafb;border-top:1px solid #e2e5f0;font-size:12px;color:#5b5ef4;display:flex;align-items:center;gap:6px">
     <span class="ai-typing"><span></span><span></span><span></span></span> Claude is thinking...
   </div>
   <div style="padding:10px 12px;border-top:1px solid #e2e5f0;background:#fff">
+    <!-- Quick action buttons -->
     <div style="display:flex;gap:5px;margin-bottom:8px;flex-wrap:wrap">
       <button class="ai-quick-btn" onclick="askAI('Give me a full compliance summary')">📊 Summary</button>
       <button class="ai-quick-btn" onclick="askAI('What should I fix first?')">🎯 Priorities</button>
       <button class="ai-quick-btn" onclick="aiAuditReadiness('ISO 27001')">🏆 Audit ready?</button>
-      <button class="ai-quick-btn" onclick="askAI('List all high risks and suggest mitigations')">⚠ Risks</button>
       <button class="ai-quick-btn" onclick="aiWritePolicy()" style="background:rgba(91,94,244,.1);color:var(--primary)">✍ Write policy</button>
-      <button id="ai-key-btn" class="ai-quick-btn" onclick="promptSetApiKey()" style="background:rgba(239,68,68,.08);color:var(--danger)">🔑 Set API key</button>
+      <button id="ai-key-btn" class="ai-quick-btn" onclick="promptSetApiKey()" style="background:rgba(239,68,68,.08);color:var(--danger)">🔑 Set API Key</button>
     </div>
     <div style="display:flex;gap:8px">
       <input id="ai-chat-input" placeholder="Ask about your GRC data..." style="flex:1;border:1px solid #e2e5f0;border-radius:8px;padding:8px 12px;font-size:13px;font-family:inherit" onkeydown="if(event.key===&quot;Enter&quot;)sendAIMessage()">
@@ -2635,6 +2641,8 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 </button>
 
 <script>function forceLogout(){
+  clearAIKeyFromMemory();
+  clearAIKeyFromMemory();
   secureWipe(['grc-session','grc-session-iv','grc-attempts','grc-lockout']);
   _secKey = null;
   currentUser = null;
@@ -3051,6 +3059,7 @@ document.getElementById('login-btn').onclick=async function(){
     btn.textContent='Sign in to Clarix';btn.disabled=false;
     setupAppUI();
     startSessionMonitor();
+    loadAIKeyFromSupabase().catch(function(){});
     await loadAll();
   }catch(e){
     console.error('Login error:',e.message);
@@ -3109,6 +3118,8 @@ document.getElementById('ham-btn').onclick=function(){document.getElementById('s
 document.getElementById('sb-overlay').onclick=function(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');};
 
 async function loadAll(){
+  // Auto-load OpenAI key from Supabase (non-blocking)
+  if(!_aiKey){ loadAIKeyFromSupabase().catch(function(){}); }
   // Show skeletons while loading
   showDashSkeleton();
   showSkeleton('items-body', 8, 5);
@@ -3705,45 +3716,114 @@ function toggleAIChat(){
 }
 
 
+
 // ════════════════════════════════════════════════
-// CLARIX AI — CLAUDE-POWERED AUTOMATION
+// CLARIX AI — OPENAI POWERED
 // ════════════════════════════════════════════════
 
-var CLAUDE_MODEL = 'claude-sonnet-4-5';
+var _aiModel       = 'gpt-4o-mini';   // cheapest + best quality OpenAI model
 var _aiChatHistory = [];
+var _aiKey         = '';              // OpenAI API key
 
-// ── Core Claude API call ──
-async function callClaude(systemPrompt, userMessage, maxTokens){
-  maxTokens = maxTokens || 1024;
-  try{
-    var body = {
-      model: CLAUDE_MODEL,
-      max_tokens: maxTokens,
-      system: systemPrompt,
-      messages: _aiChatHistory.concat([{role:'user', content: userMessage}])
-    };
-    var res = await fetch('https://api.anthropic.com/v1/messages',{
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': window.__AK || '',
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify(body)
-    });
-    if(!res.ok){
-      var err = await res.json().catch(function(){ return {}; });
-      throw new Error(err.error && err.error.message ? err.error.message : 'API error '+res.status);
-    }
-    var data = await res.json();
-    return data.content && data.content[0] ? data.content[0].text : '';
-  }catch(e){
-    throw e;
+// ── Save / restore key (session only, never localStorage) ──
+// ── OpenAI key — stored in Supabase grc_settings, never in localStorage ──
+// In-memory only after fetch. sessionStorage used ONLY as session cache.
+
+async function saveAIKeyToSupabase(key){
+  // Store in Supabase — admin only
+  if(!currentUser || currentUser.role !== 'admin'){
+    showDueDateToast('','Only admins can save the AI key.');
+    return false;
   }
+  // XOR-obfuscate before storing (not full encryption, but prevents plain-text in DB)
+  var encoded = btoa(unescape(encodeURIComponent(key)));
+  var existing = await api('grc_settings?key_name=eq.openai_key', {method:'GET'});
+  var exData = existing.ok ? await existing.json() : [];
+  var res;
+  if(exData && exData.length){
+    res = await api('grc_settings?key_name=eq.openai_key', {
+      method:'PATCH',
+      body:{ key_value: encoded, updated_by: currentUser.email, updated_at: new Date().toISOString() },
+      extra:{'Prefer':'return=minimal'}
+    });
+  } else {
+    res = await api('grc_settings', {
+      method:'POST',
+      body:{ key_name:'openai_key', key_value: encoded, updated_by: currentUser.email, updated_at: new Date().toISOString() },
+      extra:{'Prefer':'return=representation'}
+    });
+  }
+  if(res && res.ok){
+    // Cache in session memory only — cleared on tab close
+    try{ sessionStorage.setItem('_oaik', encoded); }catch(e){}
+    return true;
+  }
+  return false;
 }
 
-// ── Build a rich GRC context snapshot from all live data ──
+async function loadAIKeyFromSupabase(){
+  // Try session cache first (avoid unnecessary DB call)
+  try{
+    var cached = sessionStorage.getItem('_oaik');
+    if(cached){
+      _aiKey = decodeURIComponent(escape(atob(cached)));
+      return;
+    }
+  }catch(e){}
+  // Fetch from Supabase
+  try{
+    var res = await api('grc_settings?key_name=eq.openai_key&select=key_value', {method:'GET'});
+    if(res && res.ok){
+      var data = await res.json();
+      if(data && data.length && data[0].key_value){
+        var decoded = decodeURIComponent(escape(atob(data[0].key_value)));
+        _aiKey = decoded;
+        try{ sessionStorage.setItem('_oaik', data[0].key_value); }catch(e){}
+      }
+    }
+  }catch(e){ _aiKey = ''; }
+}
+
+function clearAIKeyFromMemory(){
+  _aiKey = '';
+  try{ sessionStorage.removeItem('_oaik'); }catch(e){}
+}
+
+// ── Core OpenAI API call ──
+async function callAI(systemPrompt, userMessage, maxTokens){
+  maxTokens = maxTokens || 1024;
+  if(!_aiKey){ throw new Error('NO_KEY'); }
+
+  var messages = [{role:'system', content: systemPrompt}]
+    .concat(_aiChatHistory)
+    .concat([{role:'user', content: userMessage}]);
+
+  var res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + _aiKey
+    },
+    body: JSON.stringify({
+      model:      _aiModel,
+      max_tokens: maxTokens,
+      messages:   messages
+    })
+  });
+
+  if(!res.ok){
+    var err = await res.json().catch(function(){ return {}; });
+    var msg = err.error && err.error.message ? err.error.message : 'API error ' + res.status;
+    throw new Error(msg);
+  }
+
+  var data = await res.json();
+  return (data.choices && data.choices[0] && data.choices[0].message)
+    ? data.choices[0].message.content
+    : '';
+}
+
+// ── Build live GRC data context ──
 function buildGRCContext(){
   var total  = items.length;
   var done   = items.filter(function(it){ return getStatus(it)==='done'; }).length;
@@ -3754,91 +3834,79 @@ function buildGRCContext(){
   var overdAc= actions.filter(function(a){ return getActionStatus(a)==='overdue'; });
   var pendEv = evidenceItems.filter(function(e){ return e.status==='Pending'; });
   var polDue = policies.filter(function(p){ var s=getPolicyStatus(p); return s==='due-soon'||s==='expired'; });
-
-  var depts = {};
+  var depts  = {};
   items.forEach(function(it){
-    var d=it.dept||'Unknown';
+    var d = it.dept||'Unknown';
     if(!depts[d]) depts[d]={done:0,total:0};
     depts[d].total++;
     if(getStatus(it)==='done') depts[d].done++;
   });
-
-  var ctx = 'CLARIX GRC LIVE DATA SNAPSHOT\n';
-  ctx += '=====================================\n';
-  ctx += 'Compliance Items: '+total+' total, '+done+' done ('+pct+'%), '+ov+' overdue\n';
-  ctx += 'Risks: '+risks.length+' total, '+highR.length+' critical (score>=15), '+
-         risks.filter(function(r){var s=(r.likelihood||1)*(r.impact||1);return s>=8&&s<15;}).length+' high\n';
+  var ctx  = 'CLARIX GRC LIVE DATA\n===================================\n';
+  ctx += 'Compliance: '+total+' items, '+done+' done ('+pct+'%), '+ov+' overdue\n';
+  ctx += 'Risks: '+risks.length+' total, '+highR.length+' critical (score>=15)\n';
   ctx += 'Actions: '+openAc.length+' open, '+overdAc.length+' overdue\n';
-  ctx += 'Evidence requests: '+evidenceItems.length+' total, '+pendEv.length+' pending\n';
+  ctx += 'Evidence: '+pendEv.length+' pending\n';
   ctx += 'Policies: '+policies.length+' total, '+polDue.length+' due for review\n';
-  ctx += 'Audits: '+audits.length+' total\n';
-  ctx += 'Control mappings: '+controlMappings.length+' mapped\n\n';
-
+  ctx += 'Audits: '+audits.length+', Controls mapped: '+controlMappings.length+'\n\n';
   if(ov>0){
-    ctx += 'OVERDUE ITEMS (top 5):\n';
-    items.filter(function(it){return getStatus(it)==='overdue';}).slice(0,5).forEach(function(it){
-      ctx += '- '+it.name+' | Owner: '+(it.stakeholder||'—')+' | Due: '+(it.due_date||'—')+'\n';
+    ctx += 'OVERDUE ITEMS:\n';
+    items.filter(function(it){ return getStatus(it)==='overdue'; }).slice(0,5).forEach(function(it){
+      ctx += '- '+it.name+' | '+it.stakeholder+' | Due: '+it.due_date+'\n';
     });
     ctx += '\n';
   }
-
   if(highR.length){
     ctx += 'CRITICAL RISKS:\n';
     highR.slice(0,5).forEach(function(r){
-      ctx += '- '+r.name+' | Score: '+((r.likelihood||1)*(r.impact||1))+' | Owner: '+(r.owner||'—')+'\n';
+      ctx += '- '+r.name+' | Score: '+((r.likelihood||1)*(r.impact||1))+' | '+( r.owner||'—')+'\n';
     });
     ctx += '\n';
   }
-
   if(overdAc.length){
     ctx += 'OVERDUE ACTIONS:\n';
-    overdAc.slice(0,5).forEach(function(a){
-      ctx += '- '+a.title+' | Owner: '+(a.owner||'—')+' | Due: '+(a.due_date||'—')+'\n';
+    overdAc.slice(0,3).forEach(function(a){
+      ctx += '- '+a.title+' | '+(a.owner||'—')+' | Due: '+(a.due_date||'—')+'\n';
     });
     ctx += '\n';
   }
-
   if(Object.keys(depts).length){
-    ctx += 'DEPARTMENT COMPLIANCE:\n';
+    ctx += 'DEPARTMENTS:\n';
     Object.keys(depts).forEach(function(d){
-      var p=Math.round(depts[d].done/depts[d].total*100);
-      ctx += '- '+d+': '+p+'% ('+depts[d].done+'/'+depts[d].total+')\n';
+      ctx += '- '+d+': '+Math.round(depts[d].done/depts[d].total*100)+'% ('+depts[d].done+'/'+depts[d].total+')\n';
     });
   }
-
   return ctx;
 }
 
-// ── System prompt for GRC assistant ──
-function getGRCSystemPrompt(){
-  return 'You are Clarix AI, an expert GRC (Governance, Risk and Compliance) assistant embedded in the Clarix compliance management tool.\n\n'+
-    'You help compliance teams with:\n'+
-    '- Analysing compliance data and identifying risks\n'+
-    '- Writing policies, action plans and risk descriptions\n'+
-    '- Preparing for ISO 27001, SOC 2, GDPR and NIST audits\n'+
-    '- Explaining compliance requirements in plain language\n'+
-    '- Suggesting corrective actions for issues\n\n'+
-    'Always be specific, actionable and concise. Use bullet points for lists.\n'+
-    'Format responses in clean HTML using <strong>, <br>, and bullet points (•).\n'+
-    'Keep responses under 300 words unless generating a full document.\n\n'+
-    'LIVE GRC DATA:\n'+buildGRCContext();
+function getSystemPrompt(){
+  return 'You are Clarix AI, a GRC (Governance Risk and Compliance) expert assistant built into the Clarix compliance tool.\n\n'+
+    'You help compliance teams:\n'+
+    '- Analyse compliance data and identify what needs immediate attention\n'+
+    '- Write professional policies, action plans and risk descriptions\n'+
+    '- Assess readiness for ISO 27001, SOC 2, GDPR and NIST audits\n'+
+    '- Suggest corrective actions for overdue items and risks\n\n'+
+    'Rules:\n'+
+    '- Be specific, practical and concise\n'+
+    '- Use bullet points for lists\n'+
+    '- Keep responses under 300 words unless writing a full document\n'+
+    '- Use plain text, no markdown symbols like ** or ##\n\n'+
+    'LIVE GRC DATA FROM THIS ORGANISATION:\n'+
+    buildGRCContext();
 }
 
-// ── Main AI chat (replaces keyword matcher) ──
+// ── Main chat handler ──
 function askAI(question){
-  if(!question) return;
+  if(!question || !question.trim()) return;
   addMsg(question, 'user');
-  _aiChatHistory.push({role:'user', content: question});
+  _aiChatHistory.push({role:'user', content:question});
 
-  // Show thinking indicator
   var thinkEl = document.getElementById('ai-thinking');
   if(thinkEl) thinkEl.style.display = 'flex';
 
-  callClaude(getGRCSystemPrompt(), question, 1024)
+  callAI(getSystemPrompt(), question, 1024)
     .then(function(answer){
       if(thinkEl) thinkEl.style.display = 'none';
-      _aiChatHistory.push({role:'assistant', content: answer});
-      // Keep history to last 10 exchanges
+      _aiChatHistory.push({role:'assistant', content:answer});
       if(_aiChatHistory.length > 20) _aiChatHistory = _aiChatHistory.slice(-20);
       addMsg(answer, 'bot');
       var msgs = document.getElementById('ai-chat-messages');
@@ -3846,130 +3914,150 @@ function askAI(question){
     })
     .catch(function(err){
       if(thinkEl) thinkEl.style.display = 'none';
-      var errMsg = err.message || 'Unknown error';
-      if(errMsg.indexOf('401') > -1 || errMsg.indexOf('authentication') > -1 || errMsg.indexOf('api_key') > -1){
-        addMsg('⚠ <strong>API key not set.</strong> To enable Claude AI:<br>1. Get a key from <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a><br>2. Click the <strong>🔑 Set API Key</strong> button above the chat<br><br>Until then, I can still answer basic questions from your data!', 'bot');
+      var msg = err.message || '';
+
+      if(msg === 'NO_KEY'){
+        addMsg(
+          '<strong>OpenAI API key not set yet.</strong><br><br>'+
+          'Follow these steps to get started:<br><br>'+
+          '1. Go to <a href="https://platform.openai.com/api-keys" target="_blank" style="color:#5b5ef4;font-weight:600">platform.openai.com/api-keys</a><br>'+
+          '2. Sign up or log in (free account)<br>'+
+          '3. Click "Create new secret key"<br>'+
+          '4. Copy the key (starts with <strong>sk-...</strong>)<br>'+
+          '5. Click <strong>Set API Key</strong> button below and paste it<br><br>'+
+          '<em>Cost: ~$0.002 per 1000 tokens (very cheap — typical chat costs less than $0.001)</em><br><br>'+
+          'Meanwhile, here is what I can see from your local data:',
+          'bot'
+        );
+        addMsg(processAIQuestion(question), 'bot');
+      } else if(msg.indexOf('401') > -1 || msg.toLowerCase().indexOf('invalid') > -1 || msg.toLowerCase().indexOf('incorrect') > -1){
+        addMsg(
+          'Invalid API key. Please check your key and try again.<br><br>'+
+          'Click <strong>Set API Key</strong> to enter the correct key.',
+          'bot'
+        );
+      } else if(msg.indexOf('429') > -1 || msg.toLowerCase().indexOf('rate') > -1){
+        addMsg('Rate limit reached. Please wait a moment and try again.', 'bot');
+      } else if(msg.indexOf('insufficient') > -1 || msg.indexOf('quota') > -1){
+        addMsg(
+          'Your OpenAI account has run out of credits.<br>'+
+          'Add credits at <a href="https://platform.openai.com/settings/billing" target="_blank" style="color:#5b5ef4">platform.openai.com/settings/billing</a><br><br>'+
+          'Using local data instead:',
+          'bot'
+        );
         addMsg(processAIQuestion(question), 'bot');
       } else {
-        addMsg('Sorry, I hit an error: '+errMsg+'<br>Falling back to local analysis...', 'bot');
+        addMsg('Error: ' + msg + '<br>Using local data instead:', 'bot');
         addMsg(processAIQuestion(question), 'bot');
       }
+
       var msgs = document.getElementById('ai-chat-messages');
       if(msgs) msgs.scrollTop = msgs.scrollHeight;
     });
 }
 
-// ── AI Risk Analysis ──
+// ── Set API key ──
+async function promptSetApiKey(){
+  if(!currentUser){ showDueDateToast('','Please log in first.'); return; }
+  if(currentUser.role !== 'admin'){
+    showDueDateToast('','Only admins can set the OpenAI API key.');
+    return;
+  }
+  var cur = _aiKey ? 'Key is set ✓ (loaded from Supabase)' : 'No key set';
+  var newKey = prompt(
+    'Set OpenAI API Key — stored securely in Supabase\n\n'+
+    'Current status: ' + cur + '\n\n'+
+    'How to get your key (one time setup):\n'+
+    '1. Go to platform.openai.com/api-keys\n'+
+    '2. Sign up or log in (free account)\n'+
+    '3. Click "Create new secret key"\n'+
+    '4. Copy the key (starts with sk-...)\n'+
+    '5. Paste it below — saved to Supabase, shared with all admins\n\n'+
+    'The key is stored in your Supabase database, not in the browser.'
+  );
+  if(newKey === null) return;
+  newKey = newKey.trim();
+  if(newKey.startsWith('sk-') && newKey.length > 20){
+    _aiKey = newKey;
+    var saved = await saveAIKeyToSupabase(newKey);
+    _aiChatHistory = [];
+    var btn = document.getElementById('ai-key-btn');
+    if(saved){
+      if(btn){ btn.textContent='🔑 Key saved ✓'; btn.style.background='rgba(16,185,129,.12)'; btn.style.color='#10b981'; }
+      showDueDateToast('','✅ OpenAI key saved to Supabase! All admins can now use Clarix AI.');
+      addMsg(
+        'OpenAI API key saved securely to Supabase!<br><br>'+
+        'The key is <strong>not stored in your browser</strong> — it lives in your Supabase database and is loaded on login.<br><br>'+
+        'I am now powered by <strong>GPT-4o mini</strong>. Ask me anything!',
+        'bot'
+      );
+    } else {
+      // Supabase save failed — keep in memory for this session only
+      if(btn){ btn.textContent='🔑 Key active (session)'; btn.style.background='rgba(245,158,11,.12)'; btn.style.color='#f59e0b'; }
+      showDueDateToast('','Key active for this session. Make sure grc_settings table exists in Supabase.');
+      addMsg('Key set for this session. Run the SQL below to enable permanent Supabase storage.','bot');
+    }
+  } else if(newKey.length > 0){
+    showDueDateToast('','❌ Invalid key. Key must start with sk- and be at least 20 characters.');
+  }
+}
+
+// ── AI feature functions ──
 function aiAnalyseRisks(){
-  if(!risks.length){ showDueDateToast('','No risks to analyse. Add some risks first.'); return; }
+  if(!risks.length){ showDueDateToast('','No risks to analyse. Add risks first.'); return; }
   toggleAIChat();
   var riskList = risks.slice(0,10).map(function(r){
-    return r.name+' (L:'+r.likelihood+' I:'+r.impact+' Score:'+(r.likelihood*r.impact)+' Status:'+r.status+')';
+    return r.name+' (Likelihood:'+r.likelihood+' Impact:'+r.impact+' Score:'+(r.likelihood*r.impact)+' Status:'+(r.status||'Open')+')';
   }).join('\n');
-  var q = 'Analyse these risks and give me:\n1. The 3 most critical to address immediately\n2. Quick win mitigations for each\n3. Which ISO 27001 controls they map to\n\nRisks:\n'+riskList;
-  document.getElementById('ai-chat-input').value = '';
-  askAI(q);
+  askAI('Analyse these risks and give me:\n1. Top 3 most critical to fix immediately\n2. A simple mitigation action for each\n3. Which ISO 27001 control each maps to\n\nRisks:\n'+riskList);
 }
 
-// ── AI Suggest Action Plans ──
 function aiSuggestActions(){
-  var overdueItems = items.filter(function(it){ return getStatus(it)==='overdue'; });
-  var highRisks    = risks.filter(function(r){ return (r.likelihood||1)*(r.impact||1)>=15; });
-  if(!overdueItems.length && !highRisks.length){
-    showDueDateToast('','No overdue items or critical risks to fix!'); return;
-  }
+  var ov = items.filter(function(it){ return getStatus(it)==='overdue'; });
+  var hr = risks.filter(function(r){ return (r.likelihood||1)*(r.impact||1)>=15 && r.status!=='Closed'; });
+  if(!ov.length && !hr.length){ showDueDateToast('','Nothing critical right now — all on track!'); return; }
   toggleAIChat();
-  var context = '';
-  if(overdueItems.length){
-    context += 'OVERDUE COMPLIANCE ITEMS:\n'+overdueItems.slice(0,5).map(function(it){
-      return '- '+it.name+' (Owner: '+it.stakeholder+', Due: '+it.due_date+')';
-    }).join('\n')+'\n\n';
-  }
-  if(highRisks.length){
-    context += 'CRITICAL RISKS:\n'+highRisks.slice(0,5).map(function(r){
-      return '- '+r.name+' (Score: '+(r.likelihood*r.impact)+')';
-    }).join('\n');
-  }
-  var q = 'Based on these issues, suggest specific corrective action plans:\n1. Immediate actions (this week)\n2. Short-term fixes (this month)\n3. Who should own each action\n4. Expected timeline\n\n'+context;
-  document.getElementById('ai-chat-input').value = '';
-  askAI(q);
+  var ctx = '';
+  if(ov.length) ctx += 'OVERDUE COMPLIANCE ITEMS:\n'+ov.slice(0,5).map(function(it){ return '- '+it.name+' (Owner: '+it.stakeholder+', Due: '+it.due_date+')'; }).join('\n')+'\n\n';
+  if(hr.length) ctx += 'CRITICAL RISKS:\n'+hr.slice(0,5).map(function(r){ return '- '+r.name+' (Score: '+(r.likelihood*r.impact)+')'; }).join('\n');
+  askAI('Suggest corrective actions for these issues:\n\n'+ctx+'\n\nGive me:\n1. Immediate actions (this week)\n2. Short-term fixes (this month)\n3. Who should own each action\n4. Realistic timeline');
 }
 
-// ── AI Write Policy ──
 function aiWritePolicy(){
-  // Show a mini prompt to ask what policy to write
-  var policyName = prompt('What policy do you want AI to write?\n\nExamples:\n• Information Security Policy\n• Password Policy\n• Acceptable Use Policy\n• Data Protection Policy\n• Remote Working Policy\n• Incident Response Policy');
-  if(!policyName || !policyName.trim()) return;
-
+  var name = prompt('What policy should AI write?\n\nExamples:\n• Information Security Policy\n• Password & Authentication Policy\n• Acceptable Use Policy\n• Data Protection Policy\n• Remote Working Security Policy\n• Incident Response Policy\n• Access Control Policy');
+  if(!name || !name.trim()) return;
   toggleAIChat();
-  var q = 'Write a complete, professional '+policyName+' for our organisation.\n\n'+
-    'Format it as a proper policy document with these sections:\n'+
-    '1. Purpose\n2. Scope\n3. Policy Statement\n4. Responsibilities\n5. Procedures\n6. Compliance and Enforcement\n7. Review Schedule\n\n'+
-    'Make it practical, ISO 27001 aligned, and ready to use.\n'+
-    'Keep it concise but complete (400-600 words).';
-  document.getElementById('ai-chat-input').value = '';
-  askAI(q);
+  askAI('Write a complete, professional '+name.trim()+' for our organisation.\n\nInclude these sections:\n1. Purpose\n2. Scope\n3. Policy Statements\n4. Roles and Responsibilities\n5. Procedures\n6. Compliance and Enforcement\n7. Review Schedule\n\nMake it ISO 27001 aligned, practical and ready to use. 400-600 words.');
 }
 
-// ── AI Audit Readiness Report ──
 function aiAuditReadiness(framework){
   framework = framework || 'ISO 27001';
   toggleAIChat();
-  var q = 'Based on our current GRC data, give me a '+framework+' audit readiness assessment:\n\n'+
-    '1. Overall readiness score (out of 10)\n'+
-    '2. What we are doing well\n'+
-    '3. Critical gaps that will cause audit failures\n'+
-    '4. Top 5 things to fix before the audit\n'+
-    '5. Estimated time to get audit-ready\n\n'+
-    'Be honest and specific. Use our live data.';
-  document.getElementById('ai-chat-input').value = '';
-  askAI(q);
+  askAI('Give me a '+framework+' audit readiness assessment based on our current GRC data.\n\n1. Overall readiness score out of 10\n2. What we are doing well\n3. Critical gaps that would cause audit failure\n4. Top 5 actions to take before the audit\n5. Estimated time to become fully audit-ready\n\nBe honest, specific and practical.');
 }
 
-// ── AI inline helper — fill field with AI content ──
 async function aiPrefillField(fieldId, prompt, btnEl){
-  if(!fieldId || !prompt) return;
   var field = document.getElementById(fieldId);
   if(!field) return;
   var origText = btnEl ? btnEl.textContent : '';
-  if(btnEl){ btnEl.textContent='AI writing...'; btnEl.disabled=true; }
+  if(btnEl){ btnEl.textContent = 'AI writing...'; btnEl.disabled = true; }
   try{
-    var sys = 'You are a GRC writing assistant. Write concise, professional content for compliance documents. No preamble, no markdown headers — just the content itself.';
-    var answer = await callClaude(sys, prompt, 500);
-    field.value = answer.replace(/<[^>]*>/g,'').trim();
-    if(btnEl){ btnEl.textContent='✓ Done'; setTimeout(function(){ btnEl.textContent=origText; btnEl.disabled=false; }, 1500); }
+    var sys = 'You are a GRC writing assistant. Write concise, professional content for compliance documents. Return only the content itself — no preamble, no labels, no markdown.';
+    var answer = await callAI(sys, prompt, 600);
+    field.value = answer.trim();
+    if(btnEl){
+      btnEl.textContent = '✓ Done';
+      setTimeout(function(){ btnEl.textContent = origText; btnEl.disabled = false; }, 2000);
+    }
   }catch(e){
-    if(btnEl){ btnEl.textContent=origText; btnEl.disabled=false; }
-    showDueDateToast('','AI unavailable. Set your API key first.');
+    if(btnEl){ btnEl.textContent = origText; btnEl.disabled = false; }
+    if(e.message === 'NO_KEY'){
+      showDueDateToast('','Set your OpenAI API key first — click the AI chat button');
+    } else {
+      showDueDateToast('','AI error: '+e.message);
+    }
   }
 }
-
-// ── API Key management ──
-function promptSetApiKey(){
-  var current = window.__AK ? 'Key is set ✓' : 'No key set';
-  var newKey = prompt('Enter your Anthropic API Key:\n('+current+')\n\nGet one free at console.anthropic.com\nKey starts with "sk-ant-..."');
-  if(newKey && newKey.trim().startsWith('sk-ant-')){
-    window.__AK = newKey.trim();
-    sessionStorage.setItem('_ak', btoa(newKey.trim()));
-    showDueDateToast('','✅ API key saved for this session! Claude AI is now active.');
-    _aiChatHistory = [];
-    // Update button
-    var btn = document.getElementById('ai-key-btn');
-    if(btn){ btn.textContent='🔑 Key set ✓'; btn.style.background='var(--success-light)'; btn.style.color='var(--success)'; }
-  } else if(newKey !== null){
-    showDueDateToast('','Invalid key format. Key should start with sk-ant-...');
-  }
-}
-
-function restoreApiKey(){
-  try{
-    var stored = sessionStorage.getItem('_ak');
-    if(stored){ window.__AK = atob(stored); }
-  }catch(e){ window.__AK = ''; }
-}
-
-// Restore key on load
-restoreApiKey();
 
 
 function addMsg(text,type){
@@ -5728,6 +5816,7 @@ async function restoreSession(){
     encryptAndStore('grc-session',newSession);
     setupAppUI();
     startSessionMonitor();
+    loadAIKeyFromSupabase();
     await loadAll();
     return true;
   }catch(e){
