@@ -1120,6 +1120,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
           <svg class="sb-chevron open" id="chev-admin" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
         </button>
         <div class="sb-group open" id="grp-admin">
+          <button class="sb-btn sb-child" id="nav-audit-trail"><span class="sb-dot"></span>Audit trail</button>
           <button class="sb-btn sb-child" id="nav-admin"><span class="sb-dot"></span>Manage users</button>
         </div>
       </div>
@@ -2094,6 +2095,69 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
       </div>
 
+      <!-- AUDIT TRAIL -->
+      <div id="s-audit-trail" class="sec">
+
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">Audit Trail</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:2px">Complete tamper-evident log of every change — who did what, when, and what changed · ISO 27001 A.8.15</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="at-filter-action" onchange="renderAuditTrail()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+              <option value="">All actions</option>
+              <option value="CREATE">Created</option>
+              <option value="UPDATE">Updated</option>
+              <option value="DELETE">Deleted</option>
+              <option value="LOGIN">Login</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="EXPORT">Export</option>
+            </select>
+            <select id="at-filter-module" onchange="renderAuditTrail()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+              <option value="">All modules</option>
+              <option value="Compliance Item">Compliance Items</option>
+              <option value="Risk">Risks</option>
+              <option value="Action">Actions</option>
+              <option value="Evidence">Evidence</option>
+              <option value="Policy">Policies</option>
+              <option value="Audit">Audits</option>
+              <option value="User">Users</option>
+              <option value="Control Mapping">Control Mappings</option>
+              <option value="System">System</option>
+            </select>
+            <input id="at-filter-user" oninput="renderAuditTrail()" placeholder="Filter by user..." style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:150px">
+            <button class="btn" onclick="exportAuditTrail()" style="font-size:12px;display:inline-flex;align-items:center;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Export
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary strip -->
+        <div id="at-summary" class="dash-grid" style="margin-bottom:14px"></div>
+
+        <!-- Audit log table -->
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="min-width:160px;padding-left:16px">Timestamp</th>
+              <th style="min-width:130px">User</th>
+              <th style="min-width:80px">Action</th>
+              <th style="min-width:120px">Module</th>
+              <th style="min-width:220px">Description</th>
+              <th style="min-width:100px">IP / Device</th>
+            </tr></thead>
+            <tbody id="audit-trail-body"></tbody>
+          </table>
+        </div>
+
+        <!-- Load more -->
+        <div id="at-load-more" style="display:none;text-align:center;margin-top:14px">
+          <button class="btn" onclick="loadMoreAuditLogs()" style="font-size:13px">Load more entries</button>
+        </div>
+
+      </div>
+
       <div id="s-scorecard" class="sec">
         <div class="card"><div class="card-title">Stakeholder compliance scorecard</div><div id="scorecard-content"><div class="empty">Loading...</div></div></div>
       </div>
@@ -2641,7 +2705,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 </button>
 
 <script>function forceLogout(){
-  clearAIKeyFromMemory();
+  if(currentUser) writeAuditLog('LOGOUT','System','User logged out: '+(currentUser.email||''));
   clearAIKeyFromMemory();
   secureWipe(['grc-session','grc-session-iv','grc-attempts','grc-lockout']);
   _secKey = null;
@@ -2861,7 +2925,7 @@ document.addEventListener('visibilitychange', function(){
 });
 
 
-var items=[],logs=[],risks=[],users=[],actions=[],audits=[],evidenceItems=[],controlMappings=[],policies=[];var calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calSelectedDate=null,currentUser=null,currentEmail=null,activeFreq='';
+var items=[],logs=[],risks=[],users=[],actions=[],audits=[],evidenceItems=[],controlMappings=[],policies=[],auditLogs=[];var atPage=0,atPageSize=50;var calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calSelectedDate=null,currentUser=null,currentEmail=null,activeFreq='';
 var FL={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
 var RC={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'};
 
@@ -3053,6 +3117,7 @@ document.getElementById('login-btn').onclick=async function(){
     var _raw=data[0];
     var safeUser={id:_raw.id,name:_raw.name,email:_raw.email,role:_raw.role};
     currentUser=safeUser;
+    writeAuditLog('LOGIN','System','User logged in: '+safeUser.email,{role:safeUser.role});
     // Encrypt session with AES-GCM
     var session={user:safeUser,expires:Date.now()+(8*60*60*1000),loginTime:Date.now()};
     encryptAndStore('grc-session',session);
@@ -3094,6 +3159,7 @@ navCfg.forEach(function(m){
       'nav-actions':can('actions'),
       'nav-evidence':can('actions'),
       'nav-admin':can('admin'),
+      'nav-audit-trail':can('admin'),
       'nav-scorecard':currentUser&&currentUser.role!=='stakeholder',
       'nav-portal':currentUser&&currentUser.role!=='stakeholder',
       'nav-overdue':currentUser&&currentUser.role!=='stakeholder',
@@ -3110,7 +3176,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-audit-trail')renderAuditTrail();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
     if(window.innerWidth<=600){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -3142,6 +3208,7 @@ async function loadAll(){
     var r6=await fetch(base+'grc_evidence?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
     var r7=await fetch(base+'grc_control_mappings?select=*',{method:'GET',headers:headers,mode:'cors'});
     var r8=await fetch(base+'grc_policies?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
+    var r9=await fetch(base+'grc_audit_trail?select=*&order=created_at.desc&limit=50',{method:'GET',headers:headers,mode:'cors'});
 
     if(!r1.ok||!r2.ok||!r3.ok){
       throw new Error('HTTP error: '+(r1.ok?r2.ok?r3.status:r2.status:r1.status));
@@ -3175,6 +3242,8 @@ async function loadAll(){
     controlMappings=Array.isArray(d7)?d7:[];
     var d8=r8.ok?(await r8.json()):[];
     policies=Array.isArray(d8)?d8:[];
+    var d9=r9&&r9.ok?(await r9.json()):[];
+    auditLogs=Array.isArray(d9)?d9:[];
     
     document.getElementById('conn-dot').style.background='#0d9e7e';
     document.getElementById('conn-lbl').style.color='#0d9e7e';
@@ -3182,7 +3251,7 @@ async function loadAll(){
     
 
     
-    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();renderActions();renderEvidence();renderFrameworks();renderCalendar();renderPolicies();
+    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();renderActions();renderEvidence();renderFrameworks();renderCalendar();renderPolicies();renderAuditTrail();
     var ovCount=items.filter(function(it){return getStatus(it)==='overdue';}).length;
     var ob=document.getElementById('ov-badge');
     if(ob){ob.textContent=ovCount;ob.style.display=ovCount>0?'inline-block':'none';}
@@ -6480,7 +6549,9 @@ function renderRiskTable(){
       del.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';del.textContent='Delete';
       (function(rid){del.onclick=async function(){
         if(!confirm('Delete this risk?')) return;
+        var riskToDelete=risks.find(function(x){return x.id==rid;});
         await api('grc_risks?id=eq.'+rid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+        writeAuditLog('DELETE','Risk','Deleted risk: '+(riskToDelete?riskToDelete.name:rid));
         await loadAll();
       };})(r.id);
       wrap.appendChild(del);
@@ -6527,11 +6598,278 @@ document.addEventListener('DOMContentLoaded', function(){
       var rLike=document.getElementById('r-like'); if(rLike) rLike.value='3';
       var rImp=document.getElementById('r-impact'); if(rImp) rImp.value='3';
       closePanel();
+      writeAuditLog('CREATE','Risk','Added risk: '+name,{likelihood:like,impact:impact,score:like*impact});
       showDueDateToast('','Risk added!');
       await loadAll();
     };
   }
 });
+
+
+
+// ════════════════════════════════════════════════
+// AUDIT TRAIL — ISO 27001 A.8.15 CHANGE LOG
+// ════════════════════════════════════════════════
+
+// ── Core log writer — call after every save/delete ──
+async function writeAuditLog(action, module, description, meta){
+  // action: CREATE | UPDATE | DELETE | LOGIN | LOGOUT | EXPORT
+  // module: Compliance Item | Risk | Action | Evidence | Policy | User | etc.
+  if(!currentUser) return;
+  var entry = {
+    action:      action,
+    module:      module,
+    description: description,
+    performed_by: currentUser.name,
+    user_email:  currentUser.email,
+    user_role:   currentUser.role,
+    meta:        meta ? JSON.stringify(meta) : null,
+    ip_hint:     navigator.userAgent.slice(0,80)
+  };
+  // Fire-and-forget — don't block the main operation
+  api('grc_audit_trail', {
+    method: 'POST',
+    body:   entry,
+    extra:  {'Prefer': 'return=minimal'}
+  }).catch(function(e){ console.warn('Audit log write failed:', e.message); });
+}
+
+// ── Render audit trail page ──
+function renderAuditTrail(){
+  var actionFilter = (document.getElementById('at-filter-action') || {}).value || '';
+  var moduleFilter = (document.getElementById('at-filter-module') || {}).value || '';
+  var userFilter   = ((document.getElementById('at-filter-user')  || {}).value || '').toLowerCase().trim();
+
+  // Summary cards
+  var sumEl = document.getElementById('at-summary');
+  if(sumEl){
+    while(sumEl.firstChild) sumEl.removeChild(sumEl.firstChild);
+    var today_str = today();
+    var todayLogs = auditLogs.filter(function(l){ return l.created_at && l.created_at.startsWith(today_str); });
+    var creates   = auditLogs.filter(function(l){ return l.action==='CREATE'; }).length;
+    var updates   = auditLogs.filter(function(l){ return l.action==='UPDATE'; }).length;
+    var deletes   = auditLogs.filter(function(l){ return l.action==='DELETE'; }).length;
+    var uniqueUsers = new Set(auditLogs.map(function(l){ return l.user_email; })).size;
+    [
+      {l:'Total entries', v:auditLogs.length,  c:'var(--primary)', t:'#5b5ef4'},
+      {l:'Today',         v:todayLogs.length,  c:'var(--text)',    t:'#10b981'},
+      {l:'Created',       v:creates,           c:'var(--success)', t:'#10b981'},
+      {l:'Updated',       v:updates,           c:'var(--warning)', t:'#f59e0b'},
+      {l:'Deleted',       v:deletes,           c:'var(--danger)',  t:'#ef4444'},
+      {l:'Active users',  v:uniqueUsers,       c:'var(--primary)', t:'#7c3aed'}
+    ].forEach(function(m){
+      var card = document.createElement('div');
+      card.className = 'metric-card';
+      card.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
+        '<div class="mc-label" style="margin-top:4px">'+m.l+'</div>'+
+        '<div class="mc-val" style="color:'+m.c+'">'+m.v+'</div>';
+      sumEl.appendChild(card);
+    });
+  }
+
+  // Filter logs
+  var filtered = auditLogs.filter(function(l){
+    if(actionFilter && l.action !== actionFilter) return false;
+    if(moduleFilter && l.module !== moduleFilter) return false;
+    if(userFilter && !(l.performed_by||'').toLowerCase().includes(userFilter) &&
+                     !(l.user_email||'').toLowerCase().includes(userFilter)) return false;
+    return true;
+  });
+
+  var tb = document.getElementById('audit-trail-body');
+  if(!tb) return;
+  while(tb.firstChild) tb.removeChild(tb.firstChild);
+
+  if(!filtered.length){
+    var tr0 = document.createElement('tr');
+    var td0 = document.createElement('td');
+    td0.colSpan = 6;
+    td0.style.cssText = 'padding:60px 20px;text-align:center';
+    if(!auditLogs.length){
+      var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:12px';ei.textContent='📜';
+      var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px';et.textContent='No audit logs yet';
+      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3)';es.textContent='Logs will appear here as soon as users start making changes in the tool.';
+      td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);
+    } else {
+      var fi=document.createElement('div');fi.style.cssText='font-size:28px;margin-bottom:8px';fi.textContent='🔍';
+      var fs=document.createElement('div');fs.style.cssText='font-size:13px;color:var(--text3)';fs.textContent='No logs match this filter.';
+      td0.appendChild(fi);td0.appendChild(fs);
+    }
+    tr0.appendChild(td0);tb.appendChild(tr0);
+    return;
+  }
+
+  // Action badge colours
+  var actionColors = {
+    'CREATE': ['var(--success-light)','var(--success)','+ Created'],
+    'UPDATE': ['var(--warning-light)','var(--warning)','✎ Updated'],
+    'DELETE': ['var(--danger-light)', 'var(--danger)', '✕ Deleted'],
+    'LOGIN':  ['var(--primary-light)','var(--primary)','→ Login'],
+    'LOGOUT': ['var(--border)',       'var(--text3)',  '← Logout'],
+    'EXPORT': ['rgba(124,58,237,.1)','#7c3aed',       '↓ Export']
+  };
+
+  filtered.forEach(function(log){
+    var ac = actionColors[log.action] || ['var(--border)','var(--text3)',log.action];
+
+    var tr = document.createElement('tr');
+    tr.className = 'item-row';
+    tr.style.height = '52px';
+
+    // Col 1: Timestamp
+    var td1 = document.createElement('td');
+    td1.style.paddingLeft = '16px';
+    var ts = log.created_at ? log.created_at.replace('T',' ').slice(0,19) : '—';
+    var tsDate = ts.slice(0,10);
+    var tsTime = ts.slice(11,19);
+    td1.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--text)">'+tsDate+'</div>'+
+                    '<div style="font-size:11px;color:var(--text3)">'+tsTime+'</div>';
+
+    // Col 2: User
+    var td2 = document.createElement('td');
+    var initials = (log.performed_by||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+    var roleColor = {admin:'#5b5ef4',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'}[log.user_role]||'#888';
+    td2.innerHTML = '<div style="display:flex;align-items:center;gap:8px">'+
+      '<div style="width:28px;height:28px;border-radius:50%;background:'+roleColor+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+initials+'</div>'+
+      '<div><div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">'+escHtml(log.performed_by||'—')+'</div>'+
+      '<div style="font-size:10px;color:var(--text3)">'+escHtml(log.user_role||'')+'</div></div></div>';
+
+    // Col 3: Action badge
+    var td3 = document.createElement('td');
+    var badge = document.createElement('span');
+    badge.className = 'badge';
+    badge.style.cssText = 'background:'+ac[0]+';color:'+ac[1]+';white-space:nowrap;font-weight:700';
+    badge.textContent = ac[2];
+    td3.appendChild(badge);
+
+    // Col 4: Module
+    var td4 = document.createElement('td');
+    td4.innerHTML = '<span style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text2);white-space:nowrap">'+escHtml(log.module||'—')+'</span>';
+
+    // Col 5: Description — expandable
+    var td5 = document.createElement('td');
+    var desc = log.description || '—';
+    var descDiv = document.createElement('div');
+    descDiv.style.cssText = 'font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px';
+    descDiv.textContent = desc;
+    descDiv.title = desc;
+    td5.appendChild(descDiv);
+    // If there's meta data, show it on expand
+    if(log.meta){
+      var metaDiv = document.createElement('div');
+      metaDiv.style.cssText = 'font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px';
+      try{
+        var m = JSON.parse(log.meta);
+        var parts = Object.keys(m).slice(0,2).map(function(k){ return k+': '+String(m[k]).slice(0,20); });
+        metaDiv.textContent = parts.join(' · ');
+      }catch(e){ metaDiv.textContent = String(log.meta).slice(0,40); }
+      td5.appendChild(metaDiv);
+    }
+
+    // Col 6: IP / Device hint
+    var td6 = document.createElement('td');
+    var ua = log.ip_hint||'';
+    var device = ua.indexOf('Mobile')>-1?'📱 Mobile':ua.indexOf('Chrome')>-1?'🌐 Chrome':ua.indexOf('Firefox')>-1?'🦊 Firefox':ua.indexOf('Safari')>-1?'🧭 Safari':'💻 Desktop';
+    td6.innerHTML = '<span style="font-size:11px;color:var(--text3)">'+device+'</span>';
+
+    // Expand row for full details
+    tr.style.cursor = 'pointer';
+    (function(logEntry){
+      tr.addEventListener('click', function(){
+        var isOpen = tr.classList.contains('expanded');
+        tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
+        tb.querySelectorAll('.at-detail-row').forEach(function(d){d.remove();});
+        if(!isOpen){
+          tr.classList.add('expanded');
+          var dtr = document.createElement('tr');
+          dtr.className = 'at-detail-row';
+          var dtd = document.createElement('td');
+          dtd.colSpan = 6;
+          dtd.style.cssText = 'padding:0;white-space:normal;overflow:visible';
+          var bc = ac[1];
+          var metaHtml = '';
+          if(logEntry.meta){
+            try{
+              var pm = JSON.parse(logEntry.meta);
+              metaHtml = '<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Change details</div>'+
+                '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
+              Object.keys(pm).forEach(function(k){
+                metaHtml += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px">'+
+                  '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">'+escHtml(k)+'</div>'+
+                  '<div style="font-size:12px;color:var(--text);word-break:break-all">'+escHtml(String(pm[k]).slice(0,200))+'</div></div>';
+              });
+              metaHtml += '</div></div>';
+            }catch(e){}
+          }
+          dtd.innerHTML = '<div style="background:var(--surface2);border-left:3px solid '+bc+';padding:14px 20px">'+
+            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:10px">'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Performed by</div><div style="font-size:13px;font-weight:600;color:var(--text)">'+escHtml(logEntry.performed_by||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:13px;color:var(--text)">'+escHtml(logEntry.user_email||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Role</div><div style="font-size:13px;color:var(--text)">'+escHtml(logEntry.user_role||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Timestamp</div><div style="font-size:13px;color:var(--text)">'+(logEntry.created_at||'—').replace('T',' ').slice(0,19)+'</div></div>'+
+            '</div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Full description</div>'+
+            '<div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 14px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+escHtml(logEntry.description||'—')+'</div></div>'+
+            metaHtml+
+            (logEntry.ip_hint?'<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">User agent</div><div style="font-size:11px;color:var(--text3);word-break:break-all">'+escHtml(logEntry.ip_hint)+'</div></div>':'')+
+            '</div>';
+          dtr.appendChild(dtd);
+          tr.parentNode.insertBefore(dtr, tr.nextSibling);
+        }
+      });
+    })(log);
+
+    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
+    tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);
+    tb.appendChild(tr);
+  });
+
+  // Load more button
+  var loadMoreEl = document.getElementById('at-load-more');
+  if(loadMoreEl) loadMoreEl.style.display = filtered.length >= 50 ? '' : 'none';
+}
+
+// ── Load more audit logs ──
+async function loadMoreAuditLogs(){
+  atPage++;
+  var offset = atPage * atPageSize;
+  try{
+    var res = await api('grc_audit_trail?select=*&order=created_at.desc&limit='+atPageSize+'&offset='+offset, {method:'GET'});
+    if(res.ok){
+      var more = await res.json();
+      if(Array.isArray(more) && more.length){
+        auditLogs = auditLogs.concat(more);
+        renderAuditTrail();
+      } else {
+        var btn = document.getElementById('at-load-more');
+        if(btn) btn.style.display = 'none';
+        showDueDateToast('','All audit logs loaded.');
+      }
+    }
+  }catch(e){ showDueDateToast('','Error loading more logs.'); }
+}
+
+// ── Export audit trail to Excel ──
+function exportAuditTrail(){
+  if(typeof XLSX === 'undefined'){ alert('Excel library loading. Please wait 3 seconds and try again.'); return; }
+  var rows = [['Timestamp','Action','Module','Description','Performed By','Email','Role','Device']];
+  auditLogs.forEach(function(l){
+    var ua = l.ip_hint||'';
+    var device = ua.indexOf('Mobile')>-1?'Mobile':ua.indexOf('Chrome')>-1?'Chrome':ua.indexOf('Firefox')>-1?'Firefox':'Desktop';
+    rows.push([
+      (l.created_at||'').replace('T',' ').slice(0,19),
+      l.action||'',
+      l.module||'',
+      l.description||'',
+      l.performed_by||'',
+      l.user_email||'',
+      l.user_role||'',
+      device
+    ]);
+  });
+  exportToXLSX('Clarix_Audit_Trail_'+getDateStr()+'.xlsx', 'Audit Trail', rows);
+  writeAuditLog('EXPORT','System','Exported audit trail to Excel',{rows:rows.length-1});
+}
 
 
 // ── DARK / LIGHT MODE ──
@@ -6717,7 +7055,7 @@ function renderActions(){
     var td7=document.createElement('td');var wrap=document.createElement('div');wrap.style.cssText='display:flex;gap:5px;flex-wrap:wrap;align-items:center';
     if(!isClosed&&can('actions')){var cBtn=document.createElement('button');cBtn.className='btn btn-sm';cBtn.style.cssText='background:var(--success-light);border-color:rgba(16,185,129,.3);color:var(--success);font-weight:600;font-size:11px';cBtn.innerHTML='<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Close';(function(aid){cBtn.onclick=async function(e){e.stopPropagation();await closeAction(aid);};})(a.id);wrap.appendChild(cBtn);}
     if(can('actions')){var eBtn2=document.createElement('button');eBtn2.className='btn btn-sm';eBtn2.style.fontSize='11px';eBtn2.textContent='Edit';(function(act){eBtn2.onclick=function(e){e.stopPropagation();editAction(act);};})(a);wrap.appendChild(eBtn2);}
-    if(can('delete')){var dBtn2=document.createElement('button');dBtn2.className='btn btn-sm';dBtn2.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';dBtn2.textContent='Del';(function(aid){dBtn2.onclick=async function(e){e.stopPropagation();if(!confirm('Delete this action?'))return;await api('grc_actions?id=eq.'+aid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};})(a.id);wrap.appendChild(dBtn2);}
+    if(can('delete')){var dBtn2=document.createElement('button');dBtn2.className='btn btn-sm';dBtn2.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';dBtn2.textContent='Del';(function(aid){dBtn2.onclick=async function(e){e.stopPropagation();if(!confirm('Delete this action?'))return;var _adel=actions.find(function(x){return x.id==aid;});await api('grc_actions?id=eq.'+aid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});writeAuditLog('DELETE','Action','Deleted action: '+(_adel?_adel.title:aid));await loadAll();};})(a.id);wrap.appendChild(dBtn2);}
     td7.appendChild(wrap);tr.appendChild(td7);
     tr.addEventListener('click',function(){
       var existing=document.getElementById('action-detail-'+a.id);var isOpen=tr.classList.contains('expanded');
@@ -6746,6 +7084,7 @@ async function closeAction(id){
   var notes=prompt('Add closure notes (optional):');if(notes===null)return;
   var upd={status:'Closed',closed_date:today()};if(notes)upd.closure_notes=notes;
   await api('grc_actions?id=eq.'+id,{method:'PATCH',body:upd,extra:{'Prefer':'return=minimal'}});
+  writeAuditLog('UPDATE','Action','Closed action ID: '+id,{closure_notes:notes||''});
   showDueDateToast('','Action closed!');await loadAll();
 }
 function editAction(a){
@@ -6777,7 +7116,7 @@ async function saveAction(){
   var body={title:title,category:document.getElementById('action-category').value,priority:document.getElementById('action-priority').value,description:document.getElementById('action-desc').value.trim(),owner:owner,department:document.getElementById('action-dept').value.trim(),due_date:due,source:document.getElementById('action-source').value.trim(),action_plan:document.getElementById('action-plan').value.trim(),status:status,closure_notes:document.getElementById('action-closure').value.trim()};
   if(status==='Closed'&&!editId)body.closed_date=today();
   var res=editId?await api('grc_actions?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}}):await api('grc_actions',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  if(res&&res.ok){closePanel();document.getElementById('action-panel-title').textContent='Add action / issue';document.getElementById('action-edit-id').value='';['action-title','action-desc','action-owner','action-dept','action-due','action-source','action-plan','action-closure'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('action-status').value='Open';var cw=document.getElementById('action-closure-wrap');if(cw)cw.style.display='none';showDueDateToast('',editId?'Action updated!':'Action logged!');await loadAll();}
+  if(res&&res.ok){closePanel();document.getElementById('action-panel-title').textContent='Add action / issue';document.getElementById('action-edit-id').value='';['action-title','action-desc','action-owner','action-dept','action-due','action-source','action-plan','action-closure'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});document.getElementById('action-status').value='Open';var cw=document.getElementById('action-closure-wrap');if(cw)cw.style.display='none';writeAuditLog(editId?'UPDATE':'CREATE','Action',editId?'Updated action':'Created action',{owner:owner});showDueDateToast('',editId?'Action updated!':'Action logged!');await loadAll();}
   else alert('Error saving. Make sure grc_actions table exists in Supabase.');
 }
 function updateActionsBadge(){
@@ -6840,15 +7179,15 @@ function renderEvidence(){
     if(s==='submitted'&&can('actions')){var appBtn=document.createElement('button');appBtn.className='btn btn-sm';appBtn.style.cssText='font-size:11px;background:var(--success-light);border-color:rgba(16,185,129,.3);color:var(--success);font-weight:700';appBtn.innerHTML='✓ Approve';(function(eid){appBtn.onclick=async function(e){e.stopPropagation();await api('grc_evidence?id=eq.'+eid,{method:'PATCH',body:{status:'Approved',approved_by:currentUser?currentUser.name:'Admin',approved_date:today()},extra:{'Prefer':'return=minimal'}});showDueDateToast('','Evidence approved!');await loadAll();};})(ev.id);wrap.appendChild(appBtn);var rejBtn=document.createElement('button');rejBtn.className='btn btn-sm';rejBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.3);color:var(--danger)';rejBtn.textContent='Reject';(function(eid){rejBtn.onclick=async function(e){e.stopPropagation();var reason=prompt('Rejection reason:');if(reason===null)return;await api('grc_evidence?id=eq.'+eid,{method:'PATCH',body:{status:'Rejected',rejection_reason:reason},extra:{'Prefer':'return=minimal'}});await loadAll();};})(ev.id);wrap.appendChild(rejBtn);}
     if(ev.evidence_link){var vBtn=document.createElement('a');vBtn.href=ev.evidence_link;vBtn.target='_blank';vBtn.className='btn btn-sm';vBtn.style.cssText='font-size:11px;text-decoration:none;display:inline-flex;align-items:center';vBtn.textContent='View';wrap.appendChild(vBtn);}
     if(can('actions')){var editBtn=document.createElement('button');editBtn.className='btn btn-sm';editBtn.style.fontSize='11px';editBtn.textContent='Edit';(function(itev){editBtn.onclick=function(e){e.stopPropagation();editEvidence(itev);};})(ev);wrap.appendChild(editBtn);}
-    if(can('delete')){var delBtn=document.createElement('button');delBtn.className='btn btn-sm';delBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';delBtn.textContent='Del';(function(eid){delBtn.onclick=async function(e){e.stopPropagation();if(!confirm('Delete?'))return;await api('grc_evidence?id=eq.'+eid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});await loadAll();};})(ev.id);wrap.appendChild(delBtn);}
+    if(can('delete')){var delBtn=document.createElement('button');delBtn.className='btn btn-sm';delBtn.style.cssText='font-size:11px;border-color:rgba(239,68,68,.25);color:var(--danger)';delBtn.textContent='Del';(function(eid){delBtn.onclick=async function(e){e.stopPropagation();if(!confirm('Delete evidence?'))return;var _evdel=evidenceItems.find(function(x){return x.id==eid;});await api('grc_evidence?id=eq.'+eid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});writeAuditLog('DELETE','Evidence','Deleted evidence: '+(_evdel?_evdel.title:eid));await loadAll();};})(ev.id);wrap.appendChild(delBtn);}
     td7.appendChild(wrap);tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tb.appendChild(tr);
   });
   updateEvidenceBadge();
 }
 function openEvidenceSubmitPanel(ev){document.getElementById('ev-submit-id').value=ev.id;var subEl=document.getElementById('ev-submit-sub');if(subEl)subEl.textContent='For: '+ev.title+' ('+ev.owner+')';var descBox=document.getElementById('ev-submit-desc-box');if(descBox)descBox.innerHTML='<strong>Required:</strong> '+(ev.description||ev.title||'—')+(ev.deadline?'<br><strong>Deadline:</strong> '+ev.deadline:'');document.getElementById('ev-link').value='';document.getElementById('ev-submit-notes').value='';openPanel('ev-submit-panel');}
-async function submitEvidence(){var id=document.getElementById('ev-submit-id').value;var link=document.getElementById('ev-link').value.trim();var notes=document.getElementById('ev-submit-notes').value.trim();if(!link){alert('Please provide the evidence link.');return;}var res=await api('grc_evidence?id=eq.'+id,{method:'PATCH',body:{status:'Submitted',evidence_link:link,submission_notes:notes,submitted_at:new Date().toISOString()},extra:{'Prefer':'return=minimal'}});if(res&&res.ok){closePanel();showDueDateToast('','Evidence submitted!');await loadAll();}}
-async function saveAudit(){if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}var name=document.getElementById('audit-name').value.trim();if(!name){alert('Please enter an audit name.');return;}var body={name:name,audit_type:document.getElementById('audit-type').value,start_date:document.getElementById('audit-start').value||null,end_date:document.getElementById('audit-end').value||null,auditor:document.getElementById('audit-auditor').value.trim(),description:document.getElementById('audit-desc').value.trim()};var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});showDueDateToast('','Audit created!');await loadAll();}else alert('Error. Make sure grc_audits table exists in Supabase.');}
-async function saveEvidence(){if(!can('actions')){noPermission('Only admin and manager can manage evidence.');return;}var editId=document.getElementById('ev-edit-id').value;var title=document.getElementById('ev-title').value.trim();var owner=document.getElementById('ev-owner').value.trim();var dept=document.getElementById('ev-dept').value.trim();var deadline=document.getElementById('ev-deadline').value;var auditId=document.getElementById('ev-audit').value;if(!title){alert('Enter a title.');return;}if(!owner){alert('Assign an owner.');return;}if(!dept){alert('Enter team/department.');return;}if(!deadline){alert('Set a deadline.');return;}if(!auditId){alert('Select an audit first.');return;}var body={title:title,description:document.getElementById('ev-desc').value.trim(),audit_id:auditId,evidence_type:document.getElementById('ev-type').value,owner:owner,department:dept,email:document.getElementById('ev-email').value.trim(),deadline:deadline,priority:document.getElementById('ev-priority').value,control_ref:document.getElementById('ev-control').value.trim(),notes:document.getElementById('ev-notes').value.trim(),status:'Pending'};var res=editId?await api('grc_evidence?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}}):await api('grc_evidence',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();document.getElementById('ev-edit-id').value='';['ev-title','ev-desc','ev-owner','ev-dept','ev-email','ev-deadline','ev-control','ev-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});showDueDateToast('',editId?'Updated!':'Evidence request created!');await loadAll();}else alert('Error. Make sure grc_evidence table exists.');}
+async function submitEvidence(){var id=document.getElementById('ev-submit-id').value;var link=document.getElementById('ev-link').value.trim();var notes=document.getElementById('ev-submit-notes').value.trim();if(!link){alert('Please provide the evidence link.');return;}var res=await api('grc_evidence?id=eq.'+id,{method:'PATCH',body:{status:'Submitted',evidence_link:link,submission_notes:notes,submitted_at:new Date().toISOString()},extra:{'Prefer':'return=minimal'}});if(res&&res.ok){closePanel();writeAuditLog('UPDATE','Evidence','Submitted evidence',{id:id});showDueDateToast('','Evidence submitted!');await loadAll();}}
+async function saveAudit(){if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}var name=document.getElementById('audit-name').value.trim();if(!name){alert('Please enter an audit name.');return;}var body={name:name,audit_type:document.getElementById('audit-type').value,start_date:document.getElementById('audit-start').value||null,end_date:document.getElementById('audit-end').value||null,auditor:document.getElementById('audit-auditor').value.trim(),description:document.getElementById('audit-desc').value.trim()};var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog('CREATE','Audit','Created audit: '+name);showDueDateToast('','Audit created!');await loadAll();}else alert('Error. Make sure grc_audits table exists in Supabase.');}
+async function saveEvidence(){if(!can('actions')){noPermission('Only admin and manager can manage evidence.');return;}var editId=document.getElementById('ev-edit-id').value;var title=document.getElementById('ev-title').value.trim();var owner=document.getElementById('ev-owner').value.trim();var dept=document.getElementById('ev-dept').value.trim();var deadline=document.getElementById('ev-deadline').value;var auditId=document.getElementById('ev-audit').value;if(!title){alert('Enter a title.');return;}if(!owner){alert('Assign an owner.');return;}if(!dept){alert('Enter team/department.');return;}if(!deadline){alert('Set a deadline.');return;}if(!auditId){alert('Select an audit first.');return;}var body={title:title,description:document.getElementById('ev-desc').value.trim(),audit_id:auditId,evidence_type:document.getElementById('ev-type').value,owner:owner,department:dept,email:document.getElementById('ev-email').value.trim(),deadline:deadline,priority:document.getElementById('ev-priority').value,control_ref:document.getElementById('ev-control').value.trim(),notes:document.getElementById('ev-notes').value.trim(),status:'Pending'};var res=editId?await api('grc_evidence?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}}):await api('grc_evidence',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();document.getElementById('ev-edit-id').value='';['ev-title','ev-desc','ev-owner','ev-dept','ev-email','ev-deadline','ev-control','ev-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog(editId?'UPDATE':'CREATE','Evidence',editId?'Updated evidence':'Created evidence: '+title,{owner:owner,deadline:deadline});showDueDateToast('',editId?'Updated!':'Evidence request created!');await loadAll();}else alert('Error. Make sure grc_evidence table exists.');}
 function editEvidence(ev){document.getElementById('evidence-panel-title').textContent='Edit evidence request';document.getElementById('ev-edit-id').value=ev.id;document.getElementById('ev-title').value=ev.title||'';document.getElementById('ev-desc').value=ev.description||'';document.getElementById('ev-audit').value=ev.audit_id||'';document.getElementById('ev-type').value=ev.evidence_type||'Screenshot';document.getElementById('ev-owner').value=ev.owner||'';document.getElementById('ev-dept').value=ev.department||'';document.getElementById('ev-email').value=ev.email||'';document.getElementById('ev-deadline').value=ev.deadline||'';document.getElementById('ev-priority').value=ev.priority||'Medium';document.getElementById('ev-control').value=ev.control_ref||'';document.getElementById('ev-notes').value=ev.notes||'';openPanel('evidence-panel');}
 function updateEvidenceBadge(){var cnt=evidenceItems.filter(function(e){var s=getEvidenceStatus(e);return s==='pending'||s==='overdue'||s==='submitted';}).length;var b=document.getElementById('evidence-badge');if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}}
 
@@ -7018,7 +7357,7 @@ async function saveControlMapping(){
   if(status==='gap'&&checkedItems.length>0) status='partial';
   var body={framework_id:fwId,control_id:ctrlId,coverage_status:status,item_ids:JSON.stringify(checkedItems),risk_ids:JSON.stringify(checkedRisks),notes:document.getElementById('map-notes').value.trim(),evidence_link:document.getElementById('map-evidence-link').value.trim()};
   var existing=getControlMapping(fwId,ctrlId);var res=existing?await api('grc_control_mappings?framework_id=eq.'+fwId+'&control_id=eq.'+ctrlId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}}):await api('grc_control_mappings',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  if(res&&res.ok){closePanel();showDueDateToast('','Control mapping saved!');await loadAll();}
+  if(res&&res.ok){closePanel();writeAuditLog(existing?'UPDATE':'CREATE','Control Mapping',(existing?'Updated':'Mapped')+' control '+ctrlId+' ('+fwId+')',{status:status});showDueDateToast('','Control mapping saved!');await loadAll();}
   else alert('Error saving. Make sure grc_control_mappings table exists in Supabase.');
 }
 function updateFrameworksBadge(){var fwId=(document.getElementById('fw-select')||{}).value||'iso27001';var fw=FRAMEWORKS[fwId];if(!fw)return;var gaps=fw.controls.filter(function(c){return getCoverageStatus(fwId,c.id)==='gap';}).length;var b=document.getElementById('frameworks-badge');if(b){b.textContent=gaps;b.style.display=gaps>0?'inline-block':'none';}}
@@ -7920,7 +8259,9 @@ function renderPolicies(){
         delBtn.onclick=async function(e){
           e.stopPropagation();
           if(!confirm('Delete this policy? This cannot be undone.')) return;
+          var polDel=policies.find(function(x){return x.id==pid;});
           await api('grc_policies?id=eq.'+pid,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+          writeAuditLog('DELETE','Policy','Deleted policy: '+(polDel?polDel.name:pid));
           showDueDateToast('','Policy deleted.');
           await loadAll();
         };
@@ -8134,6 +8475,7 @@ async function savePolicy(){
     document.getElementById('policy-status').value='Active';
     document.getElementById('policy-category').value='Information Security';
     document.getElementById('policy-review-freq').value='Annual';
+    writeAuditLog(editId?'UPDATE':'CREATE','Policy',editId?'Updated policy: '+name:'Created policy: '+name,{category:body.category,owner:body.owner});
     showDueDateToast('',editId?'Policy updated!':'Policy created!');
     await loadAll();
   } else {
