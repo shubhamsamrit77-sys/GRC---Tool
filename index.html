@@ -909,7 +909,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 </style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f52d9'/><text y='.9em' font-size='80' font-family='Segoe UI,sans-serif' font-weight='800' fill='white' x='15'>C</text></svg>">
   <!-- Security headers via meta tags -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://cdnjs.cloudflare.com https://mail.google.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://api.anthropic.com; frame-ancestors 'none';">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://cdnjs.cloudflare.com https://mail.google.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://api.anthropic.com;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
@@ -3146,7 +3146,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-actions','s-actions','Action & Issue Tracker','Track failures, corrective actions and closure'],['nav-evidence','s-evidence','Evidence Collection','Collect audit evidence from teams'],['nav-policy','s-policy','Policy Register','Store, version and track all security policies'],['nav-calendar','s-calendar','Audit Calendar','All deadlines and audit events in one view'],['nav-frameworks','s-frameworks','Control Framework Mapping','Map items to ISO 27001, SOC 2, GDPR and NIST controls'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-actions','s-actions','Action & Issue Tracker','Track failures, corrective actions and closure'],['nav-evidence','s-evidence','Evidence Collection','Collect audit evidence from teams'],['nav-policy','s-policy','Policy Register','Store, version and track all security policies'],['nav-calendar','s-calendar','Audit Calendar','All deadlines and audit events in one view'],['nav-frameworks','s-frameworks','Control Framework Mapping','Map items to ISO 27001, SOC 2, GDPR and NIST controls'],['nav-audit-trail','s-audit-trail','Audit Trail','Tamper-evident log of every change — ISO 27001 A.8.15'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
@@ -3208,7 +3208,7 @@ async function loadAll(){
     var r6=await fetch(base+'grc_evidence?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
     var r7=await fetch(base+'grc_control_mappings?select=*',{method:'GET',headers:headers,mode:'cors'});
     var r8=await fetch(base+'grc_policies?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
-    var r9=await fetch(base+'grc_audit_trail?select=*&order=created_at.desc&limit=50',{method:'GET',headers:headers,mode:'cors'});
+    var r9=await fetch(base+'grc_audit_trail?select=*&order=created_at.desc&limit=50',{method:'GET',headers:headers,mode:'cors'}).catch(function(){return {ok:false};});
 
     if(!r1.ok||!r2.ok||!r3.ok){
       throw new Error('HTTP error: '+(r1.ok?r2.ok?r3.status:r2.status:r1.status));
@@ -3242,7 +3242,7 @@ async function loadAll(){
     controlMappings=Array.isArray(d7)?d7:[];
     var d8=r8.ok?(await r8.json()):[];
     policies=Array.isArray(d8)?d8:[];
-    var d9=r9&&r9.ok?(await r9.json()):[];
+    var d9=[];try{if(r9&&r9.ok)d9=await r9.json();}catch(e){d9=[];}
     auditLogs=Array.isArray(d9)?d9:[];
     
     document.getElementById('conn-dot').style.background='#0d9e7e';
@@ -6686,10 +6686,14 @@ function renderAuditTrail(){
     td0.colSpan = 6;
     td0.style.cssText = 'padding:60px 20px;text-align:center';
     if(!auditLogs.length){
-      var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:12px';ei.textContent='📜';
-      var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px';et.textContent='No audit logs yet';
-      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3)';es.textContent='Logs will appear here as soon as users start making changes in the tool.';
-      td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);
+      var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:14px';ei.textContent='📜';
+      var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px';et.textContent='No audit logs yet';
+      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:16px;max-width:480px';
+      es.textContent='Run the SQL below in Supabase to create the audit trail table. Logs will appear automatically after that.';
+      var sqlBox=document.createElement('div');
+      sqlBox.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:11px;font-family:monospace;color:var(--text2);text-align:left;margin-top:4px;line-height:1.8;max-width:560px';
+      sqlBox.textContent='CREATE TABLE grc_audit_trail (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  action text NOT NULL,\n  module text NOT NULL,\n  description text NOT NULL,\n  performed_by text, user_email text, user_role text,\n  meta text, ip_hint text,\n  created_at timestamptz DEFAULT now()\n);\nALTER TABLE grc_audit_trail ENABLE ROW LEVEL SECURITY;\nCREATE POLICY \"allow_all\" ON grc_audit_trail FOR ALL USING (true) WITH CHECK (true);';
+      td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);td0.appendChild(sqlBox);
     } else {
       var fi=document.createElement('div');fi.style.cssText='font-size:28px;margin-bottom:8px';fi.textContent='🔍';
       var fs=document.createElement('div');fs.style.cssText='font-size:13px;color:var(--text3)';fs.textContent='No logs match this filter.';
