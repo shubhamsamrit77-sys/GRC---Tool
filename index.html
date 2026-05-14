@@ -1034,8 +1034,8 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         <svg class="sb-chevron open" id="chev-compliance" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="sb-group open" id="grp-compliance">
-        <button class="sb-btn sb-child" id="nav-items"><span class="sb-dot"></span>All items</button>
-        <button class="sb-btn sb-child" id="nav-overdue"><span class="sb-dot"></span>Overdue / due soon<span class="ov-badge" id="ov-badge" style="display:none">0</span></button>
+        <button class="sb-btn sb-child" id="nav-items"><span class="sb-dot"></span>Implementation tracker</button>
+
         <button class="sb-btn sb-child" id="nav-import"><span class="sb-dot"></span>Bulk import</button>
         <button class="sb-btn sb-child" id="nav-export"><span class="sb-dot"></span>Export reports</button>
       </div>
@@ -1046,9 +1046,9 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         <svg class="sb-chevron open" id="chev-comm" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
       </button>
       <div class="sb-group open" id="grp-comm">
-        <button class="sb-btn sb-child" id="nav-email"><span class="sb-dot"></span>Follow-up emails</button>
+
         <button class="sb-btn sb-child" id="nav-emailtracker"><span class="sb-dot"></span>Email tracker<span class="ov-badge" id="emailtracker-badge" style="display:none">0</span></button>
-        <button class="sb-btn sb-child" id="nav-response"><span class="sb-dot"></span>Response monitor<span class="ov-badge" id="response-badge" style="display:none">0</span></button>
+
       </div>
       <!-- RISK -->
       <button class="sb-group-btn" onclick="toggleGroup('grp-risk')">
@@ -2280,7 +2280,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
           <div class="export-grid">
             <div class="export-card">
               <div class="export-card-icon">📊</div>
-              <div class="export-card-title">All items</div>
+              <div class="export-card-title">Implementation tracker</div>
               <div class="export-card-sub">Complete compliance register with all tasks and statuses</div>
               <div class="export-btn-group">
                 <button class="btn btn-primary btn-sm" id="export-items-xlsx">Excel</button>
@@ -3146,7 +3146,7 @@ document.getElementById('logout-btn').onclick=function(){
   document.getElementById('l-pass').value='';
 };
 
-var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','All Items','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-actions','s-actions','Action & Issue Tracker','Track failures, corrective actions and closure'],['nav-evidence','s-evidence','Evidence Collection','Collect audit evidence from teams'],['nav-policy','s-policy','Policy Register','Store, version and track all security policies'],['nav-calendar','s-calendar','Audit Calendar','All deadlines and audit events in one view'],['nav-frameworks','s-frameworks','Control Framework Mapping','Map items to ISO 27001, SOC 2, GDPR and NIST controls'],['nav-audit-trail','s-audit-trail','Audit Trail','Tamper-evident log of every change — ISO 27001 A.8.15'],['nav-admin','s-admin','Manage Users','Control team access']];
+var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','Implementation tracker','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-actions','s-actions','Action & Issue Tracker','Track failures, corrective actions and closure'],['nav-evidence','s-evidence','Evidence Collection','Collect audit evidence from teams'],['nav-policy','s-policy','Policy Register','Store, version and track all security policies'],['nav-calendar','s-calendar','Audit Calendar','All deadlines and audit events in one view'],['nav-frameworks','s-frameworks','Control Framework Mapping','Map items to ISO 27001, SOC 2, GDPR and NIST controls'],['nav-audit-trail','s-audit-trail','Audit Trail','Tamper-evident log of every change — ISO 27001 A.8.15'],['nav-admin','s-admin','Manage Users','Control team access']];
 navCfg.forEach(function(m){
   var btn=document.getElementById(m[0]);if(!btn)return;
   btn.onclick=function(){
