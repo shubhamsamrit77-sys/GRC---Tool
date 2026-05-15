@@ -920,15 +920,196 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .warn-box{background:var(--warning-light);border:1px solid rgba(245,158,11,.2);border-left:4px solid var(--warning);border-radius:10px;padding:12px 16px;margin-bottom:12px;font-size:13px;font-weight:600;color:var(--warning)}
 
 /* ── RESPONSIVE ── */
+/* ═══════════════════════════════════════════
+   MOBILE — 768px and below
+═══════════════════════════════════════════ */
 @media(max-width:768px){
-  .sidebar{position:fixed;left:-240px;z-index:100;transition:left .25s}
-  .sidebar.open{left:0}
+
+  /* ── Sidebar: slide-in drawer ── */
+  .sidebar{
+    position:fixed;top:0;left:-260px;width:260px;
+    z-index:300;transition:left .28s cubic-bezier(.4,0,.2,1);
+    height:100%;box-shadow:none;
+  }
+  .sidebar.open{left:0;box-shadow:4px 0 30px rgba(0,0,0,.4)}
   .ham-btn{display:flex!important}
+  .sb-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:299;backdrop-filter:blur(2px)}
   .sb-overlay.open{display:block}
-  .dash-grid,.metrics{grid-template-columns:1fr 1fr}
-  .dash-charts{grid-template-columns:1fr}
-  .slide-panel{width:100%;right:-100%}
-  .search-wrap{max-width:180px}
+
+  /* ── Topbar ── */
+  .topbar{padding:0 12px;gap:8px;height:52px}
+  .page-title{font-size:13px}
+  .page-sub{display:none}
+  .search-wrap{max-width:140px;margin:0 6px}
+  .search-input{font-size:12px;padding:7px 10px 7px 32px}
+  .conn-lbl{display:none}
+  .conn-dot{display:none}
+
+  /* ── Main content padding ── */
+  .content{padding:12px}
+
+  /* ── Dashboard metrics: 2-col on mobile ── */
+  .dash-grid{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .metrics{grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+  .metric-card{padding:14px 14px}
+  .mc-val{font-size:24px}
+  .mc-icon{width:32px;height:32px;margin-bottom:8px}
+
+  /* ── Dashboard charts: single column ── */
+  .dash-charts{grid-template-columns:1fr;gap:10px}
+  .chart-card{padding:16px}
+  .ring-wrap{gap:16px}
+
+  /* ── Overdue strip ── */
+  .ov-task{font-size:12px}
+  .ov-meta{display:none}
+
+  /* ── Items table: scrollable with card-style rows ── */
+  .items-table-wrap,.table-wrap{border-radius:10px;overflow:hidden}
+  .items-table-header{padding:12px 14px;gap:8px;flex-direction:column;align-items:flex-start}
+  #freq-filters{gap:5px}
+  .filter-tag{padding:4px 10px;font-size:11px}
+
+  /* Hide lower-priority columns, keep Task + Status + Priority */
+  table.items-tbl thead tr th:nth-child(2),  /* Assignee  */
+  table.items-tbl thead tr th:nth-child(3),  /* Dept      */
+  table.items-tbl thead tr th:nth-child(5),  /* Frequency */
+  table.items-tbl thead tr th:nth-child(8),  /* Framework */
+  table.items-tbl tbody tr td:nth-child(2),
+  table.items-tbl tbody tr td:nth-child(3),
+  table.items-tbl tbody tr td:nth-child(5),
+  table.items-tbl tbody tr td:nth-child(8){
+    display:none;
+  }
+
+  table.items-tbl{font-size:12px}
+  th{padding:9px 10px;font-size:9px}
+  td{padding:10px 10px;white-space:nowrap}
+  tr.item-row{height:auto}
+
+  /* Task cell: allow wrap */
+  .task-name-cell{max-width:160px}
+  .task-text{white-space:normal;word-break:break-word;line-height:1.35;font-size:12px}
+
+  /* Detail expand panel: full-width tidy grid */
+  .detail-row td > div{padding:0 12px 14px!important}
+  .detail-tab-bar{gap:0;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch;padding-bottom:0}
+  .detail-tab{padding:7px 12px;font-size:11px;white-space:nowrap}
+  .detail-tab-pane [style*="grid-template-columns:repeat(4"]{
+    grid-template-columns:1fr 1fr!important;
+    gap:10px!important;
+  }
+
+  /* ── Slide panels: full-screen bottom sheet ── */
+  .slide-panel{
+    width:100%!important;
+    top:auto;
+    bottom:-100vh;
+    right:0!important;
+    left:0!important;
+    height:92vh;
+    border-radius:18px 18px 0 0;
+    border-left:none;
+    border-top:1px solid var(--border);
+    transition:bottom .3s cubic-bezier(.4,0,.2,1);
+    box-shadow:0 -20px 60px rgba(0,0,0,.25);
+  }
+  .slide-panel.open{bottom:0!important;right:auto!important}
+  .panel-header{padding:16px 18px}
+  .panel-title{font-size:15px}
+  .panel-body{padding:14px 18px;gap:12px}
+  .panel-footer{padding:12px 18px}
+  /* Bottom sheet drag handle */
+  .panel-header::before{
+    content:'';display:block;width:40px;height:4px;
+    background:var(--border);border-radius:2px;
+    margin:0 auto 14px;
+  }
+  /* Panel form: single column on mobile */
+  .p2{grid-template-columns:1fr!important}
+
+  /* ── Risk register table ── */
+  .risk-table th:nth-child(3),
+  .risk-table td:nth-child(3),
+  .risk-table th:nth-child(5),
+  .risk-table td:nth-child(5){display:none}
+
+  /* ── Action tracker ── */
+  .at-table th:nth-child(4),
+  .at-table td:nth-child(4){display:none}
+
+  /* ── Buttons ── */
+  .btn{padding:8px 12px;font-size:12px}
+  .btn-primary{padding:9px 14px}
+  .action-btn{padding:5px 8px;font-size:11px}
+  .panel-footer .btn{flex:1;justify-content:center}
+
+  /* ── Scorecard / export grids ── */
+  .export-grid,.scorecard-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .export-card{padding:14px!important}
+
+  /* ── Policy / Framework / Calendar ── */
+  .policy-grid,.fw-card-grid{grid-template-columns:1fr!important;gap:10px!important}
+  .cal-grid{grid-template-columns:repeat(7,1fr)!important;font-size:10px!important}
+  .cal-day{min-height:36px!important;padding:4px!important;font-size:10px!important}
+
+  /* ── Evidence / Admin tables ── */
+  .ev-table th:nth-child(4),
+  .ev-table td:nth-child(4),
+  .ev-table th:nth-child(5),
+  .ev-table td:nth-child(5){display:none}
+
+  /* ── Toast: full-width at bottom ── */
+  .toast{
+    left:12px;right:12px;bottom:12px;
+    transform:none;
+    white-space:normal;text-align:center;
+    font-size:12px;
+    border-radius:10px;
+  }
+
+  /* ── Section headings ── */
+  .section-title{font-size:15px!important}
+  .section-sub{font-size:11px!important}
+
+  /* ── Attention needed strip ── */
+  .attention-strip{display:flex;flex-direction:column;gap:6px}
+
+  /* ── Login: hide left panel, center right ── */
+  .login-bg-left{display:none}
+  .login-bg-right{width:100%;padding:24px 20px;justify-content:center;min-height:100vh}
+  .login-box{width:100%;max-width:400px}
+
+  /* ── Add-item button: sticky bottom on Implementation tracker ── */
+  .items-table-header .btn-primary{
+    position:fixed;
+    bottom:16px;right:16px;
+    z-index:200;
+    border-radius:50px;
+    padding:12px 18px;
+    font-size:13px;
+    box-shadow:0 4px 20px rgba(91,94,244,.45);
+  }
+}
+
+/* ═══════════════════════════════════════════
+   SMALL PHONES — 420px and below
+═══════════════════════════════════════════ */
+@media(max-width:420px){
+  .dash-grid,.metrics{grid-template-columns:1fr 1fr;gap:8px}
+  .metric-card{padding:12px 12px}
+  .mc-val{font-size:20px}
+  .mc-label{font-size:9px}
+  .mc-sub{font-size:10px}
+  .topbar{padding:0 10px}
+  .search-wrap{max-width:110px}
+  .content{padding:10px}
+  .export-grid,.scorecard-grid{grid-template-columns:1fr!important}
+  /* Hide Due Date column too on tiny screens */
+  table.items-tbl thead tr th:nth-child(6),
+  table.items-tbl tbody tr td:nth-child(6){display:none}
+  .task-name-cell{max-width:120px}
+  .detail-tab{padding:6px 9px;font-size:10px}
 }
 
 </style>
@@ -2768,8 +2949,9 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   showDueDateToast('','🔒 Session ended — please sign in again.');
 }
 // ── SLIDE PANELS ──
+function isMobile(){return window.innerWidth<=768;}
+
 function openPanel(id){
-  // Role-based panel access
   var panelPerms={
     'item-panel': can('add'),
     'risk-panel': can('add'),
@@ -2779,7 +2961,6 @@ function openPanel(id){
     'evidence-panel': can('actions'),
     'ev-submit-panel': can('actions'),
     'policy-panel': can('add'),
-    'policy-view-panel': true,
     'policy-view-panel': true
   };
   if(id in panelPerms && !panelPerms[id]){
@@ -2789,11 +2970,15 @@ function openPanel(id){
   var panel=document.getElementById(id);
   var overlay=document.getElementById('panel-overlay');
   if(!panel||!overlay) return;
+  // On mobile reset bottom so CSS transition works
+  if(isMobile()) panel.style.bottom='';
   panel.classList.add('open');
   overlay.style.display='block';
   document.body.style.overflow='hidden';
   var first=panel.querySelector('input,select,textarea');
   if(first) setTimeout(function(){first.focus();},320);
+  // Swipe-down to close on mobile
+  if(isMobile()) enableSwipeClose(panel);
 }
 
 function closePanel(){
@@ -2801,6 +2986,38 @@ function closePanel(){
   var overlay=document.getElementById('panel-overlay');
   if(overlay) overlay.style.display='none';
   document.body.style.overflow='';
+}
+
+// Swipe-down gesture to close bottom-sheet panels on mobile
+function enableSwipeClose(panel){
+  var startY=0,isDragging=false,startBottom=0;
+  function onTouchStart(e){
+    var header=panel.querySelector('.panel-header');
+    if(!header||!header.contains(e.target)) return;
+    startY=e.touches[0].clientY;
+    startBottom=0;
+    isDragging=true;
+    panel.style.transition='none';
+  }
+  function onTouchMove(e){
+    if(!isDragging) return;
+    var dy=e.touches[0].clientY - startY;
+    if(dy>0){ panel.style.bottom='-'+dy+'px'; e.preventDefault(); }
+  }
+  function onTouchEnd(e){
+    if(!isDragging) return;
+    isDragging=false;
+    panel.style.transition='';
+    var dy=e.changedTouches[0].clientY - startY;
+    if(dy>90){ closePanel(); } else { panel.style.bottom='0'; }
+  }
+  panel.removeEventListener('touchstart',panel._swipeStart);
+  panel.removeEventListener('touchmove',panel._swipeMove);
+  panel.removeEventListener('touchend',panel._swipeEnd);
+  panel._swipeStart=onTouchStart; panel._swipeMove=onTouchMove; panel._swipeEnd=onTouchEnd;
+  panel.addEventListener('touchstart',onTouchStart,{passive:true});
+  panel.addEventListener('touchmove',onTouchMove,{passive:false});
+  panel.addEventListener('touchend',onTouchEnd,{passive:true});
 }
 
 
@@ -8724,6 +8941,125 @@ function updatePolicyBadge(){
   if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}
 }
 
+// ── Mobile bottom nav: highlight active tab ──
+(function(){
+  var map={
+    'mbn-dash':'nav-dash',
+    'mbn-items':'nav-items',
+    'mbn-risks':'nav-risks',
+    'mbn-actions':'nav-actions',
+    'mbn-more':'ham-btn'
+  };
+  function syncMbn(){
+    Object.keys(map).forEach(function(mbnId){
+      var el=document.getElementById(mbnId);
+      if(!el) return;
+      var navEl=document.getElementById(map[mbnId]);
+      if(mbnId==='mbn-more'){el.classList.remove('mbn-active');return;}
+      el.classList.toggle('mbn-active', navEl?navEl.classList.contains('active'):false);
+    });
+  }
+  // Watch for active class changes using MutationObserver
+  var navEl=document.getElementById('nav-dash');
+  if(navEl){
+    var obs=new MutationObserver(syncMbn);
+    document.querySelectorAll('.sb-btn').forEach(function(b){
+      obs.observe(b,{attributes:true,attributeFilter:['class']});
+    });
+  }
+  document.addEventListener('DOMContentLoaded',syncMbn);
+  setTimeout(syncMbn,800);
+})();
+
 </script>
+
+<!-- ── MOBILE BOTTOM NAV ── -->
+<style>
+.mobile-bottom-nav{
+  display:none;
+  position:fixed;bottom:0;left:0;right:0;z-index:280;
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:6px 0 max(6px,env(safe-area-inset-bottom));
+  box-shadow:0 -4px 20px rgba(0,0,0,.12);
+}
+.mobile-bottom-nav ul{
+  display:flex;list-style:none;margin:0;padding:0;
+  justify-content:space-around;align-items:center;
+}
+.mobile-bottom-nav li button{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;cursor:pointer;
+  padding:6px 10px;border-radius:10px;
+  color:var(--text3);font-family:var(--font);
+  font-size:10px;font-weight:600;letter-spacing:.2px;
+  transition:all .15s;min-width:56px;
+}
+.mobile-bottom-nav li button svg{
+  transition:transform .15s;
+}
+.mobile-bottom-nav li button.mbn-active{
+  color:var(--primary);
+}
+.mobile-bottom-nav li button.mbn-active svg{
+  transform:translateY(-2px);
+}
+.mbn-dot{
+  width:5px;height:5px;border-radius:50%;
+  background:var(--danger);position:absolute;
+  top:0;right:0;
+}
+.mbn-icon-wrap{position:relative;display:inline-flex}
+@media(max-width:768px){
+  .mobile-bottom-nav{display:block}
+  /* Push content above the bottom nav */
+  .content{padding-bottom:70px!important}
+}
+</style>
+
+<nav class="mobile-bottom-nav" id="mobile-bottom-nav">
+  <ul>
+    <li>
+      <button id="mbn-dash" onclick="document.getElementById('nav-dash').click()">
+        <div class="mbn-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        </div>
+        Dashboard
+      </button>
+    </li>
+    <li>
+      <button id="mbn-items" onclick="document.getElementById('nav-items').click()">
+        <div class="mbn-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+        </div>
+        Tracker
+      </button>
+    </li>
+    <li>
+      <button id="mbn-risks" onclick="document.getElementById('nav-risks').click()">
+        <div class="mbn-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </div>
+        Risks
+      </button>
+    </li>
+    <li>
+      <button id="mbn-actions" onclick="document.getElementById('nav-actions').click()">
+        <div class="mbn-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        </div>
+        Actions
+      </button>
+    </li>
+    <li>
+      <button id="mbn-more" onclick="document.getElementById('ham-btn').click()">
+        <div class="mbn-icon-wrap">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </div>
+        Menu
+      </button>
+    </li>
+  </ul>
+</nav>
+
 </body>
 </html>
