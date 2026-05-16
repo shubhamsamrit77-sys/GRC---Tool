@@ -1048,7 +1048,19 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   .export-grid,.scorecard-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
   .export-card{padding:14px!important}
 
-  /* ── Policy / Framework / Calendar ── */
+  /* ── Audit trail: stack filters vertically ── */
+  #s-audit-trail > div:first-child{flex-direction:column;align-items:flex-start!important}
+  #s-audit-trail > div:first-child > div:last-child{flex-wrap:wrap;gap:6px}
+  #s-audit-trail > div:first-child select,
+  #s-audit-trail > div:first-child input[type=text],
+  #s-audit-trail > div:first-child input:not([type=date]){width:100%!important}
+  #at-summary{grid-template-columns:1fr 1fr!important}
+
+  /* ── Audit trail table: hide lower-priority cols ── */
+  #s-audit-trail th:nth-child(4),
+  #s-audit-trail td:nth-child(4),
+  #s-audit-trail th:nth-child(6),
+  #s-audit-trail td:nth-child(6){display:none}
   .policy-grid,.fw-card-grid{grid-template-columns:1fr!important;gap:10px!important}
   .cal-grid{grid-template-columns:repeat(7,1fr)!important;font-size:10px!important}
   .cal-day{min-height:36px!important;padding:4px!important;font-size:10px!important}
@@ -2333,6 +2345,9 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
               <option value="System">System</option>
             </select>
             <input id="at-filter-user" oninput="renderAuditTrail()" placeholder="Filter by user..." style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:150px">
+            <input id="at-filter-date-from" type="date" onchange="renderAuditTrail()" title="From date" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+            <input id="at-filter-date-to"   type="date" onchange="renderAuditTrail()" title="To date"   style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+            <button class="btn" onclick="(function(){['at-filter-action','at-filter-module','at-filter-user','at-filter-date-from','at-filter-date-to'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});renderAuditTrail();})()" style="font-size:12px" title="Clear all filters">✕ Clear</button>
             <button class="btn" onclick="exportAuditTrail()" style="font-size:12px;display:inline-flex;align-items:center;gap:5px">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
               Export
@@ -2341,7 +2356,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         </div>
 
         <!-- Summary strip -->
-        <div id="at-summary" class="dash-grid" style="margin-bottom:14px"></div>
+        <div id="at-summary" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px"></div>
 
         <!-- Audit log table -->
         <div class="table-wrap">
@@ -3560,6 +3575,7 @@ document.getElementById('add-item-btn').onclick=async function(){
   await loadAll();
   closePanel();
   showDueDateToast('','Compliance item added!');
+  writeAuditLog('CREATE','Compliance Item','Added compliance item: '+name,{dept:row.dept,freq:row.freq,assignee:row.assignee||row.stakeholder,priority:row.priority});
 };
 
 function renderFreqFilters(){
@@ -3798,6 +3814,7 @@ function renderItems(){
         actLog.push({ts:new Date().toISOString(),user:currentUser?currentUser.name:'User',action:(it.done?'Marked as Pending':'Marked as Done')});
         updateBody.activity_log=JSON.stringify(actLog);
         await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
+        writeAuditLog('UPDATE','Compliance Item',(it.done?'Marked pending: ':'Marked done: ')+it.name,{prev_status:it.done?'Done':'Pending',new_status:it.done?'Pending':'Done'});
         if(!it.done) showDueDateToast(it.freq,updateBody.due_date||it.due_date);
         await loadAll();
       }
@@ -3807,7 +3824,9 @@ function renderItems(){
     el.addEventListener('click',async function(e){
       e.stopPropagation();
       if(!confirm('Delete this item?'))return;
+      var itDel=items.find(function(x){return x.id==el.getAttribute('data-del');});
       await api('grc_items?id=eq.'+el.getAttribute('data-del'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+      writeAuditLog('DELETE','Compliance Item','Deleted item: '+(itDel?itDel.name:el.getAttribute('data-del')));
       await loadAll();
     });
   });
@@ -7042,47 +7061,108 @@ async function writeAuditLog(action, module, description, meta){
 }
 
 // ── Render audit trail page ──
-function renderAuditTrail(){
-  var actionFilter = (document.getElementById('at-filter-action') || {}).value || '';
-  var moduleFilter = (document.getElementById('at-filter-module') || {}).value || '';
-  var userFilter   = ((document.getElementById('at-filter-user')  || {}).value || '').toLowerCase().trim();
+async function renderAuditTrail(){
+  // ── 1. Read all filter values ──
+  var actionFilter = ((document.getElementById('at-filter-action')||{}).value||'').trim();
+  var moduleFilter = ((document.getElementById('at-filter-module')||{}).value||'').trim();
+  var userFilter   = ((document.getElementById('at-filter-user')  ||{}).value||'').toLowerCase().trim();
+  var dateFrom     = ((document.getElementById('at-filter-date-from')||{}).value||'').trim();
+  var dateTo       = ((document.getElementById('at-filter-date-to')||{}).value||'').trim();
 
-  // Summary cards
+  // ── 2. Normalise helpers ──
+  // Map dropdown display labels → DB stored action strings (uppercase)
+  var actionNorm = {
+    'Created':'CREATE','Updated':'UPDATE','Deleted':'DELETE',
+    'Login':'LOGIN','Logout':'LOGOUT','Export':'EXPORT',
+    'CREATE':'CREATE','UPDATE':'UPDATE','DELETE':'DELETE',
+    'LOGIN':'LOGIN','LOGOUT':'LOGOUT','EXPORT':'EXPORT'
+  };
+  var normAction = actionFilter ? (actionNorm[actionFilter]||actionFilter.toUpperCase()) : '';
+
+  // Module values already match DB — 'Compliance Item','Risk','Action' etc.
+  // But tolerate trailing 's' (e.g. 'Risks' → 'Risk')
+  var moduleMap = {
+    'Compliance Items':'Compliance Item','Risks':'Risk','Actions':'Action',
+    'Evidences':'Evidence','Policies':'Policy','Audits':'Audit',
+    'Users':'User','Control Mappings':'Control Mapping','Systems':'System'
+  };
+  var normModule = moduleFilter ? (moduleMap[moduleFilter]||moduleFilter) : '';
+
+  // ── 3. If any filter active, try fresh server-side fetch (max 200) ──
+  var anyFilter = normAction||normModule||userFilter||dateFrom||dateTo;
+  if(anyFilter){
+    try{
+      var qs = 'grc_audit_trail?select=*&order=created_at.desc&limit=200';
+      if(normAction) qs += '&action=eq.'+encodeURIComponent(normAction);
+      if(normModule) qs += '&module=eq.'+encodeURIComponent(normModule);
+      var res = await api(qs,{method:'GET'});
+      if(res.ok){
+        var fresh = await res.json();
+        if(Array.isArray(fresh)){
+          // Merge into auditLogs (de-dup by id)
+          var existingIds = new Set(auditLogs.map(function(l){return l.id;}));
+          fresh.forEach(function(l){ if(!existingIds.has(l.id)) auditLogs.push(l); });
+        }
+      }
+    }catch(e){ /* silent — use cached */ }
+  }
+
+  // ── 4. Client-side filter on full auditLogs array ──
+  var filtered = auditLogs.filter(function(l){
+    // Action — normalise both sides to uppercase for comparison
+    if(normAction){
+      var lAction = (l.action||'').toUpperCase();
+      if(lAction !== normAction) return false;
+    }
+    // Module — exact match after normalisation
+    if(normModule){
+      var lModule = (l.module||'').trim();
+      // Also try without trailing 's' on each side
+      if(lModule !== normModule && lModule+'s' !== normModule && lModule !== normModule+'s') return false;
+    }
+    // User — partial match on name or email
+    if(userFilter){
+      var byName  = (l.performed_by||'').toLowerCase().includes(userFilter);
+      var byEmail = (l.user_email||'').toLowerCase().includes(userFilter);
+      if(!byName && !byEmail) return false;
+    }
+    // Date from
+    if(dateFrom && l.created_at && l.created_at.slice(0,10) < dateFrom) return false;
+    // Date to
+    if(dateTo   && l.created_at && l.created_at.slice(0,10) > dateTo)   return false;
+    return true;
+  });
+
+  // ── 5. Summary cards (always based on full auditLogs, not filtered) ──
   var sumEl = document.getElementById('at-summary');
   if(sumEl){
     while(sumEl.firstChild) sumEl.removeChild(sumEl.firstChild);
-    var today_str = today();
-    var todayLogs = auditLogs.filter(function(l){ return l.created_at && l.created_at.startsWith(today_str); });
-    var creates   = auditLogs.filter(function(l){ return l.action==='CREATE'; }).length;
-    var updates   = auditLogs.filter(function(l){ return l.action==='UPDATE'; }).length;
-    var deletes   = auditLogs.filter(function(l){ return l.action==='DELETE'; }).length;
-    var uniqueUsers = new Set(auditLogs.map(function(l){ return l.user_email; })).size;
+    var today_str  = today();
+    var todayCount = auditLogs.filter(function(l){ return l.created_at&&l.created_at.startsWith(today_str); }).length;
+    var creates    = auditLogs.filter(function(l){ return (l.action||'').toUpperCase()==='CREATE'; }).length;
+    var updates    = auditLogs.filter(function(l){ return (l.action||'').toUpperCase()==='UPDATE'; }).length;
+    var deletes    = auditLogs.filter(function(l){ return (l.action||'').toUpperCase()==='DELETE'; }).length;
+    var uniqUsers  = new Set(auditLogs.map(function(l){ return l.user_email||l.performed_by; })).size;
     [
-      {l:'Total entries', v:auditLogs.length,  c:'var(--primary)', t:'#5b5ef4'},
-      {l:'Today',         v:todayLogs.length,  c:'var(--text)',    t:'#10b981'},
-      {l:'Created',       v:creates,           c:'var(--success)', t:'#10b981'},
-      {l:'Updated',       v:updates,           c:'var(--warning)', t:'#f59e0b'},
-      {l:'Deleted',       v:deletes,           c:'var(--danger)',  t:'#ef4444'},
-      {l:'Active users',  v:uniqueUsers,       c:'var(--primary)', t:'#7c3aed'}
+      {l:'Total entries', v:auditLogs.length, c:'var(--primary)', t:'#5b5ef4'},
+      {l:'Today',         v:todayCount,        c:'var(--text)',   t:'#10b981'},
+      {l:'Created',       v:creates,           c:'var(--success)',t:'#10b981'},
+      {l:'Updated',       v:updates,           c:'var(--warning)',t:'#f59e0b'},
+      {l:'Deleted',       v:deletes,           c:'var(--danger)', t:'#ef4444'},
+      {l:'Active users',  v:uniqUsers,         c:'var(--primary)',t:'#7c3aed'}
     ].forEach(function(m){
       var card = document.createElement('div');
       card.className = 'metric-card';
-      card.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
-        '<div class="mc-label" style="margin-top:4px">'+m.l+'</div>'+
-        '<div class="mc-val" style="color:'+m.c+'">'+m.v+'</div>';
+      card.style.cursor = 'default';
+      card.innerHTML =
+        '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
+        '<div class="mc-label" style="margin-top:6px;font-size:10px">'+m.l+'</div>'+
+        '<div class="mc-val" style="color:'+m.c+';font-size:28px">'+m.v+'</div>';
       sumEl.appendChild(card);
     });
   }
 
-  // Filter logs
-  var filtered = auditLogs.filter(function(l){
-    if(actionFilter && l.action !== actionFilter) return false;
-    if(moduleFilter && l.module !== moduleFilter) return false;
-    if(userFilter && !(l.performed_by||'').toLowerCase().includes(userFilter) &&
-                     !(l.user_email||'').toLowerCase().includes(userFilter)) return false;
-    return true;
-  });
-
+  // ── 6. Render table ──
   var tb = document.getElementById('audit-trail-body');
   if(!tb) return;
   while(tb.firstChild) tb.removeChild(tb.firstChild);
@@ -7093,59 +7173,72 @@ function renderAuditTrail(){
     td0.colSpan = 6;
     td0.style.cssText = 'padding:60px 20px;text-align:center';
     if(!auditLogs.length){
+      // Table not set up yet
       var ei=document.createElement('div');ei.style.cssText='font-size:36px;margin-bottom:14px';ei.textContent='📜';
       var et=document.createElement('div');et.style.cssText='font-size:15px;font-weight:700;color:var(--text);margin-bottom:8px';et.textContent='No audit logs yet';
-      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:16px;max-width:480px';
+      var es=document.createElement('div');es.style.cssText='font-size:13px;color:var(--text3);margin-bottom:16px;max-width:480px;margin-left:auto;margin-right:auto';
       es.textContent='Run the SQL below in Supabase to create the audit trail table. Logs will appear automatically after that.';
       var sqlBox=document.createElement('div');
-      sqlBox.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:11px;font-family:monospace;color:var(--text2);text-align:left;margin-top:4px;line-height:1.8;max-width:560px';
-      sqlBox.textContent='CREATE TABLE grc_audit_trail (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  action text NOT NULL,\n  module text NOT NULL,\n  description text NOT NULL,\n  performed_by text, user_email text, user_role text,\n  meta text, ip_hint text,\n  created_at timestamptz DEFAULT now()\n);\nALTER TABLE grc_audit_trail ENABLE ROW LEVEL SECURITY;\nCREATE POLICY \"allow_all\" ON grc_audit_trail FOR ALL USING (true) WITH CHECK (true);';
+      sqlBox.style.cssText='background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px 16px;font-size:11px;font-family:monospace;color:var(--text2);text-align:left;margin-top:4px;line-height:1.8;max-width:560px;margin-left:auto;margin-right:auto';
+      sqlBox.textContent='CREATE TABLE grc_audit_trail (\n  id uuid DEFAULT gen_random_uuid() PRIMARY KEY,\n  action text NOT NULL,\n  module text NOT NULL,\n  description text NOT NULL,\n  performed_by text, user_email text, user_role text,\n  meta text, ip_hint text,\n  created_at timestamptz DEFAULT now()\n);\nALTER TABLE grc_audit_trail ENABLE ROW LEVEL SECURITY;\nCREATE POLICY "allow_all" ON grc_audit_trail FOR ALL USING (true) WITH CHECK (true);';
       td0.appendChild(ei);td0.appendChild(et);td0.appendChild(es);td0.appendChild(sqlBox);
     } else {
-      var fi=document.createElement('div');fi.style.cssText='font-size:28px;margin-bottom:8px';fi.textContent='🔍';
-      var fs=document.createElement('div');fs.style.cssText='font-size:13px;color:var(--text3)';fs.textContent='No logs match this filter.';
-      td0.appendChild(fi);td0.appendChild(fs);
+      // Filters active but no match
+      var fi=document.createElement('div');fi.style.cssText='font-size:28px;margin-bottom:10px';fi.textContent='🔍';
+      var fs=document.createElement('div');fs.style.cssText='font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px';fs.textContent='No logs match this filter';
+      var fc=document.createElement('div');fc.style.cssText='font-size:12px;color:var(--text3);margin-bottom:14px';fc.textContent='Try clearing one or more filters to see results.';
+      var clrBtn=document.createElement('button');clrBtn.className='btn';clrBtn.textContent='Clear all filters';
+      clrBtn.onclick=function(){
+        ['at-filter-action','at-filter-module','at-filter-user','at-filter-date-from','at-filter-date-to'].forEach(function(id){
+          var el=document.getElementById(id);if(el)el.value='';
+        });
+        renderAuditTrail();
+      };
+      td0.appendChild(fi);td0.appendChild(fs);td0.appendChild(fc);td0.appendChild(clrBtn);
     }
-    tr0.appendChild(td0);tb.appendChild(tr0);
+    tr0.appendChild(td0); tb.appendChild(tr0);
     return;
   }
 
-  // Action badge colours
+  // ── 7. Action badge colour map ──
   var actionColors = {
-    'CREATE': ['var(--success-light)','var(--success)','+ Created'],
-    'UPDATE': ['var(--warning-light)','var(--warning)','✎ Updated'],
-    'DELETE': ['var(--danger-light)', 'var(--danger)', '✕ Deleted'],
-    'LOGIN':  ['var(--primary-light)','var(--primary)','→ Login'],
-    'LOGOUT': ['var(--border)',       'var(--text3)',  '← Logout'],
-    'EXPORT': ['rgba(124,58,237,.1)','#7c3aed',       '↓ Export']
+    'CREATE': ['var(--success-light)','var(--success)',   '+ Created'],
+    'UPDATE': ['var(--warning-light)','var(--warning)',   '✎ Updated'],
+    'DELETE': ['var(--danger-light)', 'var(--danger)',    '✕ Deleted'],
+    'LOGIN':  ['var(--primary-light)','var(--primary)',   '→ Login'],
+    'LOGOUT': ['var(--border)',       'var(--text3)',     '← Logout'],
+    'EXPORT': ['rgba(124,58,237,.1)','#7c3aed',          '↓ Export']
   };
 
+  // ── 8. Build rows ──
   filtered.forEach(function(log){
-    var ac = actionColors[log.action] || ['var(--border)','var(--text3)',log.action];
+    var normA = (log.action||'').toUpperCase();
+    var ac = actionColors[normA] || ['var(--border)','var(--text3)', log.action||'—'];
 
     var tr = document.createElement('tr');
     tr.className = 'item-row';
     tr.style.height = '52px';
+    tr.style.cursor = 'pointer';
 
-    // Col 1: Timestamp
+    // Timestamp
     var td1 = document.createElement('td');
     td1.style.paddingLeft = '16px';
-    var ts = log.created_at ? log.created_at.replace('T',' ').slice(0,19) : '—';
+    var ts     = (log.created_at||'—').replace('T',' ').slice(0,19);
     var tsDate = ts.slice(0,10);
     var tsTime = ts.slice(11,19);
     td1.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--text)">'+tsDate+'</div>'+
                     '<div style="font-size:11px;color:var(--text3)">'+tsTime+'</div>';
 
-    // Col 2: User
+    // User
     var td2 = document.createElement('td');
     var initials = (log.performed_by||'?').split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
-    var roleColor = {admin:'#5b5ef4',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'}[log.user_role]||'#888';
+    var roleColor = {admin:'#5b5ef4',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'}[(log.user_role||'').toLowerCase()]||'#888';
     td2.innerHTML = '<div style="display:flex;align-items:center;gap:8px">'+
       '<div style="width:28px;height:28px;border-radius:50%;background:'+roleColor+';display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">'+initials+'</div>'+
-      '<div><div style="font-size:12px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100px">'+escHtml(log.performed_by||'—')+'</div>'+
+      '<div><div style="font-size:12px;font-weight:600;color:var(--text);max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+escHtml(log.performed_by||'—')+'</div>'+
       '<div style="font-size:10px;color:var(--text3)">'+escHtml(log.user_role||'')+'</div></div></div>';
 
-    // Col 3: Action badge
+    // Action badge
     var td3 = document.createElement('td');
     var badge = document.createElement('span');
     badge.className = 'badge';
@@ -7153,74 +7246,71 @@ function renderAuditTrail(){
     badge.textContent = ac[2];
     td3.appendChild(badge);
 
-    // Col 4: Module
+    // Module
     var td4 = document.createElement('td');
     td4.innerHTML = '<span style="font-size:11px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:3px 8px;color:var(--text2);white-space:nowrap">'+escHtml(log.module||'—')+'</span>';
 
-    // Col 5: Description — expandable
+    // Description
     var td5 = document.createElement('td');
-    var desc = log.description || '—';
+    var desc = log.description||'—';
     var descDiv = document.createElement('div');
-    descDiv.style.cssText = 'font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px';
-    descDiv.textContent = desc;
-    descDiv.title = desc;
+    descDiv.style.cssText = 'font-size:12px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px';
+    descDiv.textContent = desc; descDiv.title = desc;
     td5.appendChild(descDiv);
-    // If there's meta data, show it on expand
     if(log.meta){
       var metaDiv = document.createElement('div');
-      metaDiv.style.cssText = 'font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:210px';
+      metaDiv.style.cssText = 'font-size:10px;color:var(--text3);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px';
       try{
-        var m = JSON.parse(log.meta);
-        var parts = Object.keys(m).slice(0,2).map(function(k){ return k+': '+String(m[k]).slice(0,20); });
-        metaDiv.textContent = parts.join(' · ');
-      }catch(e){ metaDiv.textContent = String(log.meta).slice(0,40); }
+        var mp = JSON.parse(log.meta);
+        metaDiv.textContent = Object.keys(mp).slice(0,2).map(function(k){return k+': '+String(mp[k]).slice(0,20);}).join(' · ');
+      }catch(e2){ metaDiv.textContent = String(log.meta).slice(0,40); }
       td5.appendChild(metaDiv);
     }
 
-    // Col 6: IP / Device hint
+    // Device
     var td6 = document.createElement('td');
     var ua = log.ip_hint||'';
     var device = ua.indexOf('Mobile')>-1?'📱 Mobile':ua.indexOf('Chrome')>-1?'🌐 Chrome':ua.indexOf('Firefox')>-1?'🦊 Firefox':ua.indexOf('Safari')>-1?'🧭 Safari':'💻 Desktop';
     td6.innerHTML = '<span style="font-size:11px;color:var(--text3)">'+device+'</span>';
 
-    // Expand row for full details
-    tr.style.cursor = 'pointer';
-    (function(logEntry){
+    // ── Expand row for full detail ──
+    (function(logEntry, acLocal){
       tr.addEventListener('click', function(){
         var isOpen = tr.classList.contains('expanded');
         tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
         tb.querySelectorAll('.at-detail-row').forEach(function(d){d.remove();});
         if(!isOpen){
           tr.classList.add('expanded');
-          var dtr = document.createElement('tr');
-          dtr.className = 'at-detail-row';
-          var dtd = document.createElement('td');
-          dtd.colSpan = 6;
+          var dtr = document.createElement('tr'); dtr.className = 'at-detail-row';
+          var dtd = document.createElement('td'); dtd.colSpan = 6;
           dtd.style.cssText = 'padding:0;white-space:normal;overflow:visible';
-          var bc = ac[1];
+          var bc = acLocal[1];
           var metaHtml = '';
           if(logEntry.meta){
             try{
               var pm = JSON.parse(logEntry.meta);
-              metaHtml = '<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Change details</div>'+
-                '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">';
+              metaHtml = '<div style="margin-top:12px">'+
+                '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:8px">Change details</div>'+
+                '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:8px">';
               Object.keys(pm).forEach(function(k){
                 metaHtml += '<div style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 10px">'+
                   '<div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:3px">'+escHtml(k)+'</div>'+
                   '<div style="font-size:12px;color:var(--text);word-break:break-all">'+escHtml(String(pm[k]).slice(0,200))+'</div></div>';
               });
               metaHtml += '</div></div>';
-            }catch(e){}
+            }catch(e2){}
           }
-          dtd.innerHTML = '<div style="background:var(--surface2);border-left:3px solid '+bc+';padding:14px 20px">'+
-            '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:10px">'+
+          dtd.innerHTML = '<div style="background:var(--surface2);border-left:3px solid '+bc+';padding:16px 20px">'+
+            '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:12px">'+
             '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Performed by</div><div style="font-size:13px;font-weight:600;color:var(--text)">'+escHtml(logEntry.performed_by||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:13px;color:var(--text)">'+escHtml(logEntry.user_email||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:12px;color:var(--text);word-break:break-all">'+escHtml(logEntry.user_email||'—')+'</div></div>'+
             '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Role</div><div style="font-size:13px;color:var(--text)">'+escHtml(logEntry.user_role||'—')+'</div></div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Timestamp</div><div style="font-size:13px;color:var(--text)">'+(logEntry.created_at||'—').replace('T',' ').slice(0,19)+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Module</div><div style="font-size:13px;color:var(--text)">'+escHtml(logEntry.module||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Action</div><div style="margin-top:2px"><span class="badge" style="background:'+acLocal[0]+';color:'+acLocal[1]+';font-weight:700">'+acLocal[2]+'</span></div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Timestamp</div><div style="font-size:12px;color:var(--text)">'+(logEntry.created_at||'—').replace('T',' ').slice(0,19)+'</div></div>'+
             '</div>'+
-            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Full description</div>'+
-            '<div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 14px;border-radius:8px;border:1px solid var(--border);line-height:1.7">'+escHtml(logEntry.description||'—')+'</div></div>'+
+            '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Full description</div>'+
+            '<div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 14px;border-radius:8px;border:1px solid var(--border);line-height:1.7;word-break:break-word">'+escHtml(logEntry.description||'—')+'</div></div>'+
             metaHtml+
             (logEntry.ip_hint?'<div style="margin-top:10px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">User agent</div><div style="font-size:11px;color:var(--text3);word-break:break-all">'+escHtml(logEntry.ip_hint)+'</div></div>':'')+
             '</div>';
@@ -7228,16 +7318,16 @@ function renderAuditTrail(){
           tr.parentNode.insertBefore(dtr, tr.nextSibling);
         }
       });
-    })(log);
+    })(log, ac);
 
     tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);
     tr.appendChild(td4);tr.appendChild(td5);tr.appendChild(td6);
     tb.appendChild(tr);
   });
 
-  // Load more button
+  // Load more button visibility
   var loadMoreEl = document.getElementById('at-load-more');
-  if(loadMoreEl) loadMoreEl.style.display = filtered.length >= 50 ? '' : 'none';
+  if(loadMoreEl) loadMoreEl.style.display = (!anyFilter && auditLogs.length >= 50) ? '' : 'none';
 }
 
 // ── Load more audit logs ──
