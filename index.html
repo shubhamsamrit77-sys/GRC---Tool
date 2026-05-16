@@ -907,7 +907,20 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .ev-upload-zone:hover{border-color:var(--primary);background:var(--primary-light)}
 .ev-upload-zone input[type=file]{display:none}
 .ev-file-chip{display:inline-flex;align-items:center;gap:6px;background:var(--primary-light);color:var(--primary);border:1px solid rgba(91,94,244,.2);border-radius:20px;padding:3px 10px;font-size:11px;font-weight:600;margin:3px}
-/* ── ACTIVITY LOG ── */
+/* ── AUDIT TRAIL FILTER BAR ── */
+.at-filter-select{
+  padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:12px;font-family:var(--font);background:var(--surface2);
+  color:var(--text);outline:none;width:100%;transition:border-color .15s;
+  -webkit-appearance:none;appearance:none;
+}
+.at-filter-select:focus{border-color:var(--primary);background:var(--surface)}
+.at-filter-divider{width:1px;height:36px;background:var(--border);flex-shrink:0;margin-top:18px}
+/* Summary grid — 6 equal cols on desktop, 3 on tablet, 2 on mobile */
+#at-summary{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:20px}
+#at-summary .metric-card{padding:14px 16px}
+#at-summary .mc-val{font-size:24px}
+#at-summary .mc-label{font-size:9px}
 .act-log-item{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2)}
 .act-log-item:last-child{border-bottom:none}
 .act-log-dot{width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:4px;flex-shrink:0}
@@ -1065,13 +1078,10 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   .exp-row-btns{width:100%;justify-content:flex-end}
   .exp-btn{padding:7px 14px;font-size:12px;flex:1;justify-content:center}
 
-  /* ── Audit trail: stack filters vertically ── */
-  #s-audit-trail > div:first-child{flex-direction:column;align-items:flex-start!important}
-  #s-audit-trail > div:first-child > div:last-child{flex-wrap:wrap;gap:6px}
-  #s-audit-trail > div:first-child select,
-  #s-audit-trail > div:first-child input[type=text],
-  #s-audit-trail > div:first-child input:not([type=date]){width:100%!important}
-  #at-summary{grid-template-columns:1fr 1fr!important}
+  /* ── Audit trail: filter bar wraps on mobile ── */
+  #at-summary{grid-template-columns:repeat(3,1fr)!important;gap:8px!important}
+  .at-filter-divider{display:none}
+  #s-audit-trail .card > .table-wrap{overflow-x:auto}
 
   /* ── Audit trail table: hide lower-priority cols ── */
   #s-audit-trail th:nth-child(4),
@@ -2334,13 +2344,28 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <!-- AUDIT TRAIL -->
       <div id="s-audit-trail" class="sec">
 
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <!-- ── Page header row ── -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px">
           <div>
-            <div style="font-size:16px;font-weight:700;color:var(--text)">Audit Trail</div>
-            <div style="font-size:12px;color:var(--text3);margin-top:2px">Complete tamper-evident log of every change — who did what, when, and what changed · ISO 27001 A.8.15</div>
+            <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">Audit Trail</div>
+            <div style="font-size:12px;color:var(--text3);margin-top:3px">Tamper-evident log · who did what, when · ISO 27001 A.8.15</div>
           </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="at-filter-action" onchange="renderAuditTrail()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+          <button class="btn btn-primary" onclick="exportAuditTrail()" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:8px 16px">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export Excel
+          </button>
+        </div>
+
+        <!-- ── Summary cards ── -->
+        <div id="at-summary" style="display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px;margin-bottom:20px"></div>
+
+        <!-- ── Filter bar — single horizontal row ── -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+
+          <!-- Action filter -->
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:130px;flex:1">
+            <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Action</label>
+            <select id="at-filter-action" onchange="renderAuditTrail()" class="at-filter-select">
               <option value="">All actions</option>
               <option value="CREATE">Created</option>
               <option value="UPDATE">Updated</option>
@@ -2349,7 +2374,14 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
               <option value="LOGOUT">Logout</option>
               <option value="EXPORT">Export</option>
             </select>
-            <select id="at-filter-module" onchange="renderAuditTrail()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+          </div>
+
+          <div class="at-filter-divider"></div>
+
+          <!-- Module filter -->
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;flex:1">
+            <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Module</label>
+            <select id="at-filter-module" onchange="renderAuditTrail()" class="at-filter-select">
               <option value="">All modules</option>
               <option value="Compliance Item">Compliance Items</option>
               <option value="Risk">Risks</option>
@@ -2361,38 +2393,63 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
               <option value="Control Mapping">Control Mappings</option>
               <option value="System">System</option>
             </select>
-            <input id="at-filter-user" oninput="renderAuditTrail()" placeholder="Filter by user..." style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none;width:150px">
-            <input id="at-filter-date-from" type="date" onchange="renderAuditTrail()" title="From date" style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
-            <input id="at-filter-date-to"   type="date" onchange="renderAuditTrail()" title="To date"   style="padding:7px 10px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
-            <button class="btn" onclick="(function(){['at-filter-action','at-filter-module','at-filter-user','at-filter-date-from','at-filter-date-to'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});renderAuditTrail();})()" style="font-size:12px" title="Clear all filters">✕ Clear</button>
-            <button class="btn" onclick="exportAuditTrail()" style="font-size:12px;display:inline-flex;align-items:center;gap:5px">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Export
+          </div>
+
+          <div class="at-filter-divider"></div>
+
+          <!-- User search -->
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:140px;flex:1.5">
+            <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">User</label>
+            <div style="position:relative">
+              <svg style="position:absolute;left:8px;top:50%;transform:translateY(-50%);opacity:.4;pointer-events:none" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              <input id="at-filter-user" oninput="renderAuditTrail()" placeholder="Search user..." class="at-filter-select" style="padding-left:28px;width:100%;box-sizing:border-box">
+            </div>
+          </div>
+
+          <div class="at-filter-divider"></div>
+
+          <!-- Date range -->
+          <div style="display:flex;flex-direction:column;gap:4px;min-width:200px;flex:1.5">
+            <label style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px">Date range</label>
+            <div style="display:flex;align-items:center;gap:6px">
+              <input id="at-filter-date-from" type="date" onchange="renderAuditTrail()" class="at-filter-select" style="flex:1;min-width:0">
+              <span style="font-size:11px;color:var(--text3);flex-shrink:0">→</span>
+              <input id="at-filter-date-to" type="date" onchange="renderAuditTrail()" class="at-filter-select" style="flex:1;min-width:0">
+            </div>
+          </div>
+
+          <div class="at-filter-divider"></div>
+
+          <!-- Clear button -->
+          <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;padding-top:18px">
+            <button class="btn" onclick="(function(){['at-filter-action','at-filter-module','at-filter-user','at-filter-date-from','at-filter-date-to'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});renderAuditTrail();})()" style="font-size:12px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+              Clear
             </button>
           </div>
+
         </div>
 
-        <!-- Summary strip -->
-        <div id="at-summary" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:16px"></div>
-
-        <!-- Audit log table -->
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th style="min-width:160px;padding-left:16px">Timestamp</th>
-              <th style="min-width:130px">User</th>
-              <th style="min-width:80px">Action</th>
-              <th style="min-width:120px">Module</th>
-              <th style="min-width:220px">Description</th>
-              <th style="min-width:100px">IP / Device</th>
-            </tr></thead>
-            <tbody id="audit-trail-body"></tbody>
-          </table>
+        <!-- ── Audit log table ── -->
+        <div class="card" style="padding:0;overflow:hidden">
+          <div class="table-wrap" style="margin:0">
+            <table>
+              <thead><tr>
+                <th style="min-width:140px;padding-left:16px">Timestamp</th>
+                <th style="min-width:130px">User</th>
+                <th style="min-width:90px">Action</th>
+                <th style="min-width:110px">Module</th>
+                <th>Description</th>
+                <th style="min-width:90px">Device</th>
+              </tr></thead>
+              <tbody id="audit-trail-body"></tbody>
+            </table>
+          </div>
         </div>
 
         <!-- Load more -->
         <div id="at-load-more" style="display:none;text-align:center;margin-top:14px">
-          <button class="btn" onclick="loadMoreAuditLogs()" style="font-size:13px">Load more entries</button>
+          <button class="btn" onclick="loadMoreAuditLogs()" style="font-size:13px;padding:9px 24px">Load more entries</button>
         </div>
 
       </div>
@@ -7268,8 +7325,8 @@ async function renderAuditTrail(){
       card.style.cursor = 'default';
       card.innerHTML =
         '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
-        '<div class="mc-label" style="margin-top:6px;font-size:10px">'+m.l+'</div>'+
-        '<div class="mc-val" style="color:'+m.c+';font-size:28px">'+m.v+'</div>';
+        '<div style="font-size:9px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-top:4px">'+m.l+'</div>'+
+        '<div style="font-size:24px;font-weight:800;color:'+m.c+';margin-top:4px;line-height:1">'+m.v+'</div>';
       sumEl.appendChild(card);
     });
   }
