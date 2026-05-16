@@ -5098,110 +5098,238 @@ function renderPortal(){
 }
 
 // ── PORTAL PAGE (runs when ?portal= is in URL) ──
+var _portalShown = false; // guard against double-render
+
 function checkPortalMode(){
   var params = new URLSearchParams(window.location.search);
   var portalCode = params.get('portal');
   if(!portalCode) return false;
+  if(_portalShown) return true;
+  _portalShown = true;
   var stakeName = decodeStake(portalCode);
-  if(!stakeName){ document.body.innerHTML='<div style="font-family:Segoe UI,sans-serif;text-align:center;padding:60px;color:#d93f3f;font-size:16px">Invalid portal link. Please contact your GRC team.</div>'; return true; }
+  if(!stakeName){
+    document.body.innerHTML = '<div style="font-family:\'Segoe UI\',sans-serif;max-width:600px;margin:80px auto;text-align:center;padding:40px"><div style="font-size:48px;margin-bottom:16px">⚠️</div><div style="font-size:18px;font-weight:700;color:#d93f3f;margin-bottom:8px">Invalid portal link</div><div style="font-size:14px;color:#7c8298">Please contact your GRC team for a valid link.</div></div>';
+    return true;
+  }
   showPortalPage(stakeName);
   return true;
 }
 
 async function showPortalPage(stakeName){
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('main-app').style.display='none';
-  document.body.style.background='#f5f6fa';
-  var page=document.createElement('div');
-  page.style.cssText='max-width:800px;margin:0 auto;padding:24px 16px;font-family:Segoe UI,sans-serif';
-  var initials=stakeName.charAt(0).toUpperCase();
-  var headerHtml=[
-    '<div style="background:#4f52d9;border-radius:12px;padding:20px 24px;margin-bottom:20px;display:flex;align-items:center;gap:14px">',
-    '<div style="width:44px;height:44px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:700;color:#fff">'+initials+'</div>',
-    '<div>',
-    '<div style="font-size:18px;font-weight:700;color:#fff">Hello, '+stakeName+'</div>',
-    '<div style="font-size:13px;color:rgba(255,255,255,.8)">Your compliance tasks — Clarix</div>',
-    '</div></div>',
-    '<div id="portal-tasks-area"><div style="text-align:center;padding:40px;color:#7c8298">Loading your tasks...</div></div>'
-  ].join('');
-  page.innerHTML=headerHtml;
+  // Ensure we only build the page once
+  if(document.getElementById('portal-page-root')) return;
+
+  // Hide app chrome
+  var loginEl = document.getElementById('login-screen');
+  var appEl   = document.getElementById('main-app');
+  if(loginEl) loginEl.style.display='none';
+  if(appEl)   appEl.style.display='none';
+  document.body.style.cssText='margin:0;padding:0;background:#f3f4f8;font-family:"Segoe UI",system-ui,sans-serif;min-height:100vh';
+
+  // Build page shell
+  var page = document.createElement('div');
+  page.id  = 'portal-page-root';
+  page.style.cssText = 'max-width:760px;margin:0 auto;padding:28px 16px 60px';
+
+  var initials = stakeName.trim().split(' ').map(function(w){return w[0]||'';}).join('').slice(0,2).toUpperCase();
+
+  page.innerHTML =
+    // Header card
+    '<div style="background:linear-gradient(135deg,#4f52d9,#7c3aed);border-radius:16px;padding:22px 26px;margin-bottom:20px;display:flex;align-items:center;gap:16px;box-shadow:0 4px 20px rgba(79,82,217,.3)">' +
+      '<div style="width:48px;height:48px;background:rgba(255,255,255,.2);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff;flex-shrink:0">'+initials+'</div>'+
+      '<div><div style="font-size:19px;font-weight:800;color:#fff;margin-bottom:2px">Hello, '+escHtmlPortal(stakeName)+'</div>'+
+      '<div style="font-size:13px;color:rgba(255,255,255,.75)">Your compliance tasks — Clarix</div></div>'+
+    '</div>'+
+    // Tasks area
+    '<div id="portal-tasks-area">'+
+      '<div style="background:#fff;border-radius:14px;border:1px solid #e4e7f0;padding:48px 24px;text-align:center">'+
+        '<div style="font-size:32px;margin-bottom:12px">⏳</div>'+
+        '<div style="font-size:14px;font-weight:600;color:#0f1117;margin-bottom:4px">Loading your tasks…</div>'+
+        '<div style="font-size:12px;color:#9ca3af">Please wait a moment</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="text-align:center;padding:24px 0 0;font-size:11px;color:#b0b6c8">Powered by <strong>Clarix</strong> — Compliance Intelligence</div>';
+
   document.body.appendChild(page);
+
+  // Fetch with server-side filter by stakeholder name
   try{
-    var headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'};
-    var res=await fetch(SUPA_URL+'/rest/v1/grc_items?select=*&order=due_date.asc',{method:'GET',headers:headers,mode:'cors'});
-    var allItems=await res.json();
-    var myItems=(allItems||[]).filter(function(it){return it.stakeholder===stakeName||it.email===stakeName;});
-    var area=document.getElementById('portal-tasks-area');
-    if(!myItems.length){
-      area.innerHTML='<div style="background:#fff;border-radius:12px;border:1px solid #e2e5f0;padding:40px;text-align:center;color:#7c8298">No tasks assigned to you currently. Contact your GRC team.</div>';
-      return;
+    var headers={
+      'apikey':SUPA_KEY,
+      'Authorization':'Bearer '+SUPA_KEY,
+      'Accept':'application/json'
+    };
+
+    // Try exact stakeholder name match first
+    var nameEnc = encodeURIComponent(stakeName);
+    var url = SUPA_URL+'/rest/v1/grc_items?select=*&order=due_date.asc&stakeholder=eq.'+nameEnc;
+    var res  = await fetch(url, {method:'GET', headers:headers, mode:'cors'});
+
+    var myItems = [];
+    if(res.ok){
+      var data = await res.json();
+      myItems = Array.isArray(data) ? data : [];
     }
-    var done=myItems.filter(function(it){return it.done;}).length;
-    var pct=Math.round(done/myItems.length*100);
-    var barColor=pct>=80?'#0d9e7e':pct>=50?'#e07d1a':'#d93f3f';
-    var freqMap={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
-    var html=[];
-    html.push('<div style="background:#fff;border-radius:12px;border:1px solid #e2e5f0;padding:16px 20px;margin-bottom:16px">');
-    html.push('<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">');
-    html.push('<span style="font-weight:600">Your compliance progress</span>');
-    html.push('<span style="font-weight:700;color:'+barColor+'">'+pct+'% complete</span></div>');
-    html.push('<div style="height:10px;background:#e2e5f0;border-radius:5px;overflow:hidden">');
-    html.push('<div style="width:'+pct+'%;height:100%;background:'+barColor+';border-radius:5px;transition:width .5s"></div></div>');
-    html.push('<div style="font-size:12px;color:#7c8298;margin-top:6px">'+done+' completed out of '+myItems.length+' total tasks</div></div>');
-    myItems.forEach(function(it){
-      var todayStr=new Date().toISOString().split('T')[0];
-      var s=it.done?'done':(it.due_date&&it.due_date<todayStr?'overdue':'pending');
-      var sColor=s==='done'?'#0d9e7e':s==='overdue'?'#d93f3f':'#e07d1a';
-      var sBg=s==='done'?'#e0f7f2':s==='overdue'?'#fdeaea':'#fef3e2';
-      html.push('<div style="background:#fff;border-radius:12px;border:1px solid #e2e5f0;border-left:4px solid '+sColor+';padding:16px 20px;margin-bottom:12px">');
-      html.push('<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">');
-      html.push('<div style="flex:1">');
-      html.push('<div style="font-size:14px;font-weight:600;color:#0f1117;margin-bottom:6px;word-break:break-word">'+it.name+'</div>');
-      html.push('<div style="font-size:12px;color:#7c8298">');
-      html.push('Frequency: '+(freqMap[it.freq]||it.freq));
-      html.push(' &nbsp;|&nbsp; Due: '+(it.due_date||'Not set'));
-      html.push(' &nbsp;|&nbsp; Dept: '+(it.dept||'—')+'</div>');
-      if(it.notes) html.push('<div style="font-size:12px;color:#7c8298;margin-top:4px;font-style:italic">Note: '+it.notes+'</div>');
-      html.push('</div>');
-      html.push('<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">');
-      html.push('<span style="background:'+sBg+';color:'+sColor+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+s.charAt(0).toUpperCase()+s.slice(1)+'</span>');
-      if(!it.done){
-        html.push('<button onclick="portalMarkDone('+it.id+',this)" style="background:#4f52d9;color:#fff;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:600;cursor:pointer;font-family:Segoe UI,sans-serif">Mark as done</button>');
-      } else {
-        html.push('<span style="font-size:12px;color:#0d9e7e;font-weight:600">Completed!</span>');
+
+    // If nothing found, fall back to fetching all and filtering client-side
+    // (handles case differences, email-based matching, assignee field)
+    if(!myItems.length){
+      var res2 = await fetch(SUPA_URL+'/rest/v1/grc_items?select=*&order=due_date.asc', {method:'GET', headers:headers, mode:'cors'});
+      if(res2.ok){
+        var all = await res2.json();
+        var lowerName = stakeName.toLowerCase();
+        myItems = (Array.isArray(all)?all:[]).filter(function(it){
+          return (it.stakeholder||'').toLowerCase()===lowerName ||
+                 (it.email||'').toLowerCase()===lowerName ||
+                 (it.assignee||'').toLowerCase()===lowerName ||
+                 (it.stakeholder_email||'').toLowerCase()===lowerName;
+        });
       }
-      html.push('</div></div></div>');
-    });
-    html.push('<div style="text-align:center;padding:20px;font-size:12px;color:#b0b6c8">Clarix — Powered by your compliance team</div>');
-    area.innerHTML=html.join('');
-  }catch(e){
-    var area2=document.getElementById('portal-tasks-area');
-    if(area2) area2.innerHTML='<div style="background:#fdeaea;border-radius:12px;padding:20px;color:#d93f3f;font-size:13px">Error loading tasks: '+e.message+'</div>';
+    }
+
+    renderPortalTasks(myItems, stakeName);
+
+  }catch(err){
+    var area = document.getElementById('portal-tasks-area');
+    if(area) area.innerHTML =
+      '<div style="background:#fef2f2;border:1px solid #fecaca;border-radius:14px;padding:24px;color:#dc2626;font-size:14px;text-align:center">'+
+        '<div style="font-size:28px;margin-bottom:10px">❌</div>'+
+        '<div style="font-weight:600;margin-bottom:4px">Could not load tasks</div>'+
+        '<div style="font-size:12px;opacity:.8">'+escHtmlPortal(err.message)+'</div>'+
+      '</div>';
   }
 }
 
-
-async function portalMarkDone(itemId, btn){
-  btn.textContent='Saving...';
-  btn.disabled=true;
-  try{
-    var headers={'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Prefer':'return=minimal'};
-    await fetch(SUPA_URL+'/rest/v1/grc_items?id=eq.'+itemId,{method:'PATCH',headers:headers,body:JSON.stringify({done:true}),mode:'cors'});
-    var card=btn.closest('div[style*="border-left"]');
-    if(card){
-      card.style.borderLeftColor='#0d9e7e';
-      btn.parentElement.innerHTML='<span style="font-size:12px;color:#0d9e7e;font-weight:600">Completed!</span>';
-      var badge=card.querySelector('span[style*="border-radius:20px"]');
-      if(badge){badge.textContent='Done';badge.style.background='#e0f7f2';badge.style.color='#0d9e7e';}
-    }
-  }catch(e){ btn.textContent='Mark as done'; btn.disabled=false; alert('Error: '+e.message); }
+function escHtmlPortal(s){
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// Run portal check on page load
+function renderPortalTasks(myItems, stakeName){
+  var area = document.getElementById('portal-tasks-area');
+  if(!area) return;
+
+  if(!myItems.length){
+    area.innerHTML =
+      '<div style="background:#fff;border-radius:14px;border:1px solid #e4e7f0;padding:48px 24px;text-align:center">'+
+        '<div style="font-size:36px;margin-bottom:12px">📋</div>'+
+        '<div style="font-size:15px;font-weight:700;color:#0f1117;margin-bottom:6px">No tasks assigned to you</div>'+
+        '<div style="font-size:13px;color:#9ca3af">Contact your GRC team if you think this is a mistake.</div>'+
+      '</div>';
+    return;
+  }
+
+  var done  = myItems.filter(function(it){return it.done;}).length;
+  var overdue = myItems.filter(function(it){
+    var today = new Date().toISOString().split('T')[0];
+    return !it.done && it.due_date && it.due_date < today;
+  }).length;
+  var pct   = Math.round(done/myItems.length*100);
+  var barClr= pct>=80?'#10b981':pct>=50?'#f59e0b':'#ef4444';
+  var freqMap={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
+
+  var html = [];
+
+  // Progress card
+  html.push('<div style="background:#fff;border-radius:14px;border:1px solid #e4e7f0;padding:18px 22px;margin-bottom:16px;box-shadow:0 1px 4px rgba(0,0,0,.05)">');
+  html.push('<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px">');
+  html.push('<div style="font-size:13px;font-weight:700;color:#0f1117">Your compliance progress</div>');
+  html.push('<div style="font-size:13px;font-weight:800;color:'+barClr+'">'+pct+'%</div></div>');
+  html.push('<div style="height:8px;background:#f1f3f8;border-radius:4px;overflow:hidden;margin-bottom:8px">');
+  html.push('<div style="width:'+pct+'%;height:100%;background:'+barClr+';border-radius:4px;transition:width .6s"></div></div>');
+  html.push('<div style="display:flex;gap:16px;font-size:12px;color:#6b7280">');
+  html.push('<span style="color:#10b981;font-weight:600">✓ '+done+' done</span>');
+  if(overdue) html.push('<span style="color:#ef4444;font-weight:600">⚠ '+overdue+' overdue</span>');
+  html.push('<span>'+myItems.length+' total</span>');
+  html.push('</div></div>');
+
+  // Task cards
+  myItems.forEach(function(it){
+    var today = new Date().toISOString().split('T')[0];
+    var s = it.done?'done':(it.due_date&&it.due_date<today?'overdue':'pending');
+    var cfg = {
+      done:    {clr:'#10b981', bg:'#ecfdf5', bdr:'#10b981', lbl:'Done'},
+      overdue: {clr:'#ef4444', bg:'#fef2f2', bdr:'#ef4444', lbl:'Overdue'},
+      pending: {clr:'#f59e0b', bg:'#fffbeb', bdr:'#e4e7f0', lbl:'Pending'}
+    }[s];
+
+    html.push('<div style="background:#fff;border-radius:14px;border:1px solid #e4e7f0;border-left:4px solid '+cfg.bdr+';padding:16px 20px;margin-bottom:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)">');
+    html.push('<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap">');
+    // Left: task info
+    html.push('<div style="flex:1;min-width:0">');
+    html.push('<div style="font-size:14px;font-weight:700;color:#0f1117;margin-bottom:6px;line-height:1.4;word-break:break-word">'+escHtmlPortal(it.name)+'</div>');
+    html.push('<div style="display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:#9ca3af;margin-bottom:6px">');
+    if(it.dept)     html.push('<span style="background:#f3f4f6;border-radius:6px;padding:2px 8px;color:#374151;font-weight:600">'+escHtmlPortal(it.dept)+'</span>');
+    if(it.freq)     html.push('<span style="background:#f3f4f6;border-radius:6px;padding:2px 8px;color:#374151">'+( freqMap[it.freq]||it.freq)+'</span>');
+    if(it.due_date) html.push('<span style="background:'+(s==='overdue'?'#fef2f2':'#f3f4f6')+';border-radius:6px;padding:2px 8px;color:'+(s==='overdue'?'#ef4444':'#374151')+';font-weight:'+(s==='overdue'?'700':'400')+'">Due '+it.due_date+'</span>');
+    if(it.priority) html.push('<span style="background:#f3f4f6;border-radius:6px;padding:2px 8px;color:#374151">'+escHtmlPortal(it.priority)+' priority</span>');
+    html.push('</div>');
+    if(it.notes) html.push('<div style="font-size:12px;color:#6b7280;margin-top:4px;font-style:italic;line-height:1.5">📝 '+escHtmlPortal(it.notes)+'</div>');
+    html.push('</div>');
+    // Right: status + action
+    html.push('<div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0">');
+    html.push('<span style="background:'+cfg.bg+';color:'+cfg.clr+';font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px;white-space:nowrap">'+cfg.lbl+'</span>');
+    if(!it.done){
+      html.push('<button id="pdone-'+it.id+'" onclick="portalMarkDone('+it.id+',this)" '+
+        'style="background:#4f52d9;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;white-space:nowrap;transition:opacity .15s">'+
+        'Mark as done</button>');
+    } else {
+      html.push('<span style="font-size:12px;color:#10b981;font-weight:700">✓ Completed</span>');
+    }
+    html.push('</div></div></div>');
+  });
+
+  area.innerHTML = html.join('');
+}
+
+async function portalMarkDone(itemId, btn){
+  btn.textContent='Saving…';
+  btn.style.opacity='0.6';
+  btn.disabled=true;
+  try{
+    var headers={
+      'apikey':SUPA_KEY,
+      'Authorization':'Bearer '+SUPA_KEY,
+      'Content-Type':'application/json',
+      'Prefer':'return=minimal'
+    };
+    var res = await fetch(SUPA_URL+'/rest/v1/grc_items?id=eq.'+itemId, {
+      method:'PATCH', headers:headers,
+      body:JSON.stringify({done:true, item_status:'Done'}),
+      mode:'cors'
+    });
+    if(!res.ok) throw new Error('Server error '+res.status);
+    // Update UI without reload
+    var card = btn.closest('div[style*="border-left"]');
+    if(card){
+      card.style.borderLeftColor='#10b981';
+      var badge = card.querySelector('span[style*="border-radius:20px"]');
+      if(badge){badge.textContent='Done';badge.style.background='#ecfdf5';badge.style.color='#10b981';}
+      btn.parentElement.innerHTML='<span style="font-size:12px;color:#10b981;font-weight:700">✓ Completed</span>';
+    }
+    // Recalculate overall progress
+    var allCards = document.querySelectorAll('#portal-tasks-area div[style*="border-left"]');
+    var total = allCards.length;
+    var doneCount = document.querySelectorAll('#portal-tasks-area span').length;
+    // Simple re-fetch to update progress bar
+    var progBar = document.querySelector('#portal-tasks-area div[style*="height:8px"]');
+    if(progBar){
+      var filled = progBar.querySelector('div');
+      // count completed badges
+      var completedSpans = document.querySelectorAll('#portal-tasks-area span[style*="10b981"][style*="border-radius:20px"]');
+      var newPct = total>0?Math.round(completedSpans.length/total*100):0;
+      if(filled) filled.style.width=newPct+'%';
+    }
+  }catch(err){
+    btn.textContent='Mark as done';
+    btn.style.opacity='1';
+    btn.disabled=false;
+    alert('Could not save: '+err.message);
+  }
+}
+
+// Run portal check on page load (single call, guarded by _portalShown flag)
 if(checkPortalMode()){
-  // Portal mode - hide everything else
-} else {
-  // Normal mode - already handled
+  // Portal mode active — normal app hidden
 }
 
 // ── RESPONSE MONITOR ──
