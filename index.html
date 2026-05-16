@@ -3547,7 +3547,9 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-audit-trail')renderAuditTrail();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();if(m[1]==='s-export')renderExportPage();
+    try{
+      if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-audit-trail')renderAuditTrail();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();if(m[1]==='s-export')renderExportPage();
+    }catch(navErr){console.warn('Nav render error:',navErr.message);}
     if(window.innerWidth<=600){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -3622,7 +3624,24 @@ async function loadAll(){
     
 
     
-    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();renderActions();renderEvidence();renderFrameworks();renderCalendar();renderPolicies();renderAuditTrail();renderExportPage();
+    // ── Safe render — one failing renderer won't kill the whole page ──
+    function safeRender(name, fn){
+      try{ fn(); }
+      catch(e){ console.warn('Render error ['+name+']:',e.message); }
+    }
+    safeRender('dash',        renderDash);
+    safeRender('freqFilters', renderFreqFilters);
+    safeRender('items',       renderItems);
+    safeRender('overdue',     renderOverdue);
+    safeRender('log',         renderLog);
+    safeRender('risks',       renderRisks);
+    safeRender('actions',     renderActions);
+    safeRender('evidence',    renderEvidence);
+    safeRender('frameworks',  renderFrameworks);
+    safeRender('calendar',    renderCalendar);
+    safeRender('policies',    renderPolicies);
+    safeRender('auditTrail',  renderAuditTrail);
+    safeRender('exportPage',  renderExportPage);
     var ovCount=items.filter(function(it){return getStatus(it)==='overdue';}).length;
     var ob=document.getElementById('ov-badge');
     if(ob){ob.textContent=ovCount;ob.style.display=ovCount>0?'inline-block':'none';}
@@ -3633,14 +3652,19 @@ async function loadAll(){
     renderDashEmailAlert();
     
   }catch(e){
-    console.error('loadAll error:',e.message);
-    document.getElementById('conn-dot').style.background='#d93f3f';
-    document.getElementById('conn-lbl').style.color='#d93f3f';
-    document.getElementById('conn-lbl').textContent='Connection error — retrying...';
-    // Auto retry after 5 seconds
-    setTimeout(function(){
-      if(currentUser) loadAll();
-    },5000);
+    var msg = e.message||'Unknown error';
+    var isNetworkError = msg.indexOf('HTTP')>-1 || msg.indexOf('fetch')>-1 ||
+                         msg.indexOf('Failed')>-1 || msg.indexOf('NetworkError')>-1 ||
+                         e instanceof TypeError;
+    console.error('loadAll error [' + (isNetworkError?'NETWORK':'RUNTIME') + ']:', msg);
+    var dot = document.getElementById('conn-dot');
+    var lbl = document.getElementById('conn-lbl');
+    if(dot) dot.style.background='#d93f3f';
+    if(lbl){ lbl.style.color='#d93f3f'; lbl.textContent=isNetworkError?'Connection error — retrying...':'Database error — check console'; }
+    // Only auto-retry on genuine network errors, not JS runtime errors
+    if(isNetworkError){
+      setTimeout(function(){ if(currentUser) loadAll(); }, 5000);
+    }
   }
 }
 
@@ -7956,39 +7980,38 @@ function guardedImport(){if(!can('import')){noPermission('Only admin and manager
 (function(){var cb=document.getElementById('confirm-import-btn');if(cb){cb.addEventListener('click',function(e){if(!can('import')){e.preventDefault();e.stopImmediatePropagation();noPermission('Only admin and manager can import data.');}},true);}})();
 
 
-// ── EXPORT BUTTON WIRING ──
-function wireExportButtons(){
-// ── Render export page live stats ──
+// ── EXPORT PAGE STATS — global so loadAll and nav can call it ──
 function renderExportPage(){
-  // Stats bar
   var bar = document.getElementById('export-stats-bar');
   if(bar){
     while(bar.firstChild) bar.removeChild(bar.firstChild);
-    var overdueCount = items.filter(function(it){return getStatus(it)==='overdue';}).length;
-    var highRiskCount = risks.filter(function(r){return (r.likelihood||1)*(r.impact||1)>=15;}).length;
+    var overdueCount = (typeof items!=='undefined'?items:[]).filter(function(it){return getStatus(it)==='overdue';}).length;
+    var highRiskCount = (typeof risks!=='undefined'?risks:[]).filter(function(r){return (r.likelihood||1)*(r.impact||1)>=15;}).length;
     [
-      {l:'Total items',    v:items.length,     c:'var(--primary)', t:'#5b5ef4'},
-      {l:'Overdue',        v:overdueCount,     c:'var(--danger)',  t:'#ef4444'},
-      {l:'Total risks',    v:risks.length,     c:'#7c3aed',       t:'#7c3aed'},
-      {l:'High risks',     v:highRiskCount,    c:'var(--danger)',  t:'#f59e0b'},
+      {l:'Total items',  v:(typeof items!=='undefined'?items:[]).length,  c:'var(--primary)', t:'#5b5ef4'},
+      {l:'Overdue',      v:overdueCount,                                  c:'var(--danger)',  t:'#ef4444'},
+      {l:'Total risks',  v:(typeof risks!=='undefined'?risks:[]).length,  c:'#7c3aed',        t:'#7c3aed'},
+      {l:'High risks',   v:highRiskCount,                                 c:'#f59e0b',        t:'#f59e0b'}
     ].forEach(function(m){
-      var card = document.createElement('div');
-      card.className = 'metric-card';
-      card.style.cursor = 'default';
-      card.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
+      var card=document.createElement('div');
+      card.className='metric-card';
+      card.style.cursor='default';
+      card.innerHTML='<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
         '<div class="mc-label" style="margin-top:6px;font-size:10px">'+m.l+'</div>'+
         '<div class="mc-val" style="color:'+m.c+';font-size:26px">'+m.v+'</div>';
       bar.appendChild(card);
     });
   }
-  // Update overdue subtitle
-  var oc = document.getElementById('exp-overdue-count');
+  var oc=document.getElementById('exp-overdue-count');
   if(oc){
-    var cnt = items.filter(function(it){return getStatus(it)==='overdue';}).length;
-    oc.textContent = cnt > 0 ? cnt+' item'+(cnt!==1?'s':'')+' past their due date — needs immediate attention' : 'No overdue items currently — all tasks on track ✓';
-    oc.style.color = cnt > 0 ? 'var(--danger)' : 'var(--success)';
+    var cnt=(typeof items!=='undefined'?items:[]).filter(function(it){return getStatus(it)==='overdue';}).length;
+    oc.textContent=cnt>0?cnt+' item'+(cnt!==1?'s':'')+' past their due date — needs immediate attention':'No overdue items currently — all tasks on track ✓';
+    oc.style.color=cnt>0?'var(--danger)':'var(--success)';
   }
 }
+
+// ── EXPORT BUTTON WIRING ──
+function wireExportButtons(){
 
 
 
