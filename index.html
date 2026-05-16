@@ -7,6 +7,7 @@
 <meta name="theme-color" content="#4f52d9">
 <title>Clarix | Compliance Intelligence Platform</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script>if(typeof XLSX==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');}</script>
 <style>
 /* ═══════════════════════════════════════════
    CLARIX — Premium Design System
@@ -699,12 +700,22 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 }
 
 /* ── EXPORT CARDS ── */
+/* ── EXPORT PAGE — minimal list rows ── */
+.exp-row{display:flex;align-items:center;gap:14px;padding:13px 20px;border-bottom:1px solid var(--border2);transition:background .12s}
+.exp-row:last-child{border-bottom:none}
+.exp-row:hover{background:var(--surface2)}
+.exp-row-icon{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.exp-row-info{flex:1;min-width:0}
+.exp-row-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px;display:flex;align-items:center;flex-wrap:wrap;gap:4px}
+.exp-row-sub{font-size:11px;color:var(--text3);line-height:1.4}
+.exp-row-btns{display:flex;gap:6px;flex-shrink:0;align-items:center}
+.exp-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 13px;border-radius:7px;font-size:12px;font-weight:600;font-family:var(--font);cursor:pointer;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);transition:all .15s;white-space:nowrap}
+.exp-btn:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.exp-btn-primary{background:var(--primary);border-color:var(--primary);color:#fff}
+.exp-btn-primary:hover{background:var(--primary-dark);border-color:var(--primary-dark);color:#fff;transform:translateY(-1px);box-shadow:0 3px 10px rgba(91,94,244,.3)}
+/* legacy compat */
 .export-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
-.export-card{
-  background:var(--surface2);border:1px solid var(--border);
-  border-radius:var(--radius-lg);padding:18px;text-align:center;
-  transition:all .2s;
-}
+.export-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;text-align:center;transition:all .2s}
 .export-card:hover{border-color:var(--primary);transform:translateY(-2px);box-shadow:var(--shadow)}
 .export-card-icon{font-size:28px;margin-bottom:8px}
 .export-card-title{font-size:13px;font-weight:700;color:var(--text);margin-bottom:4px}
@@ -1048,6 +1059,12 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   .export-grid,.scorecard-grid{grid-template-columns:1fr 1fr!important;gap:10px!important}
   .export-card{padding:14px!important}
 
+  /* ── Export rows: stack on mobile ── */
+  #export-stats-bar{grid-template-columns:1fr 1fr!important}
+  .exp-row{flex-wrap:wrap;gap:10px;padding:12px 14px}
+  .exp-row-btns{width:100%;justify-content:flex-end}
+  .exp-btn{padding:7px 14px;font-size:12px;flex:1;justify-content:center}
+
   /* ── Audit trail: stack filters vertically ── */
   #s-audit-trail > div:first-child{flex-direction:column;align-items:flex-start!important}
   #s-audit-trail > div:first-child > div:last-child{flex-wrap:wrap;gap:6px}
@@ -1127,7 +1144,7 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 </style>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%234f52d9'/><text y='.9em' font-size='80' font-family='Segoe UI,sans-serif' font-weight='800' fill='white' x='15'>C</text></svg>">
   <!-- Security headers via meta tags -->
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://cdnjs.cloudflare.com https://mail.google.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://api.anthropic.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://mail.google.com; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: https:; connect-src 'self' https://kqvvqriyaundzefmrqzk.supabase.co https://api.anthropic.com;">
   <meta http-equiv="X-Content-Type-Options" content="nosniff">
   <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
   <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
@@ -2495,78 +2512,149 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 
       <!-- EXPORT -->
       <div id="s-export" class="sec">
-        <!-- Compliance exports -->
-        <div class="page-section">
-          <div class="page-section-title">Export compliance items</div>
-          <div class="page-section-sub">Download your compliance data in Excel or CSV format for sharing with management or audit purposes.</div>
-          <div class="export-grid">
-            <div class="export-card">
-              <div class="export-card-icon">📊</div>
-              <div class="export-card-title">Implementation tracker</div>
-              <div class="export-card-sub">Complete compliance register with all tasks and statuses</div>
-              <div class="export-btn-group">
-                <button class="btn btn-primary btn-sm" id="export-items-xlsx">Excel</button>
-                <button class="btn btn-sm" id="export-items-csv">CSV</button>
-              </div>
+
+        <!-- Page header -->
+        <div style="margin-bottom:24px">
+          <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">Export Reports</div>
+          <div style="font-size:12px;color:var(--text3);margin-top:3px">Download your GRC data as Excel or CSV</div>
+        </div>
+
+        <!-- Live stats bar -->
+        <div id="export-stats-bar" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:28px"></div>
+
+        <!-- Export rows -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow-sm)">
+
+          <!-- Section: Compliance -->
+          <div style="padding:14px 20px 8px;border-bottom:1px solid var(--border2)">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)">Compliance</div>
+          </div>
+
+          <div class="exp-row" id="exp-row-items">
+            <div class="exp-row-icon" style="background:rgba(91,94,244,.1)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#5b5ef4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
             </div>
-            <div class="export-card">
-              <div class="export-card-icon">⚠️</div>
-              <div class="export-card-title">Overdue only</div>
-              <div class="export-card-sub">Items that are past their due date and need immediate attention</div>
-              <div class="export-btn-group">
-                <button class="btn btn-primary btn-sm" id="export-overdue-xlsx">Excel</button>
-                <button class="btn btn-sm" id="export-overdue-csv">CSV</button>
-              </div>
+            <div class="exp-row-info">
+              <div class="exp-row-title">Implementation tracker</div>
+              <div class="exp-row-sub">All tasks · status · assignee · priority · framework · due dates</div>
             </div>
-            <div class="export-card">
-              <div class="export-card-icon">📋</div>
-              <div class="export-card-title">Follow-up log</div>
-              <div class="export-card-sub">Full history of all follow-up emails sent with dates and tones</div>
-              <div class="export-btn-group">
-                <button class="btn btn-primary btn-sm" id="export-logs-xlsx">Excel</button>
-                <button class="btn btn-sm" id="export-logs-csv">CSV</button>
-              </div>
+            <div class="exp-row-btns">
+              <button class="exp-btn exp-btn-primary" id="export-items-xlsx">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Excel
+              </button>
+              <button class="exp-btn" id="export-items-csv">CSV</button>
             </div>
           </div>
-        </div>
-        <!-- Risk exports -->
-        <div class="page-section">
-          <div class="page-section-title">Export risk register</div>
-          <div class="page-section-sub">Download your complete risk register with likelihood, impact scores and current status.</div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-            <div class="export-card">
-              <div class="export-card-icon">🛡️</div>
-              <div class="export-card-title">All risks</div>
-              <div class="export-card-sub">Complete risk register with scores, levels and owners</div>
-              <div class="export-btn-group">
-                <button class="btn btn-primary btn-sm" id="export-risks-xlsx">Excel</button>
-                <button class="btn btn-sm" id="export-risks-csv">CSV</button>
-              </div>
+
+          <div class="exp-row" id="exp-row-overdue">
+            <div class="exp-row-icon" style="background:rgba(239,68,68,.08)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
             </div>
-            <div class="export-card">
-              <div class="export-card-icon">🔴</div>
-              <div class="export-card-title">High risks only</div>
-              <div class="export-card-sub">Only risks with score 15 or above — critical items for management</div>
-              <div class="export-btn-group">
-                <button class="btn btn-primary btn-sm" id="export-highrisks-xlsx">Excel</button>
-                <button class="btn btn-sm" id="export-highrisks-csv">CSV</button>
-              </div>
+            <div class="exp-row-info">
+              <div class="exp-row-title">Overdue items only</div>
+              <div class="exp-row-sub" id="exp-overdue-count">Items past their due date — needs immediate attention</div>
+            </div>
+            <div class="exp-row-btns">
+              <button class="exp-btn exp-btn-primary" id="export-overdue-xlsx">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Excel
+              </button>
+              <button class="exp-btn" id="export-overdue-csv">CSV</button>
             </div>
           </div>
-        </div>
-        <!-- Full report -->
-        <div class="full-report-card">
-          <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
-            <div style="flex:1">
-              <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px">📁 Full Clarix GRC Report</div>
-              <div style="font-size:13px;color:var(--text3);line-height:1.6">One Excel file with 4 sheets — Summary, Compliance Items, Risk Register and Follow-up Log. Ready for auditors and management presentations.</div>
+
+          <div class="exp-row" id="exp-row-logs">
+            <div class="exp-row-icon" style="background:rgba(16,185,129,.08)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </div>
-            <button class="btn btn-primary" id="export-full-report" style="white-space:nowrap;flex-shrink:0">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              Download Full Report
-            </button>
+            <div class="exp-row-info">
+              <div class="exp-row-title">Email follow-up log</div>
+              <div class="exp-row-sub">History of all follow-up emails · dates · tones · response status</div>
+            </div>
+            <div class="exp-row-btns">
+              <button class="exp-btn exp-btn-primary" id="export-logs-xlsx">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Excel
+              </button>
+              <button class="exp-btn" id="export-logs-csv">CSV</button>
+            </div>
           </div>
+
+          <!-- Section: Risk -->
+          <div style="padding:14px 20px 8px;border-bottom:1px solid var(--border2);border-top:1px solid var(--border2);margin-top:4px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)">Risk register</div>
+          </div>
+
+          <div class="exp-row">
+            <div class="exp-row-icon" style="background:rgba(124,58,237,.08)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </div>
+            <div class="exp-row-info">
+              <div class="exp-row-title">All risks</div>
+              <div class="exp-row-sub">Complete register · likelihood · impact scores · level · owners</div>
+            </div>
+            <div class="exp-row-btns">
+              <button class="exp-btn exp-btn-primary" id="export-risks-xlsx">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Excel
+              </button>
+              <button class="exp-btn" id="export-risks-csv">CSV</button>
+            </div>
+          </div>
+
+          <div class="exp-row">
+            <div class="exp-row-icon" style="background:rgba(239,68,68,.08)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            </div>
+            <div class="exp-row-info">
+              <div class="exp-row-title">High risks only <span style="font-size:10px;background:rgba(239,68,68,.1);color:#ef4444;border-radius:20px;padding:2px 8px;font-weight:700;margin-left:6px">Score ≥ 15</span></div>
+              <div class="exp-row-sub">Critical items for management review — score 15 or above</div>
+            </div>
+            <div class="exp-row-btns">
+              <button class="exp-btn exp-btn-primary" id="export-highrisks-xlsx">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Excel
+              </button>
+              <button class="exp-btn" id="export-highrisks-csv">CSV</button>
+            </div>
+          </div>
+
+          <!-- Section: Audit trail -->
+          <div style="padding:14px 20px 8px;border-bottom:1px solid var(--border2);border-top:1px solid var(--border2);margin-top:4px">
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--text3)">Audit trail</div>
+          </div>
+
+          <div class="exp-row">
+            <div class="exp-row-icon" style="background:rgba(245,158,11,.08)">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <div class="exp-row-info">
+              <div class="exp-row-title">Audit trail log</div>
+              <div class="exp-row-sub">Tamper-evident change log · ISO 27001 A.8.15 · who did what & when</div>
+            </div>
+            <div class="exp-row-btns">
+              <button class="exp-btn exp-btn-primary" onclick="if(can('export')){exportAuditTrail();}else{noPermission('Your role cannot export data.');}">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Excel
+              </button>
+            </div>
+          </div>
+
+        </div><!-- end export rows card -->
+
+        <!-- Full GRC Report — prominent banner at bottom -->
+        <div style="margin-top:16px;background:linear-gradient(135deg,var(--primary),#7c3aed);border-radius:14px;padding:22px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;box-shadow:0 4px 20px rgba(91,94,244,.3)">
+          <div>
+            <div style="font-size:15px;font-weight:800;color:#fff;margin-bottom:4px">Full GRC Report</div>
+            <div style="font-size:12px;color:rgba(255,255,255,.75);line-height:1.5">One Excel file · 4 sheets: Summary, Compliance Items, Risk Register, Follow-up Log</div>
+          </div>
+          <button class="btn" id="export-full-report" style="background:#fff;color:var(--primary);border:none;font-weight:700;font-size:13px;padding:10px 20px;white-space:nowrap;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.15)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Full Report
+          </button>
         </div>
+
       </div>
       <div id="s-admin" class="sec">
         <div class="sec-topbar">
@@ -3459,7 +3547,7 @@ navCfg.forEach(function(m){
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
     if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
-    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-audit-trail')renderAuditTrail();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();
+    if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-audit-trail')renderAuditTrail();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();if(m[1]==='s-export')renderExportPage();
     if(window.innerWidth<=600){document.getElementById('sidebar').classList.remove('open');document.getElementById('sb-overlay').classList.remove('open');}
   };
 });
@@ -3534,7 +3622,7 @@ async function loadAll(){
     
 
     
-    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();renderActions();renderEvidence();renderFrameworks();renderCalendar();renderPolicies();renderAuditTrail();
+    renderDash();renderFreqFilters();renderItems();renderOverdue();renderLog();renderRisks();renderActions();renderEvidence();renderFrameworks();renderCalendar();renderPolicies();renderAuditTrail();renderExportPage();
     var ovCount=items.filter(function(it){return getStatus(it)==='overdue';}).length;
     var ob=document.getElementById('ov-badge');
     if(ob){ob.textContent=ovCount;ob.style.display=ovCount>0?'inline-block':'none';}
@@ -7870,6 +7958,130 @@ function guardedImport(){if(!can('import')){noPermission('Only admin and manager
 
 // ── EXPORT BUTTON WIRING ──
 function wireExportButtons(){
+// ── Render export page live stats ──
+function renderExportPage(){
+  // Stats bar
+  var bar = document.getElementById('export-stats-bar');
+  if(bar){
+    while(bar.firstChild) bar.removeChild(bar.firstChild);
+    var overdueCount = items.filter(function(it){return getStatus(it)==='overdue';}).length;
+    var highRiskCount = risks.filter(function(r){return (r.likelihood||1)*(r.impact||1)>=15;}).length;
+    [
+      {l:'Total items',    v:items.length,     c:'var(--primary)', t:'#5b5ef4'},
+      {l:'Overdue',        v:overdueCount,     c:'var(--danger)',  t:'#ef4444'},
+      {l:'Total risks',    v:risks.length,     c:'#7c3aed',       t:'#7c3aed'},
+      {l:'High risks',     v:highRiskCount,    c:'var(--danger)',  t:'#f59e0b'},
+    ].forEach(function(m){
+      var card = document.createElement('div');
+      card.className = 'metric-card';
+      card.style.cursor = 'default';
+      card.innerHTML = '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
+        '<div class="mc-label" style="margin-top:6px;font-size:10px">'+m.l+'</div>'+
+        '<div class="mc-val" style="color:'+m.c+';font-size:26px">'+m.v+'</div>';
+      bar.appendChild(card);
+    });
+  }
+  // Update overdue subtitle
+  var oc = document.getElementById('exp-overdue-count');
+  if(oc){
+    var cnt = items.filter(function(it){return getStatus(it)==='overdue';}).length;
+    oc.textContent = cnt > 0 ? cnt+' item'+(cnt!==1?'s':'')+' past their due date — needs immediate attention' : 'No overdue items currently — all tasks on track ✓';
+    oc.style.color = cnt > 0 ? 'var(--danger)' : 'var(--success)';
+  }
+}
+
+
+
+  window.getDateStr = function(){
+    var d=new Date();
+    return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  };
+
+  window.exportToXLSX = function(filename, sheetName, rows){
+    if(typeof XLSX==='undefined'){
+      alert('Excel library not loaded yet. Please wait a few seconds and try again.');
+      return;
+    }
+    if(!rows||rows.length<2){
+      showDueDateToast('','No data to export.');
+      return;
+    }
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet(rows);
+    var colWidths = rows[0].map(function(_,ci){
+      return {wch: Math.min(40, Math.max(10, rows.reduce(function(max,row){
+        return Math.max(max, String(row[ci]||'').length);
+      },0)))};
+    });
+    ws['!cols'] = colWidths;
+    XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0,31));
+    XLSX.writeFile(wb, filename);
+    if(typeof writeAuditLog==='function') writeAuditLog('EXPORT','System','Exported '+sheetName+' to Excel',{rows:rows.length-1,filename:filename});
+    showDueDateToast('','Downloaded: '+filename);
+  };
+
+  window.exportToCSV = function(filename, rows){
+    if(!rows||rows.length<2){
+      showDueDateToast('','No data to export.');
+      return;
+    }
+    var csv = rows.map(function(row){
+      return row.map(function(cell){
+        var v = String(cell==null?'':cell);
+        return v.indexOf(',')>-1||v.indexOf('"')>-1||v.indexOf('\n')>-1 ? '"'+v.replace(/"/g,'""')+'"' : v;
+      }).join(',');
+    }).join('\r\n');
+    var blob = new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'});
+    var url  = URL.createObjectURL(blob);
+    var a    = document.createElement('a');
+    a.href   = url; a.download = filename;
+    document.body.appendChild(a); a.click();
+    setTimeout(function(){ document.body.removeChild(a); URL.revokeObjectURL(url); }, 200);
+    if(typeof writeAuditLog==='function') writeAuditLog('EXPORT','System','Exported to CSV',{rows:rows.length-1,filename:filename});
+    showDueDateToast('','Downloaded: '+filename);
+  };
+
+  window.itemsToRows = function(arr){
+    var header=['Task','Stakeholder','Email','Department','Frequency','Due Date','Status','Priority','Assignee','Framework','Category','Notes'];
+    var rows=[header];
+    (arr||[]).forEach(function(it){
+      var s=getStatus(it);
+      var displayStatus=it.item_status&&it.item_status!=='Pending'?it.item_status:(s.charAt(0).toUpperCase()+s.slice(1));
+      rows.push([
+        it.name||'',it.stakeholder||'',it.email||'',it.dept||'',
+        (FL[it.freq]||it.freq||''),it.due_date||'',displayStatus,
+        it.priority||'Medium',it.assignee||'',it.framework_tags||'',
+        it.category||'',it.notes||''
+      ]);
+    });
+    return rows;
+  };
+
+  window.risksToRows = function(arr){
+    var header=['Risk Name','Category','Likelihood','Impact','Score','Level','Owner','Status','Notes'];
+    var rows=[header];
+    (arr||[]).forEach(function(r){
+      var score=(r.likelihood||1)*(r.impact||1);
+      var level=score>=20?'Critical':score>=15?'High':score>=8?'Medium':'Low';
+      rows.push([r.name||'',r.category||'',r.likelihood||1,r.impact||1,score,level,r.owner||'',r.status||'Open',r.notes||'']);
+    });
+    return rows;
+  };
+
+  window.logsToRows = function(arr){
+    var header=['Sent at','To','Email','Department','Tone','Subject','Task','Due date','Status'];
+    var rows=[header];
+    (arr||[]).forEach(function(l){
+      rows.push([
+        (l.sent_at||'').replace('T',' ').slice(0,19),
+        l.stakeholder||'',l.stakeholder_email||'',l.dept||'',
+        l.tone||'',l.subject||'',l.task_name||'',l.due_date||'',
+        l.response_received?'Responded':'Pending'
+      ]);
+    });
+    return rows;
+  };
+
   function bindExport(id,fn){
     var el=document.getElementById(id);
     if(!el)return;
@@ -7891,12 +8103,51 @@ function wireExportButtons(){
   bindExport('export-full-report',function(){
     if(typeof XLSX==='undefined'){alert('Excel library loading. Please wait a few seconds and try again.');return;}
     var wb=XLSX.utils.book_new();
-    var summary=[['Clarix GRC Report — '+getDateStr()],[],['Total items',items.length],['Completed',items.filter(function(it){return getStatus(it)==='done';}).length],['Overdue',items.filter(function(it){return getStatus(it)==='overdue';}).length],[],['Total risks',risks.length],['High risks',risks.filter(function(r){return r.likelihood*r.impact>=15;}).length],[],['Follow-ups sent',logs.length],['Generated by','Clarix — Compliance Intelligence']];
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(summary),'Summary');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(itemsToRows(items)),'Compliance Items');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(risksToRows(risks)),'Risk Register');
-    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(logsToRows(logs)),'Follow-up Log');
-    XLSX.writeFile(wb,'Clarix_Full_Report_'+getDateStr()+'.xlsx');
+    var d=new Date();
+    var dateStr=getDateStr();
+    var completedCount=items.filter(function(it){return getStatus(it)==='done';}).length;
+    var overdueCount=items.filter(function(it){return getStatus(it)==='overdue';}).length;
+    var highRiskCount=risks.filter(function(r){return (r.likelihood||1)*(r.impact||1)>=15;}).length;
+    var summary=[
+      ['Clarix GRC Full Report'],
+      ['Generated: '+d.toLocaleString()],
+      [],
+      ['COMPLIANCE SUMMARY',''],
+      ['Total items',items.length],
+      ['Completed',completedCount],
+      ['Overdue',overdueCount],
+      ['Pending',items.length-completedCount-overdueCount],
+      [],
+      ['RISK SUMMARY',''],
+      ['Total risks',risks.length],
+      ['High risks (score ≥15)',highRiskCount],
+      [],
+      ['COMMUNICATION',''],
+      ['Follow-ups sent',logs.length],
+      [],
+      ['Generated by','Clarix — Compliance Intelligence']
+    ];
+    var wsSummary=XLSX.utils.aoa_to_sheet(summary);
+    wsSummary['!cols']=[{wch:30},{wch:20}];
+    XLSX.utils.book_append_sheet(wb,wsSummary,'Summary');
+    var wsItems=XLSX.utils.aoa_to_sheet(itemsToRows(items));
+    var itemCols=itemsToRows([]).length>0?itemsToRows(items)[0].map(function(_,ci){return {wch:Math.min(40,Math.max(12,itemsToRows(items).reduce(function(mx,r){return Math.max(mx,String(r[ci]||'').length);},0)))};}):[]; wsItems['!cols']=itemCols;
+    XLSX.utils.book_append_sheet(wb,wsItems,'Compliance Items');
+    var wsRisks=XLSX.utils.aoa_to_sheet(risksToRows(risks)); XLSX.utils.book_append_sheet(wb,wsRisks,'Risk Register');
+    var wsLogs=XLSX.utils.aoa_to_sheet(logsToRows(logs)); XLSX.utils.book_append_sheet(wb,wsLogs,'Follow-up Log');
+    // Audit trail sheet
+    if(auditLogs&&auditLogs.length){
+      var atRows=[['Timestamp','Action','Module','Description','Performed By','Email','Role','Device']];
+      auditLogs.forEach(function(l){
+        var ua=l.ip_hint||'';
+        var device=ua.indexOf('Mobile')>-1?'Mobile':ua.indexOf('Chrome')>-1?'Chrome':ua.indexOf('Firefox')>-1?'Firefox':'Desktop';
+        atRows.push([(l.created_at||'').replace('T',' ').slice(0,19),l.action||'',l.module||'',l.description||'',l.performed_by||'',l.user_email||'',l.user_role||'',device]);
+      });
+      var wsAt=XLSX.utils.aoa_to_sheet(atRows); XLSX.utils.book_append_sheet(wb,wsAt,'Audit Trail');
+    }
+    XLSX.writeFile(wb,'Clarix_Full_Report_'+dateStr+'.xlsx');
+    writeAuditLog('EXPORT','System','Downloaded Full GRC Report',{sheets:'Summary,Compliance Items,Risk Register,Follow-up Log,Audit Trail'});
+    showDueDateToast('','Full report downloaded!');
   });
   var tBtn=document.getElementById('download-template-btn');
   if(tBtn)tBtn.onclick=function(){
