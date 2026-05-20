@@ -897,6 +897,39 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 .filter-tag:hover{border-color:var(--primary);color:var(--primary)}
 .filter-tag.active{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 2px 8px var(--primary-glow)}
 #freq-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;align-items:center}
+/* ── KANBAN BOARD ── */
+.kanban-wrap{display:flex;gap:14px;overflow-x:auto;padding-bottom:16px;align-items:flex-start;min-height:300px}
+.kanban-col{flex:0 0 280px;background:var(--surface2);border-radius:var(--radius-lg);border:1px solid var(--border);display:flex;flex-direction:column;max-height:calc(100vh - 200px)}
+.kanban-col-header{padding:14px 16px 10px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:8px;flex-shrink:0}
+.kanban-col-title{font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px}
+.kanban-col-count{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px}
+.kanban-col-body{flex:1;overflow-y:auto;padding:10px 10px 10px;display:flex;flex-direction:column;gap:8px}
+.kanban-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px;cursor:pointer;transition:box-shadow .15s,border-color .15s,transform .15s;position:relative;overflow:hidden}
+.kanban-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.1);border-color:var(--primary);transform:translateY(-1px)}
+.kanban-card.dragging{opacity:.5;transform:rotate(2deg)}
+.kanban-card.drag-over{border-color:var(--primary);background:var(--primary-light)}
+.kanban-card-bar{position:absolute;top:0;left:0;right:0;height:3px;border-radius:10px 10px 0 0}
+.kanban-card-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;line-height:1.4;word-break:break-word;margin-top:4px}
+.kanban-card-meta{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:6px}
+.kanban-meta-chip{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap}
+.kanban-card-footer{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-top:6px;border-top:1px solid var(--border2)}
+.kanban-avatar{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;flex-shrink:0}
+.kanban-due{font-size:10px;font-weight:600}
+.kanban-col-drop-hint{text-align:center;padding:20px 12px;font-size:12px;color:var(--text3);border:1.5px dashed var(--border);border-radius:8px;margin:4px 0}
+.kb-col-overdue .kanban-col-header{border-top:3px solid #ef4444;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.kb-col-pending .kanban-col-header{border-top:3px solid #f59e0b;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.kb-col-inprogress .kanban-col-header{border-top:3px solid #3b82f6;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.kb-col-done .kanban-col-header{border-top:3px solid #10b981;border-radius:var(--radius-lg) var(--radius-lg) 0 0}
+.kanban-view-wrap{display:none}
+.kanban-view-wrap.active{display:block}
+.items-table-wrap.kanban-hidden{display:none}
+.kb-quick-move{font-size:10px;font-weight:600;padding:3px 8px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;font-family:var(--font);transition:all .15s}
+.kb-quick-move:hover{border-color:var(--primary);color:var(--primary);background:var(--primary-light)}
+.kb-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+.kb-stat{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;text-align:center}
+.kb-stat-num{font-size:22px;font-weight:800;line-height:1}
+.kb-stat-lbl{font-size:11px;color:var(--text2);margin-top:3px}
+
 /* ── PRIORITY BADGES ── */
 .pri-critical{background:rgba(239,68,68,.12);color:#ef4444;border:1px solid rgba(239,68,68,.25);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
 .pri-high{background:rgba(245,158,11,.12);color:#f59e0b;border:1px solid rgba(245,158,11,.25);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700}
@@ -1522,20 +1555,39 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       </div>
 
       <!-- ALL ITEMS -->
-      <div <!-- ALL ITEMS -->
       <div id="s-items" class="sec">
-        <div class="items-table-wrap">
-          <div class="items-table-header">
-            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-              <div style="font-size:15px;font-weight:700;color:var(--text)">All compliance items</div>
-              <div id="freq-filters" class="items-filter-row"></div>
+
+        <!-- Shared header bar: title + freq filters + view switcher + add button -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            <div style="font-size:15px;font-weight:700;color:var(--text)">All compliance items</div>
+            <div id="freq-filters" class="items-filter-row"></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <!-- View switcher -->
+            <div style="display:flex;border:1.5px solid var(--border);border-radius:8px;overflow:hidden">
+              <button id="kb-table-btn" onclick="setItemsView('table')"
+                style="padding:6px 13px;font-size:12px;font-weight:600;font-family:var(--font);border:none;background:var(--primary);color:#fff;cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="1"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                Table
+              </button>
+              <button id="kb-kanban-btn" onclick="setItemsView('kanban')"
+                style="padding:6px 13px;font-size:12px;font-weight:500;font-family:var(--font);border:none;background:var(--surface);color:var(--text2);cursor:pointer;display:flex;align-items:center;gap:5px;transition:all .15s">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="5" height="18" rx="1"/><rect x="10" y="3" width="5" height="11" rx="1"/><rect x="17" y="3" width="5" height="14" rx="1"/></svg>
+                Kanban
+              </button>
             </div>
+            <!-- Add button -->
             <div id="add-item-card" style="display:flex;gap:8px">
               <button class="btn btn-primary" onclick="openPanel('item-panel')">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Add item
               </button>
             </div>
           </div>
+        </div>
+
+        <!-- ── TABLE VIEW ── -->
+        <div class="items-table-wrap" id="items-table-view">
           <div style="overflow-x:auto">
             <table class="items-tbl"><thead><tr>
               <th style="min-width:220px;padding-left:20px">Task</th>
@@ -1550,6 +1602,15 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
             </tr></thead><tbody id="items-body"></tbody></table>
           </div>
         </div>
+
+        <!-- ── KANBAN VIEW ── -->
+        <div class="kanban-view-wrap" id="items-kanban-view">
+          <!-- Stats strip -->
+          <div class="kb-stats-row" id="kb-stats-row"></div>
+          <!-- Board -->
+          <div class="kanban-wrap" id="kanban-board"></div>
+        </div>
+
       </div>
 
       <!-- OVERDUE -->
@@ -3602,7 +3663,7 @@ navCfg.forEach(function(m){
     document.querySelectorAll('.sec').forEach(function(s){s.classList.remove('active');});
     btn.classList.add('active');document.getElementById(m[1]).classList.add('active');
     document.getElementById('page-title').textContent=m[2];document.getElementById('page-sub').textContent=m[3];
-    if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItems();}
+    if(m[1]==='s-dash')renderDash();if(m[1]==='s-items'){renderFreqFilters();renderItemsCurrentView();}
     if(m[1]==='s-overdue')renderOverdue();if(m[1]==='s-email')renderEmailTab();
     try{
       if(m[1]==='s-risks')renderRisks();if(m[1]==='s-admin')loadUsers();if(m[1]==='s-actions')renderActions();if(m[1]==='s-evidence')renderEvidence();if(m[1]==='s-frameworks')renderFrameworks();if(m[1]==='s-calendar')renderCalendar();if(m[1]==='s-policy')renderPolicies();if(m[1]==='s-audit-trail')renderAuditTrail();if(m[1]==='s-scorecard')renderScorecard();if(m[1]==='s-portal')renderPortal();if(m[1]==='s-response')renderResponseMonitor();if(m[1]==='s-emailtracker')renderEmailTracker();if(m[1]==='s-export')renderExportPage();
@@ -3688,7 +3749,7 @@ async function loadAll(){
     }
     safeRender('dash',        renderDash);
     safeRender('freqFilters', renderFreqFilters);
-    safeRender('items',       renderItems);
+    safeRender('items',       renderItemsCurrentView);
     safeRender('overdue',     renderOverdue);
     safeRender('log',         renderLog);
     safeRender('risks',       renderRisks);
@@ -3752,8 +3813,322 @@ function renderFreqFilters(){
   var html='<button class="filter-tag'+(activeFreq===''?' active':'')+'" data-f="">All</button>';
   freqs.forEach(function(f){if(items.some(function(it){return it.freq===f;}))html+='<button class="filter-tag'+(activeFreq===f?' active':'')+'" data-f="'+f+'">'+FL[f]+'</button>';});
   var el=document.getElementById('freq-filters');if(!el)return;el.innerHTML=html;
-  el.querySelectorAll('.filter-tag').forEach(function(b){b.onclick=function(){activeFreq=b.getAttribute('data-f');renderFreqFilters();renderItems();};});
+  el.querySelectorAll('.filter-tag').forEach(function(b){b.onclick=function(){activeFreq=b.getAttribute('data-f');renderFreqFilters();renderItemsCurrentView();};});
 }
+
+// ════════════════════════════════════════════════
+// KANBAN BOARD
+// ════════════════════════════════════════════════
+
+var _itemsView = localStorage.getItem('clarix-items-view') || 'table'; // 'table' | 'kanban'
+
+function setItemsView(view){
+  _itemsView = view;
+  localStorage.setItem('clarix-items-view', view);
+
+  var tableView  = document.getElementById('items-table-view');
+  var kanbanView = document.getElementById('items-kanban-view');
+  var tableBtn   = document.getElementById('kb-table-btn');
+  var kanbanBtn  = document.getElementById('kb-kanban-btn');
+
+  if(view === 'kanban'){
+    if(tableView)  tableView.style.display  = 'none';
+    if(kanbanView){ kanbanView.style.display = 'block'; }
+    if(tableBtn){  tableBtn.style.background='var(--surface)'; tableBtn.style.color='var(--text2)'; tableBtn.style.fontWeight='500'; }
+    if(kanbanBtn){ kanbanBtn.style.background='var(--primary)'; kanbanBtn.style.color='#fff'; kanbanBtn.style.fontWeight='600'; }
+    renderKanban();
+  } else {
+    if(tableView)  tableView.style.display  = '';
+    if(kanbanView) kanbanView.style.display  = 'none';
+    if(tableBtn){  tableBtn.style.background='var(--primary)'; tableBtn.style.color='#fff'; tableBtn.style.fontWeight='600'; }
+    if(kanbanBtn){ kanbanBtn.style.background='var(--surface)'; kanbanBtn.style.color='var(--text2)'; kanbanBtn.style.fontWeight='500'; }
+    renderItems();
+  }
+}
+
+// ── Column config ──
+var KB_COLS = [
+  { id:'overdue',    label:'Overdue',     cls:'kb-col-overdue',    barColor:'#ef4444', countBg:'#fdeaea', countColor:'#d93f3f' },
+  { id:'pending',    label:'Pending',     cls:'kb-col-pending',    barColor:'#f59e0b', countBg:'#fef3e2', countColor:'#b45309' },
+  { id:'inprogress', label:'In Progress', cls:'kb-col-inprogress', barColor:'#3b82f6', countBg:'#dbeafe', countColor:'#1d4ed8' },
+  { id:'done',       label:'Done',        cls:'kb-col-done',       barColor:'#10b981', countBg:'#e0f7f2', countColor:'#065f46' }
+];
+
+function getKanbanStatus(it){
+  if(it.done || it.item_status === 'Done') return 'done';
+  if(it.item_status === 'In Progress') return 'inprogress';
+  if(it.due_date && it.due_date < today()) return 'overdue';
+  return 'pending';
+}
+
+function renderKanban(){
+  var filtered = activeFreq ? items.filter(function(it){ return it.freq === activeFreq; }) : items;
+
+  // ── Stats strip ──
+  var statsEl = document.getElementById('kb-stats-row');
+  if(statsEl){
+    var ov = filtered.filter(function(it){ return getKanbanStatus(it) === 'overdue'; }).length;
+    var pe = filtered.filter(function(it){ return getKanbanStatus(it) === 'pending'; }).length;
+    var ip = filtered.filter(function(it){ return getKanbanStatus(it) === 'inprogress'; }).length;
+    var dn = filtered.filter(function(it){ return getKanbanStatus(it) === 'done'; }).length;
+    var pct = filtered.length ? Math.round(dn / filtered.length * 100) : 0;
+    statsEl.innerHTML =
+      '<div class="kb-stat"><div class="kb-stat-num" style="color:#ef4444">'+ov+'</div><div class="kb-stat-lbl">Overdue</div></div>'+
+      '<div class="kb-stat"><div class="kb-stat-num" style="color:#f59e0b">'+pe+'</div><div class="kb-stat-lbl">Pending</div></div>'+
+      '<div class="kb-stat"><div class="kb-stat-num" style="color:#3b82f6">'+ip+'</div><div class="kb-stat-lbl">In Progress</div></div>'+
+      '<div class="kb-stat"><div class="kb-stat-num" style="color:#10b981">'+dn+'</div><div class="kb-stat-lbl">Done ('+pct+'%)</div></div>';
+  }
+
+  var board = document.getElementById('kanban-board');
+  if(!board) return;
+  board.innerHTML = '';
+
+  // Group items by status
+  var groups = { overdue:[], pending:[], inprogress:[], done:[] };
+  filtered.forEach(function(it){ var s = getKanbanStatus(it); groups[s].push(it); });
+
+  KB_COLS.forEach(function(col){
+    var colEl = document.createElement('div');
+    colEl.className = 'kanban-col ' + col.cls;
+    colEl.setAttribute('data-col', col.id);
+
+    // Column header
+    var header = document.createElement('div');
+    header.className = 'kanban-col-header';
+    var titleDiv = document.createElement('div');
+    titleDiv.className = 'kanban-col-title';
+    titleDiv.innerHTML =
+      '<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:'+col.barColor+';flex-shrink:0"></span>' +
+      col.label;
+    var countBadge = document.createElement('span');
+    countBadge.className = 'kanban-col-count';
+    countBadge.style.cssText = 'background:'+col.countBg+';color:'+col.countColor;
+    countBadge.textContent = groups[col.id].length;
+    header.appendChild(titleDiv);
+    header.appendChild(countBadge);
+    colEl.appendChild(header);
+
+    // Column body (scrollable)
+    var body = document.createElement('div');
+    body.className = 'kanban-col-body';
+    body.setAttribute('data-col', col.id);
+
+    // Drag-over for drop target
+    body.addEventListener('dragover', function(e){
+      e.preventDefault();
+      body.style.background = 'var(--primary-light)';
+    });
+    body.addEventListener('dragleave', function(){
+      body.style.background = '';
+    });
+    body.addEventListener('drop', function(e){
+      e.preventDefault();
+      body.style.background = '';
+      var itemId = e.dataTransfer.getData('text/plain');
+      if(itemId) kbMoveItem(parseInt(itemId), col.id);
+    });
+
+    if(!groups[col.id].length){
+      var hint = document.createElement('div');
+      hint.className = 'kanban-col-drop-hint';
+      hint.textContent = 'Drop items here';
+      body.appendChild(hint);
+    } else {
+      groups[col.id].forEach(function(it){
+        body.appendChild(buildKanbanCard(it, col));
+      });
+    }
+
+    colEl.appendChild(body);
+    board.appendChild(colEl);
+  });
+}
+
+function buildKanbanCard(it, col){
+  var card = document.createElement('div');
+  card.className = 'kanban-card';
+  card.setAttribute('draggable', 'true');
+  card.setAttribute('data-id', it.id);
+
+  // Drag events
+  card.addEventListener('dragstart', function(e){
+    e.dataTransfer.setData('text/plain', String(it.id));
+    card.classList.add('dragging');
+  });
+  card.addEventListener('dragend', function(){
+    card.classList.remove('dragging');
+  });
+
+  // Priority colour map
+  var priColors = {
+    Critical: { bar:'#ef4444', bg:'#fdeaea', text:'#d93f3f' },
+    High:     { bar:'#f59e0b', bg:'#fef3e2', text:'#b45309' },
+    Medium:   { bar:'#3b82f6', bg:'#dbeafe', text:'#1d4ed8' },
+    Low:      { bar:'#10b981', bg:'#e0f7f2', text:'#065f46' }
+  };
+  var pc = priColors[it.priority] || priColors.Medium;
+
+  // Top colour bar
+  var bar = document.createElement('div');
+  bar.className = 'kanban-card-bar';
+  bar.style.background = pc.bar;
+  card.appendChild(bar);
+
+  // Task name
+  var nameEl = document.createElement('div');
+  nameEl.className = 'kanban-card-name';
+  nameEl.textContent = it.name;
+  card.appendChild(nameEl);
+
+  // Meta chips: dept + priority + freq
+  var meta = document.createElement('div');
+  meta.className = 'kanban-card-meta';
+  if(it.dept){
+    var deptChip = document.createElement('span');
+    deptChip.className = 'kanban-meta-chip';
+    deptChip.style.cssText = 'background:var(--surface2);color:var(--text2);border:1px solid var(--border)';
+    deptChip.textContent = it.dept;
+    meta.appendChild(deptChip);
+  }
+  if(it.priority){
+    var priChip = document.createElement('span');
+    priChip.className = 'kanban-meta-chip';
+    priChip.style.cssText = 'background:'+pc.bg+';color:'+pc.text;
+    priChip.textContent = it.priority;
+    meta.appendChild(priChip);
+  }
+  if(it.freq && FL[it.freq]){
+    var freqChip = document.createElement('span');
+    freqChip.className = 'kanban-meta-chip';
+    freqChip.style.cssText = 'background:var(--primary-light);color:var(--primary)';
+    freqChip.textContent = FL[it.freq];
+    meta.appendChild(freqChip);
+  }
+  card.appendChild(meta);
+
+  // Footer: assignee avatar + due date
+  var footer = document.createElement('div');
+  footer.className = 'kanban-card-footer';
+
+  // Assignee avatar
+  var assigneeName = it.assignee || it.stakeholder || '';
+  var avEl = document.createElement('div');
+  avEl.style.display = 'flex';
+  avEl.style.alignItems = 'center';
+  avEl.style.gap = '5px';
+  if(assigneeName){
+    var parts = assigneeName.trim().split(' ');
+    var initials = (parts[0]?parts[0][0]:'') + (parts[1]?parts[1][0]:'');
+    var avColors = ['#5b5ef4','#10b981','#f59e0b','#ef4444','#3b82f6','#7c3aed','#0891b2'];
+    var ci = assigneeName.charCodeAt(0) % avColors.length;
+    var av = document.createElement('span');
+    av.className = 'kanban-avatar';
+    av.style.background = avColors[ci];
+    av.title = assigneeName;
+    av.textContent = initials.toUpperCase();
+    avEl.appendChild(av);
+    var nm = document.createElement('span');
+    nm.style.cssText = 'font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px';
+    nm.textContent = assigneeName.split(' ')[0];
+    avEl.appendChild(nm);
+  }
+  footer.appendChild(avEl);
+
+  // Due date
+  if(it.due_date){
+    var dueEl = document.createElement('span');
+    dueEl.className = 'kanban-due';
+    var isOvd = !it.done && it.due_date < today();
+    dueEl.style.color = isOvd ? '#d93f3f' : 'var(--text3)';
+    dueEl.textContent = it.due_date;
+    footer.appendChild(dueEl);
+  }
+
+  card.appendChild(footer);
+
+  // Quick-move buttons row (only if user can toggle)
+  if(can('toggle')){
+    var moveRow = document.createElement('div');
+    moveRow.style.cssText = 'display:flex;gap:4px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px solid var(--border2)';
+
+    // Build next-status options excluding current
+    var colOrder = ['overdue','pending','inprogress','done'];
+    var curStatus = col.id;
+    var targets = colOrder.filter(function(c){ return c !== curStatus; });
+    var targetLabels = { overdue:'→ Overdue', pending:'→ Pending', inprogress:'→ In Progress', done:'✓ Done' };
+
+    targets.forEach(function(targetCol){
+      var btn = document.createElement('button');
+      btn.className = 'kb-quick-move';
+      btn.textContent = targetLabels[targetCol];
+      (function(tid){ btn.onclick = function(e){ e.stopPropagation(); kbMoveItem(it.id, tid); }; })(targetCol);
+      moveRow.appendChild(btn);
+    });
+
+    card.appendChild(moveRow);
+  }
+
+  // Click card → open detail row in table view
+  card.addEventListener('click', function(e){
+    if(e.target.classList.contains('kb-quick-move')) return;
+    // Switch to table view and expand the row
+    setItemsView('table');
+    setTimeout(function(){
+      var rows = document.querySelectorAll('#items-body .item-row');
+      rows.forEach(function(row){
+        if(row.getAttribute('data-id') == it.id) row.click();
+      });
+    }, 100);
+  });
+
+  return card;
+}
+
+async function kbMoveItem(itemId, targetCol){
+  var it = items.find(function(x){ return x.id == itemId; });
+  if(!it) return;
+
+  var newDone = false;
+  var newStatus = 'Pending';
+
+  if(targetCol === 'done'){
+    newDone = true;
+    newStatus = 'Done';
+  } else if(targetCol === 'inprogress'){
+    newDone = false;
+    newStatus = 'In Progress';
+  } else if(targetCol === 'pending'){
+    newDone = false;
+    newStatus = 'Pending';
+  } else if(targetCol === 'overdue'){
+    // Can't set to overdue manually — just move to pending
+    newDone = false;
+    newStatus = 'Pending';
+  }
+
+  var res = await api('grc_items?id=eq.'+itemId, {
+    method: 'PATCH',
+    body: { done: newDone, item_status: newStatus },
+    extra: { 'Prefer': 'return=minimal' }
+  });
+  if(res && res.ok){
+    writeAuditLog('UPDATE','Compliance Item','Kanban move: '+it.name+' → '+newStatus);
+    showDueDateToast('', it.name.substring(0,30)+'... → '+newStatus);
+    await loadAll();
+    // Stay on kanban view after refresh
+    if(_itemsView === 'kanban') renderKanban();
+  }
+}
+
+function renderItemsCurrentView(){
+  if(_itemsView === 'kanban'){
+    setItemsView('kanban');
+  } else {
+    setItemsView('table');
+  }
+}
+
+// ── END KANBAN ──
 
 function renderItems(){
   var filtered=activeFreq?items.filter(function(it){return it.freq===activeFreq;}):items;
