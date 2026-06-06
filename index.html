@@ -6,8 +6,6 @@
 <meta name="description" content="Clarix — Compliance Intelligence Platform. Track compliance tasks, manage risks, monitor follow-ups and stay audit-ready.">
 <meta name="theme-color" content="#4f52d9">
 <title>Clarix | Compliance Intelligence Platform</title>
-<!-- ── Supabase JS SDK (for Auth) ── -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>if(typeof XLSX==='undefined'){document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"><\/script>');}</script>
 <style>
@@ -1258,15 +1256,6 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
       <div class="login-welcome">Welcome to <span style="background:linear-gradient(90deg,#4f52d9,#7c3aed);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">Clarix</span></div>
       <div class="login-sub-new">Sign in to your compliance intelligence workspace</div>
 
-      <!-- ── GOOGLE OAUTH BUTTON ── -->
-      <button class="login-btn-new" id="login-google-btn" onclick="doGoogleLogin()" style="background:#fff;color:#3c3c3c;border:1.5px solid #e0e0e0;display:flex;align-items:center;justify-content:center;gap:10px;font-weight:600;margin-bottom:16px">
-        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
-        Continue with Google
-      </button>
-
-      <div class="login-divider">or sign in with email</div>
-
-      <!-- ── EMAIL / PASSWORD (fallback) ── -->
       <div class="login-field">
         <label class="login-field-label" for="l-email">Email address</label>
         <div class="login-field-wrap">
@@ -1283,14 +1272,16 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
         </div>
       </div>
 
-      <button class="login-btn-new" id="login-btn" style="margin-bottom:0">
+      <button class="login-btn-new" id="login-btn">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-        Sign in with email
+        Sign in to Clarix
       </button>
 
       <div class="login-err-new" id="login-err"></div>
 
-      <div class="login-secure" style="margin-top:20px">
+      <div class="login-divider">secure sign in</div>
+
+      <div class="login-secure">
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
         Clarix — Enterprise-grade compliance intelligence
       </div>
@@ -3482,7 +3473,14 @@ function api(path,opts){
   }
   var fetchOpts={method:method,headers:h,mode:'cors'};
   if(opts&&opts.body) fetchOpts.body=JSON.stringify(opts.body);
-  return fetch(SUPA_URL+'/rest/v1/'+path,fetchOpts);
+  return fetch(SUPA_URL+'/rest/v1/'+path,fetchOpts).then(function(res){
+    if(!res.ok && (method==='PATCH'||method==='POST'||method==='DELETE')){
+      res.clone().text().then(function(t){
+        console.error('[Clarix API] '+method+' '+path+' → '+res.status+': '+t);
+      });
+    }
+    return res;
+  });
 }
 
 async function testConnection(){
@@ -3505,303 +3503,143 @@ async function testConnection(){
   }
 }
 
-// ═══════════════════════════════════════════════════════════
-// CLARIX AUTH — Supabase Auth (Google OAuth + Email fallback)
-// ═══════════════════════════════════════════════════════════
+document.getElementById('login-btn').onclick=async function(){
+  var email=document.getElementById('l-email').value.trim().toLowerCase();
+  var pass=document.getElementById('l-pass').value.trim();
+  var err=document.getElementById('login-err');
+  var btn=document.getElementById('login-btn');
+  err.style.display='none';
 
-// Initialise Supabase Auth client (separate from raw REST client)
-var _supaAuth = null;
-function getSupaAuth(){
-  if(!_supaAuth && typeof supabase !== 'undefined'){
-    _supaAuth = supabase.createClient(SUPA_URL, SUPA_KEY);
-  }
-  return _supaAuth;
-}
-
-// ── After any successful sign-in, resolve the Clarix role ────────
-// Looks up grc_users by email; if not found, auto-creates with role 'viewer'
-async function resolveUserAndEnter(supaUser){
-  var email = (supaUser.email||'').toLowerCase().trim();
-  var displayName = supaUser.user_metadata && supaUser.user_metadata.full_name
-    ? supaUser.user_metadata.full_name
-    : (supaUser.user_metadata && supaUser.user_metadata.name ? supaUser.user_metadata.name : email.split('@')[0]);
-
-  // Fetch from grc_users
-  var res = await fetch(SUPA_URL+'/rest/v1/grc_users?email=eq.'+encodeURIComponent(email)+'&select=id,name,email,role',{
-    method:'GET',
-    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'},
-    mode:'cors'
-  });
-  var users = res.ok ? await res.json() : [];
-
-  var grcUser;
-  if(Array.isArray(users) && users.length){
-    grcUser = users[0];
-  } else {
-    // First time — auto-create as viewer; admin can promote later
-    var createRes = await fetch(SUPA_URL+'/rest/v1/grc_users',{
-      method:'POST',
-      headers:{
-        'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
-        'Content-Type':'application/json','Accept':'application/json',
-        'Prefer':'return=representation'
-      },
-      body: JSON.stringify({name:displayName, email:email, role:'viewer', password:''}),
-      mode:'cors'
-    });
-    var created = createRes.ok ? await createRes.json() : null;
-    grcUser = created && created.length ? created[0] : {id:supaUser.id, name:displayName, email:email, role:'viewer'};
-  }
-
-  var safeUser = {id:grcUser.id, name:grcUser.name, email:grcUser.email, role:grcUser.role};
-  currentUser = safeUser;
-  writeAuditLog('LOGIN','System','User logged in: '+safeUser.email+' (Google OAuth)',{role:safeUser.role});
-  var session = {user:safeUser, expires:Date.now()+(8*60*60*1000), loginTime:Date.now()};
-  encryptAndStore('grc-session', session);
-  setupAppUI();
-  startSessionMonitor();
-  loadAIKeyFromSupabase().catch(function(){});
-  await loadAll();
-}
-
-// ── Google OAuth ─────────────────────────────────────────────────
-async function doGoogleLogin(){
-  var btn = document.getElementById('login-google-btn');
-  var err = document.getElementById('login-err');
-  err.style.display = 'none';
-  btn.disabled = true;
-  btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Redirecting to Google…';
-
-  try{
-    var client = getSupaAuth();
-    if(!client){ throw new Error('Auth client not ready'); }
-    // redirectTo must EXACTLY match the Site URL in Supabase Auth → URL Configuration
-    // For GitHub Pages this is the repo root URL (with trailing slash)
-    var redirectUrl = window.location.origin + window.location.pathname;
-    // Ensure trailing slash so it matches Supabase Site URL setting exactly
-    if(!redirectUrl.endsWith('/')) redirectUrl = redirectUrl + '/';
-    var result = await client.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: redirectUrl,
-        queryParams: { access_type: 'offline', prompt: 'consent' }
-      }
-    });
-    if(result.error){ throw result.error; }
-    // Browser will redirect — no further action needed here
-  } catch(e){
-    err.textContent = 'Google sign-in failed: ' + e.message;
-    err.style.display = 'block';
-    btn.disabled = false;
-    btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg> Continue with Google';
-  }
-}
-
-// ── Handle OAuth redirect callback (runs on page load) ──────────
-// After Google login, Supabase redirects back with #access_token in the URL.
-// The SDK processes it and fires onAuthStateChange with INITIAL_SESSION or SIGNED_IN.
-// We must listen for BOTH events and also handle the PKCE flow (?code= in URL).
-function handleOAuthCallback(){
-  return new Promise(function(resolve){
-
-    // Detect OAuth redirect: either hash fragment (implicit) or code param (PKCE)
-    var hash   = window.location.hash || '';
-    var search = window.location.search || '';
-    var hasOAuth = hash.includes('access_token') ||
-                   hash.includes('error_description') ||
-                   search.includes('code=');
-
-    if(!hasOAuth){ resolve(false); return; }
-
-    var client = getSupaAuth();
-    if(!client){ resolve(false); return; }
-
-    // Show "signing you in" message on the login screen
-    var loginScr = document.getElementById('login-screen');
-    if(loginScr) loginScr.style.display = 'flex';
-    var errEl = document.getElementById('login-err');
-    if(errEl){
-      errEl.style.display  = 'block';
-      errEl.style.color    = 'var(--primary, #4f52d9)';
-      errEl.textContent    = '✓ Google sign-in successful — loading Clarix…';
-    }
-
-    var done = false;
-
-    // Safety timeout — 10 s
-    var timer = setTimeout(function(){
-      if(done) return;
-      done = true;
-      if(errEl){ errEl.style.color = 'red'; errEl.textContent = 'Sign-in timed out. Please try again.'; }
-      resolve(false);
-    }, 10000);
-
-    function finish(session){
-      if(done) return;
-      done = true;
-      clearTimeout(timer);
-      // Remove the #access_token / ?code= from the address bar (cosmetic)
-      if(window.history && window.history.replaceState){
-        window.history.replaceState(
-          {}, document.title,
-          window.location.pathname + window.location.search.replace(/[?&]code=[^&]+/,'')
-        );
-        // Also strip hash
-        if(window.location.hash) window.history.replaceState({}, document.title, window.location.pathname);
-      }
-      if(session && session.user){
-        resolveUserAndEnter(session.user).then(function(){ resolve(true); });
-      } else {
-        if(errEl){ errEl.style.color='red'; errEl.textContent='Google sign-in failed — no session returned.'; }
-        resolve(false);
-      }
-    }
-
-    // Strategy 1: onAuthStateChange — catches both INITIAL_SESSION and SIGNED_IN
-    var sub = client.auth.onAuthStateChange(function(event, session){
-      if(done) return;
-      // INITIAL_SESSION fires first on PKCE; SIGNED_IN fires on implicit flow
-      if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user){
-        if(sub && sub.data && sub.data.subscription) sub.data.subscription.unsubscribe();
-        finish(session);
-      }
-    });
-
-    // Strategy 2: also try getSession() after a short delay as a fallback
-    // (handles cases where onAuthStateChange already fired before we subscribed)
-    setTimeout(async function(){
-      if(done) return;
-      try{
-        var result = await client.auth.getSession();
-        if(result.data && result.data.session && result.data.session.user){
-          if(sub && sub.data && sub.data.subscription) sub.data.subscription.unsubscribe();
-          finish(result.data.session);
-        }
-      } catch(e){}
-    }, 1500);
-  });
-}
-
-// ── Email / password fallback ────────────────────────────────────
-document.getElementById('login-btn').onclick = async function(){
-  var email = document.getElementById('l-email').value.trim().toLowerCase();
-  var pass  = document.getElementById('l-pass').value.trim();
-  var err   = document.getElementById('login-err');
-  var btn   = document.getElementById('login-btn');
-  err.style.display = 'none';
-
-  if(!email || !pass){
-    err.textContent = 'Please enter your email and password.';
-    err.style.display = 'block';
+  if(!email||!pass){
+    err.textContent='Please enter your email and password.';
+    err.style.display='block';
     return;
   }
 
-  // Rate limiting
-  var lockKey  = 'grc-lockout';
-  var attKey   = 'grc-attempts';
-  var lockData = JSON.parse(localStorage.getItem(lockKey)||'null');
-  if(lockData && lockData.until > Date.now()){
-    var mins = Math.ceil((lockData.until - Date.now()) / 60000);
-    err.textContent = 'Too many failed attempts. Try again in '+mins+' minute'+(mins>1?'s':'')+'.';
-    err.style.display = 'block';
+  // ── RATE LIMITING ──
+  var lockKey='grc-lockout';
+  var attKey='grc-attempts';
+  var lockData=JSON.parse(localStorage.getItem(lockKey)||'null');
+  if(lockData&&lockData.until>Date.now()){
+    var mins=Math.ceil((lockData.until-Date.now())/60000);
+    err.textContent='Too many failed attempts. Try again in '+mins+' minute'+(mins>1?'s':'')+'.';
+    err.style.display='block';
     return;
   }
 
-  btn.textContent = 'Signing in…'; btn.disabled = true;
+  btn.textContent='Signing in...';btn.disabled=true;
   try{
-    var res = await fetch(SUPA_URL+'/rest/v1/grc_users?select=*&email=eq.'+encodeURIComponent(email),{
+    // Step 1: Fetch user by email
+    var res=await fetch(SUPA_URL+'/rest/v1/grc_users?select=*&email=eq.'+encodeURIComponent(email),{
       method:'GET',
       headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'},
       mode:'cors'
     });
-    if(!res.ok){ throw new Error('Server error '+res.status); }
-    var allUsers = await res.json();
+    if(!res.ok){throw new Error('Server error '+res.status);}
+    var allUsers=await res.json();
 
-    if(!Array.isArray(allUsers) || !allUsers.length){
-      var att = (parseInt(localStorage.getItem(attKey)||'0')) + 1;
-      localStorage.setItem(attKey, att);
-      if(att >= 5){
-        localStorage.setItem(lockKey, JSON.stringify({until:Date.now()+15*60*1000}));
+    if(!Array.isArray(allUsers)||!allUsers.length){
+      // No user found with this email
+      var attempts=(parseInt(localStorage.getItem(attKey)||'0'))+1;
+      localStorage.setItem(attKey,attempts);
+      var remaining=5-attempts;
+      if(attempts>=5){
+        localStorage.setItem(lockKey,JSON.stringify({until:Date.now()+15*60*1000}));
         localStorage.removeItem(attKey);
-        err.textContent = 'Account locked for 15 minutes.';
+        err.textContent='Account locked for 15 minutes due to too many failed attempts.';
       } else {
-        err.textContent = 'Invalid email or password. '+(5-att)+' attempt'+(5-att>1?'s':'')+' remaining.';
+        err.textContent='Invalid email or password. '+(remaining)+' attempt'+(remaining>1?'s':'')+' remaining.';
       }
-      err.style.display = 'block';
-      btn.textContent = 'Sign in with email'; btn.disabled = false;
+      err.style.display='block';
+      btn.textContent='Sign in to Clarix';btn.disabled=false;
       return;
     }
 
-    var foundUser  = allUsers[0];
+    var foundUser = allUsers[0];
     var storedPass = foundUser.password || '';
     var passwordOk = false;
 
+    // Step 2: Verify password
+    // Check if password is hashed (bcrypt hash starts with $2)
     if(storedPass.startsWith('$2')){
+      // Use Supabase RPC to verify bcrypt hash
       try{
         var rpcRes = await fetch(SUPA_URL+'/rest/v1/rpc/verify_password',{
           method:'POST',
           headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Content-Type':'application/json','Accept':'application/json'},
-          body:JSON.stringify({plain_pass:pass, hashed_pass:storedPass}),
+          body:JSON.stringify({plain_pass:pass,hashed_pass:storedPass}),
           mode:'cors'
         });
-        if(rpcRes.ok){ var rpcData = await rpcRes.json(); passwordOk = rpcData === true; }
-        else { passwordOk = (pass === storedPass); }
-      } catch(e2){ passwordOk = (pass === storedPass); }
+        if(rpcRes.ok){
+          var rpcData = await rpcRes.json();
+          passwordOk = rpcData === true;
+        } else {
+          // RPC not set up yet - fall back to plain text
+          passwordOk = (pass === storedPass);
+        }
+      }catch(e2){
+        // RPC failed - fall back to plain text
+        passwordOk = (pass === storedPass);
+      }
     } else {
+      // Plain text password (not yet migrated)
       passwordOk = (pass === storedPass);
     }
 
-    if(!passwordOk){
-      var att = (parseInt(localStorage.getItem(attKey)||'0')) + 1;
-      localStorage.setItem(attKey, att);
-      if(att >= 5){
-        localStorage.setItem(lockKey, JSON.stringify({until:Date.now()+15*60*1000}));
+    var data = passwordOk ? [foundUser] : [];
+
+    if(!Array.isArray(data)||!data.length){
+      // Track failed attempt
+      var attempts=(parseInt(localStorage.getItem(attKey)||'0'))+1;
+      localStorage.setItem(attKey,attempts);
+      var remaining=5-attempts;
+      if(attempts>=5){
+        localStorage.setItem(lockKey,JSON.stringify({until:Date.now()+15*60*1000}));
         localStorage.removeItem(attKey);
-        err.textContent = 'Account locked for 15 minutes.';
+        err.textContent='Account locked for 15 minutes due to too many failed attempts.';
       } else {
-        err.textContent = 'Invalid email or password. '+(5-att)+' attempt'+(5-att>1?'s':'')+' remaining before lockout.';
+        err.textContent='Invalid email or password. '+(remaining)+' attempt'+(remaining>1?'s':'')+' remaining before lockout.';
       }
-      err.style.display = 'block';
-      btn.textContent = 'Sign in with email'; btn.disabled = false;
+      err.style.display='block';
+      btn.textContent='Sign in to Clarix';btn.disabled=false;
       return;
     }
 
+    // Success — clear failed attempts
     localStorage.removeItem(attKey);
     localStorage.removeItem(lockKey);
-    var _raw = foundUser;
-    var safeUser = {id:_raw.id, name:_raw.name, email:_raw.email, role:_raw.role};
-    currentUser = safeUser;
+
+    // Strip password before storing — never keep password in localStorage
+    var _raw=data[0];
+    var safeUser={id:_raw.id,name:_raw.name,email:_raw.email,role:_raw.role};
+    currentUser=safeUser;
     writeAuditLog('LOGIN','System','User logged in: '+safeUser.email,{role:safeUser.role});
-    var session = {user:safeUser, expires:Date.now()+(8*60*60*1000), loginTime:Date.now()};
-    encryptAndStore('grc-session', session);
-    btn.textContent = 'Sign in with email'; btn.disabled = false;
+    // Encrypt session with AES-GCM
+    var session={user:safeUser,expires:Date.now()+(8*60*60*1000),loginTime:Date.now()};
+    encryptAndStore('grc-session',session);
+    btn.textContent='Sign in to Clarix';btn.disabled=false;
     setupAppUI();
     startSessionMonitor();
     loadAIKeyFromSupabase().catch(function(){});
     await loadAll();
-  } catch(e){
-    console.error('Login error:', e.message);
-    err.textContent = 'Connection failed. Please check your internet and try again.';
-    err.style.display = 'block';
-    btn.textContent = 'Sign in with email'; btn.disabled = false;
+  }catch(e){
+    console.error('Login error:',e.message);
+    err.textContent='Connection failed. Please check your internet and try again.';
+    err.style.display='block';
+    btn.textContent='Sign in to Clarix';btn.disabled=false;
   }
 };
-document.getElementById('l-pass').onkeydown = function(e){ if(e.key==='Enter') document.getElementById('login-btn').onclick(); };
-document.getElementById('l-email').onkeydown = function(e){ if(e.key==='Enter') document.getElementById('login-btn').onclick(); };
+document.getElementById('l-pass').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
+document.getElementById('l-email').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
 
-document.getElementById('logout-btn').onclick = async function(){
-  // Sign out from Supabase Auth (Google OAuth session)
-  try{
-    var client = getSupaAuth();
-    if(client) await client.auth.signOut();
-  } catch(e){}
+document.getElementById('logout-btn').onclick=function(){
   secureWipe(['grc-session','grc-session-iv','grc-attempts','grc-lockout']);
   _secKey = null;
-  currentUser = null;
-  document.getElementById('main-app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('l-email').value = '';
-  document.getElementById('l-pass').value = '';
+  currentUser=null;
+  document.getElementById('main-app').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('l-email').value='';
+  document.getElementById('l-pass').value='';
 };
 
 var navCfg=[['nav-dash','s-dash','Dashboard','Your compliance overview'],['nav-items','s-items','Implementation tracker','Manage compliance tasks'],['nav-email','s-email','Follow-up Emails','Generate reminder emails'],['nav-risks','s-risks','Risk Register','Track organizational risks'],['nav-overdue','s-overdue','Overdue / Due Soon','Items needing attention'],['nav-import','s-import','Bulk Import','Import items from Excel'],['nav-export','s-export','Export Reports','Download your GRC data'],['nav-scorecard','s-scorecard','Stakeholder Scorecard','Compliance rate by person'],['nav-portal','s-portal','Stakeholder Portal','Self-update links for stakeholders'],['nav-emailtracker','s-emailtracker','Email Tracker','Track all sent emails'],['nav-response','s-response','Response Monitor','Track stakeholder responses'],['nav-actions','s-actions','Action & Issue Tracker','Track failures, corrective actions and closure'],['nav-evidence','s-evidence','Evidence Collection','Collect audit evidence from teams'],['nav-policy','s-policy','Policy Register','Store, version and track all security policies'],['nav-calendar','s-calendar','Audit Calendar','All deadlines and audit events in one view'],['nav-frameworks','s-frameworks','Control Framework Mapping','Map items to ISO 27001, SOC 2, GDPR and NIST controls'],['nav-audit-trail','s-audit-trail','Audit Trail','Tamper-evident log of every change — ISO 27001 A.8.15'],['nav-admin','s-admin','Manage Users','Control team access']];
@@ -3965,7 +3803,8 @@ document.getElementById('add-item-btn').onclick=async function(){
   // Gather evidence file names
   var evList=document.getElementById('i-ev-files-list');
   var evNames=Array.from(evList.querySelectorAll('.ev-file-chip')).map(function(c){return c.getAttribute('data-name');}).join('||');
-  var row={id:Date.now(),name:name,stakeholder:stake,email:document.getElementById('i-email').value.trim(),dept:document.getElementById('i-dept').value.trim(),freq:document.getElementById('i-freq').value,due_date:document.getElementById('i-due').value,category:document.getElementById('i-cat').value,notes:document.getElementById('i-notes').value.trim(),done:document.getElementById('i-status').value==='Done',followups:0,stakeholder_email:document.getElementById('i-email').value.trim(),priority:document.getElementById('i-priority').value,assignee:document.getElementById('i-assignee').value.trim(),item_status:document.getElementById('i-status').value,framework_tags:frameworks,evidence_files:evNames,activity_log:JSON.stringify([{ts:new Date().toISOString(),user:currentUser?currentUser.name:'System',action:'Item created'}])};
+  var row={name:name,stakeholder:stake,email:document.getElementById('i-email').value.trim(),dept:document.getElementById('i-dept').value.trim(),freq:document.getElementById('i-freq').value,due_date:document.getElementById('i-due').value,category:document.getElementById('i-cat').value,notes:document.getElementById('i-notes').value.trim(),done:document.getElementById('i-status').value==='Done',followups:0,stakeholder_email:document.getElementById('i-email').value.trim(),priority:document.getElementById('i-priority').value,assignee:document.getElementById('i-assignee').value.trim(),item_status:document.getElementById('i-status').value,framework_tags:frameworks,evidence_files:evNames,activity_log:[{ts:new Date().toISOString(),user:currentUser?currentUser.name:'System',action:'Item created'}]};
+  // Note: no 'id' field — Supabase auto-generates it from the serial/bigserial column
   var res=await api('grc_items',{method:'POST',body:row,extra:{'Prefer':'return=minimal'}});
   if(!res.ok){var e=await res.json();alert('Error: '+(e.message||res.status));return;}
   ['i-name','i-stake','i-email','i-dept','i-notes','i-due','i-assignee'].forEach(function(id){document.getElementById(id).value='';});
@@ -4525,7 +4364,7 @@ function renderItems(){
         // Append to activity log
         var actLog=[];try{actLog=JSON.parse(it.activity_log||'[]');}catch(e2){}
         actLog.push({ts:new Date().toISOString(),user:currentUser?currentUser.name:'User',action:(it.done?'Marked as Pending':'Marked as Done')});
-        updateBody.activity_log=JSON.stringify(actLog);
+        updateBody.activity_log=actLog;  // send as object — Supabase jsonb column rejects pre-stringified JSON
         await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
         writeAuditLog('UPDATE','Compliance Item',(it.done?'Marked pending: ':'Marked done: ')+it.name,{prev_status:it.done?'Done':'Pending',new_status:it.done?'Pending':'Done'});
         if(!it.done) showDueDateToast(it.freq,updateBody.due_date||it.due_date);
@@ -4582,7 +4421,7 @@ async function addEvidenceToItem(input, itemId){
   // Append activity log entry
   var actLog=[];try{actLog=JSON.parse(it.activity_log||'[]');}catch(e){}
   actLog.push({ts:new Date().toISOString(),user:currentUser?currentUser.name:'User',action:'Evidence uploaded: '+newFiles.join(', ')});
-  var updateBody={evidence_files:merged.join('||'),activity_log:JSON.stringify(actLog)};
+  var updateBody={evidence_files:merged.join('||'),activity_log:actLog};  // object not string
   var res=await api('grc_items?id=eq.'+itemId,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
   if(res.ok){
     await loadAll();
@@ -6197,7 +6036,7 @@ async function saveTrackedEmail(){
   var deadline=new Date(dateSent);
   deadline.setDate(deadline.getDate()+days);
   var deadlineStr=deadline.toISOString().split('T')[0];
-  var record={id:Date.now(),stakeholder:stakeholder,email:email,subject:subject,body:body,date_sent:dateSent,response_deadline:deadlineStr,response_days:days,category:category,replied:false,reply_date:null};
+  var record={stakeholder:stakeholder,email:email,subject:subject,body:body,date_sent:dateSent,response_deadline:deadlineStr,response_days:days,category:category,replied:false,reply_date:null};
   var btn=document.getElementById('save-email-btn');
   btn.textContent='Saving...';btn.disabled=true;
   var res=await api('grc_email_tracker',{method:'POST',body:record,extra:{'Prefer':'return=minimal'}});
@@ -7244,42 +7083,20 @@ function setupAppUI(){
 }
 // Run session restore on page load
 window.addEventListener('load', async function(){
-  // Apply saved theme
+  // Apply saved theme first
   var savedTheme = localStorage.getItem('grc-theme')||'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeBtn(savedTheme);
 
-  // Keep BOTH login screen and main app hidden while we figure out auth state
-  document.getElementById('login-screen').style.display = 'none';
-  document.getElementById('main-app').style.display     = 'none';
-
   // Check portal mode
   if(checkPortalMode()) return;
 
-  // ── Step 1: Did Google just redirect back to this page? ──
-  var hash   = window.location.hash || '';
-  var search = window.location.search || '';
-  var isOAuthReturn = hash.includes('access_token') ||
-                      hash.includes('error_description') ||
-                      search.includes('code=');
-
-  if(isOAuthReturn){
-    // Show login screen with loading message while we process OAuth token
-    document.getElementById('login-screen').style.display = 'flex';
-    var oauthHandled = await handleOAuthCallback();
-    if(oauthHandled) return; // resolveUserAndEnter already called setupAppUI
-    // OAuth failed — fall through to show login screen
-    document.getElementById('login-screen').style.display = 'flex';
-    return;
-  }
-
-  // ── Step 2: Try restoring an existing Clarix session ──
+  // Try to restore session
   var restored = await restoreSession();
   if(!restored){
-    // No session — show login
-    document.getElementById('login-screen').style.display = 'flex';
+    // No session - show login
+    document.getElementById('login-screen').style.display='flex';
   }
-  // If restored — setupAppUI was already called inside restoreSession
 });
 
 // ── SKELETON LOADING ──
