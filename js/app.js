@@ -6742,5 +6742,3 @@ function updatePolicyBadge(){
   document.addEventListener('DOMContentLoaded',syncMbn);
   setTimeout(syncMbn,800);
 })();
-
-</script>
