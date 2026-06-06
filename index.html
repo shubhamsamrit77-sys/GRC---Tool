@@ -3575,10 +3575,17 @@ async function doGoogleLogin(){
   try{
     var client = getSupaAuth();
     if(!client){ throw new Error('Auth client not ready'); }
+    // redirectTo must EXACTLY match the Site URL in Supabase Auth → URL Configuration
+    // For GitHub Pages this is the repo root URL (with trailing slash)
     var redirectUrl = window.location.origin + window.location.pathname;
+    // Ensure trailing slash so it matches Supabase Site URL setting exactly
+    if(!redirectUrl.endsWith('/')) redirectUrl = redirectUrl + '/';
     var result = await client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: redirectUrl }
+      options: {
+        redirectTo: redirectUrl,
+        queryParams: { access_type: 'offline', prompt: 'consent' }
+      }
     });
     if(result.error){ throw result.error; }
     // Browser will redirect — no further action needed here
@@ -3591,16 +3598,88 @@ async function doGoogleLogin(){
 }
 
 // ── Handle OAuth redirect callback (runs on page load) ──────────
-async function handleOAuthCallback(){
-  var client = getSupaAuth();
-  if(!client) return false;
-  var result = await client.auth.getSession();
-  if(result.error || !result.data || !result.data.session) return false;
-  var supaUser = result.data.session.user;
-  if(!supaUser || !supaUser.email) return false;
-  // We have a live Supabase Auth session from OAuth redirect
-  await resolveUserAndEnter(supaUser);
-  return true;
+// After Google login, Supabase redirects back with #access_token in the URL.
+// The SDK processes it and fires onAuthStateChange with INITIAL_SESSION or SIGNED_IN.
+// We must listen for BOTH events and also handle the PKCE flow (?code= in URL).
+function handleOAuthCallback(){
+  return new Promise(function(resolve){
+
+    // Detect OAuth redirect: either hash fragment (implicit) or code param (PKCE)
+    var hash   = window.location.hash || '';
+    var search = window.location.search || '';
+    var hasOAuth = hash.includes('access_token') ||
+                   hash.includes('error_description') ||
+                   search.includes('code=');
+
+    if(!hasOAuth){ resolve(false); return; }
+
+    var client = getSupaAuth();
+    if(!client){ resolve(false); return; }
+
+    // Show "signing you in" message on the login screen
+    var loginScr = document.getElementById('login-screen');
+    if(loginScr) loginScr.style.display = 'flex';
+    var errEl = document.getElementById('login-err');
+    if(errEl){
+      errEl.style.display  = 'block';
+      errEl.style.color    = 'var(--primary, #4f52d9)';
+      errEl.textContent    = '✓ Google sign-in successful — loading Clarix…';
+    }
+
+    var done = false;
+
+    // Safety timeout — 10 s
+    var timer = setTimeout(function(){
+      if(done) return;
+      done = true;
+      if(errEl){ errEl.style.color = 'red'; errEl.textContent = 'Sign-in timed out. Please try again.'; }
+      resolve(false);
+    }, 10000);
+
+    function finish(session){
+      if(done) return;
+      done = true;
+      clearTimeout(timer);
+      // Remove the #access_token / ?code= from the address bar (cosmetic)
+      if(window.history && window.history.replaceState){
+        window.history.replaceState(
+          {}, document.title,
+          window.location.pathname + window.location.search.replace(/[?&]code=[^&]+/,'')
+        );
+        // Also strip hash
+        if(window.location.hash) window.history.replaceState({}, document.title, window.location.pathname);
+      }
+      if(session && session.user){
+        resolveUserAndEnter(session.user).then(function(){ resolve(true); });
+      } else {
+        if(errEl){ errEl.style.color='red'; errEl.textContent='Google sign-in failed — no session returned.'; }
+        resolve(false);
+      }
+    }
+
+    // Strategy 1: onAuthStateChange — catches both INITIAL_SESSION and SIGNED_IN
+    var sub = client.auth.onAuthStateChange(function(event, session){
+      if(done) return;
+      // INITIAL_SESSION fires first on PKCE; SIGNED_IN fires on implicit flow
+      if((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && session.user){
+        if(sub && sub.data && sub.data.subscription) sub.data.subscription.unsubscribe();
+        finish(session);
+      }
+    });
+
+    // Strategy 2: also try getSession() after a short delay as a fallback
+    // (handles cases where onAuthStateChange already fired before we subscribed)
+    setTimeout(async function(){
+      if(done) return;
+      try{
+        var result = await client.auth.getSession();
+        if(result.data && result.data.session && result.data.session.user){
+          if(sub && sub.data && sub.data.subscription) sub.data.subscription.unsubscribe();
+          finish(result.data.session);
+        }
+      } catch(e){}
+    }, 1500);
+  });
 }
 
 // ── Email / password fallback ────────────────────────────────────
@@ -7165,25 +7244,42 @@ function setupAppUI(){
 }
 // Run session restore on page load
 window.addEventListener('load', async function(){
-  // Apply saved theme first
+  // Apply saved theme
   var savedTheme = localStorage.getItem('grc-theme')||'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeBtn(savedTheme);
 
+  // Keep BOTH login screen and main app hidden while we figure out auth state
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('main-app').style.display     = 'none';
+
   // Check portal mode
   if(checkPortalMode()) return;
 
-  // Try to restore session
-  // 1. First check for OAuth callback (Google redirect just landed)
-  var oauthHandled = await handleOAuthCallback();
-  if(oauthHandled){ return; }
+  // ── Step 1: Did Google just redirect back to this page? ──
+  var hash   = window.location.hash || '';
+  var search = window.location.search || '';
+  var isOAuthReturn = hash.includes('access_token') ||
+                      hash.includes('error_description') ||
+                      search.includes('code=');
 
-  // 2. Try restoring encrypted local session (email login)
+  if(isOAuthReturn){
+    // Show login screen with loading message while we process OAuth token
+    document.getElementById('login-screen').style.display = 'flex';
+    var oauthHandled = await handleOAuthCallback();
+    if(oauthHandled) return; // resolveUserAndEnter already called setupAppUI
+    // OAuth failed — fall through to show login screen
+    document.getElementById('login-screen').style.display = 'flex';
+    return;
+  }
+
+  // ── Step 2: Try restoring an existing Clarix session ──
   var restored = await restoreSession();
   if(!restored){
-    // No session - show login
-    document.getElementById('login-screen').style.display='flex';
+    // No session — show login
+    document.getElementById('login-screen').style.display = 'flex';
   }
+  // If restored — setupAppUI was already called inside restoreSession
 });
 
 // ── SKELETON LOADING ──
