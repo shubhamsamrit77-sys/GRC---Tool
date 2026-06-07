@@ -344,6 +344,159 @@ async function testConnection(){
   }
 }
 
+// ════════════════════════════════════════════════════
+// GOOGLE OAUTH — Supabase Auth
+// ════════════════════════════════════════════════════
+
+// Initialise Supabase Auth client (uses same URL/KEY as REST client)
+var _supaAuth = null;
+function getSupaAuth(){
+  if(!_supaAuth && typeof supabase !== 'undefined'){
+    _supaAuth = supabase.createClient(SUPA_URL, SUPA_KEY);
+  }
+  return _supaAuth;
+}
+
+// After Google login, look up or create the user in grc_users, then enter app
+async function resolveUserAndEnter(supaUser){
+  var email = (supaUser.email||'').toLowerCase().trim();
+  var displayName = (supaUser.user_metadata&&supaUser.user_metadata.full_name)
+    ? supaUser.user_metadata.full_name
+    : ((supaUser.user_metadata&&supaUser.user_metadata.name)
+      ? supaUser.user_metadata.name
+      : email.split('@')[0]);
+
+  // Look up in grc_users
+  var res = await fetch(SUPA_URL+'/rest/v1/grc_users?email=eq.'+encodeURIComponent(email)+'&select=id,name,email,role',{
+    headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,'Accept':'application/json'},mode:'cors'
+  });
+  var users = res.ok ? await res.json() : [];
+  var grcUser;
+
+  if(Array.isArray(users) && users.length){
+    grcUser = users[0];
+  } else {
+    // First-time Google user — auto-create with viewer role
+    var cr = await fetch(SUPA_URL+'/rest/v1/grc_users',{
+      method:'POST',
+      headers:{'apikey':SUPA_KEY,'Authorization':'Bearer '+SUPA_KEY,
+        'Content-Type':'application/json','Accept':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({name:displayName,email:email,role:'viewer',password:''}),mode:'cors'
+    });
+    var created = cr.ok ? await cr.json() : null;
+    grcUser = (created&&created.length) ? created[0] : {name:displayName,email:email,role:'viewer'};
+  }
+
+  var safeUser = {id:grcUser.id,name:grcUser.name,email:grcUser.email,role:grcUser.role};
+  currentUser = safeUser;
+  writeAuditLog('LOGIN','System','User logged in via Google: '+safeUser.email,{role:safeUser.role});
+  encryptAndStore('grc-session',{user:safeUser,expires:Date.now()+(8*60*60*1000),loginTime:Date.now()});
+  setupAppUI();
+  startSessionMonitor();
+  loadAIKeyFromSupabase().catch(function(){});
+  await loadAll();
+}
+
+// Called when user clicks "Continue with Google"
+async function doGoogleLogin(){
+  var btn = document.getElementById('login-google-btn');
+  var err = document.getElementById('login-err');
+  err.style.display='none';
+  btn.disabled=true;
+  btn.innerHTML='<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Redirecting to Google…';
+  try{
+    var client = getSupaAuth();
+    if(!client){ throw new Error('Auth client not ready'); }
+    var redirectUrl = window.location.origin + window.location.pathname;
+    if(!redirectUrl.endsWith('/')) redirectUrl += '/';
+    var result = await client.auth.signInWithOAuth({
+      provider:'google',
+      options:{ redirectTo: redirectUrl, queryParams:{access_type:'offline',prompt:'consent'} }
+    });
+    if(result.error) throw result.error;
+    // Browser now redirects to Google — nothing more to do
+  } catch(e){
+    err.textContent='Google sign-in failed: '+e.message;
+    err.style.display='block';
+    btn.disabled=false;
+    btn.innerHTML='<svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.08 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-3.59-13.46-8.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg> Continue with Google';
+  }
+}
+
+// Handles the redirect-back after Google login
+// Supabase puts #access_token=... or ?code=... in the URL
+// We listen with onAuthStateChange so we don't miss the token exchange
+function handleOAuthCallback(){
+  return new Promise(function(resolve){
+    var hash   = window.location.hash||'';
+    var search = window.location.search||'';
+    var isOAuthReturn = hash.includes('access_token') ||
+                        hash.includes('error_description') ||
+                        search.includes('code=');
+    if(!isOAuthReturn){ resolve(false); return; }
+
+    var client = getSupaAuth();
+    if(!client){ resolve(false); return; }
+
+    // Show loading message while we process
+    var errEl = document.getElementById('login-err');
+    if(errEl){
+      errEl.style.display='block';
+      errEl.style.color='#4f52d9';
+      errEl.textContent='✓ Google sign-in successful — loading Clarix…';
+    }
+
+    var done = false;
+
+    // Timeout after 10 s
+    var timer = setTimeout(function(){
+      if(done) return;
+      done=true;
+      if(errEl){errEl.style.color='red';errEl.textContent='Sign-in timed out. Please try again.';}
+      resolve(false);
+    }, 10000);
+
+    function finish(session){
+      if(done) return;
+      done=true;
+      clearTimeout(timer);
+      // Clean the URL bar
+      if(window.history&&window.history.replaceState){
+        window.history.replaceState({},'',window.location.pathname);
+      }
+      if(session&&session.user){
+        resolveUserAndEnter(session.user).then(function(){ resolve(true); });
+      } else {
+        if(errEl){errEl.style.color='red';errEl.textContent='Google sign-in failed — no session.';}
+        resolve(false);
+      }
+    }
+
+    // Listen for SIGNED_IN or INITIAL_SESSION (PKCE flow fires INITIAL_SESSION)
+    var sub = client.auth.onAuthStateChange(function(event, session){
+      if(done) return;
+      if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session&&session.user){
+        if(sub&&sub.data&&sub.data.subscription) sub.data.subscription.unsubscribe();
+        finish(session);
+      }
+    });
+
+    // Fallback: try getSession() after 1.5 s in case event already fired
+    setTimeout(async function(){
+      if(done) return;
+      try{
+        var r = await client.auth.getSession();
+        if(r.data&&r.data.session&&r.data.session.user){
+          if(sub&&sub.data&&sub.data.subscription) sub.data.subscription.unsubscribe();
+          finish(r.data.session);
+        }
+      }catch(e){}
+    }, 1500);
+  });
+}
+
+// ── END GOOGLE OAUTH ──────────────────────────────────────────────
+
 document.getElementById('login-btn').onclick=async function(){
   var email=document.getElementById('l-email').value.trim().toLowerCase();
   var pass=document.getElementById('l-pass').value.trim();
@@ -473,7 +626,9 @@ document.getElementById('login-btn').onclick=async function(){
 document.getElementById('l-pass').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
 document.getElementById('l-email').onkeydown=function(e){if(e.key==='Enter')document.getElementById('login-btn').onclick();};
 
-document.getElementById('logout-btn').onclick=function(){
+document.getElementById('logout-btn').onclick=async function(){
+  // Sign out from Supabase Auth (clears Google OAuth session too)
+  try{ var client=getSupaAuth(); if(client) await client.auth.signOut(); }catch(e){}
   secureWipe(['grc-session','grc-session-iv','grc-attempts','grc-lockout']);
   _secKey = null;
   currentUser=null;
@@ -3923,18 +4078,34 @@ function setupAppUI(){
 }
 // Run session restore on page load
 window.addEventListener('load', async function(){
-  // Apply saved theme first
   var savedTheme = localStorage.getItem('grc-theme')||'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
   updateThemeBtn(savedTheme);
 
-  // Check portal mode
+  // Hide both screens while we figure out auth state
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('main-app').style.display='none';
+
   if(checkPortalMode()) return;
 
-  // Try to restore session
+  // ── Step 1: Did Google just redirect back? ──
+  var hash=window.location.hash||'';
+  var search=window.location.search||'';
+  var isOAuthReturn = hash.includes('access_token') ||
+                      hash.includes('error_description') ||
+                      search.includes('code=');
+
+  if(isOAuthReturn){
+    document.getElementById('login-screen').style.display='flex';
+    var handled = await handleOAuthCallback();
+    if(handled) return; // resolveUserAndEnter already called setupAppUI
+    document.getElementById('login-screen').style.display='flex';
+    return;
+  }
+
+  // ── Step 2: Try restoring existing session ──
   var restored = await restoreSession();
   if(!restored){
-    // No session - show login
     document.getElementById('login-screen').style.display='flex';
   }
 });
