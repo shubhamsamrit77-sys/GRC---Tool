@@ -829,22 +829,23 @@ function setItemsView(view){
   _itemsView = view;
   localStorage.setItem('clarix-items-view', view);
 
-  var tableView  = document.getElementById('items-table-view');
+  var cardsView  = document.getElementById('items-table-view');
   var kanbanView = document.getElementById('items-kanban-view');
-  var tableBtn   = document.getElementById('kb-table-btn');
+  var cardsBtn   = document.getElementById('kb-table-btn');
   var kanbanBtn  = document.getElementById('kb-kanban-btn');
 
   if(view === 'kanban'){
-    if(tableView)  tableView.style.display  = 'none';
-    if(kanbanView){ kanbanView.style.display = 'block'; }
-    if(tableBtn){  tableBtn.style.background='var(--surface)'; tableBtn.style.color='var(--text2)'; tableBtn.style.fontWeight='500'; }
-    if(kanbanBtn){ kanbanBtn.style.background='var(--primary)'; kanbanBtn.style.color='#fff'; kanbanBtn.style.fontWeight='600'; }
+    if(cardsView)  cardsView.style.display  = 'none';
+    if(kanbanView) kanbanView.style.display = 'block';
+    if(cardsBtn)  { cardsBtn.classList.remove('active'); }
+    if(kanbanBtn) { kanbanBtn.classList.add('active'); }
     renderKanban();
   } else {
-    if(tableView)  tableView.style.display  = '';
-    if(kanbanView) kanbanView.style.display  = 'none';
-    if(tableBtn){  tableBtn.style.background='var(--primary)'; tableBtn.style.color='#fff'; tableBtn.style.fontWeight='600'; }
-    if(kanbanBtn){ kanbanBtn.style.background='var(--surface)'; kanbanBtn.style.color='var(--text2)'; kanbanBtn.style.fontWeight='500'; }
+    // default: cards view
+    if(cardsView)  cardsView.style.display  = '';
+    if(kanbanView) kanbanView.style.display = 'none';
+    if(cardsBtn)  { cardsBtn.classList.add('active'); }
+    if(kanbanBtn) { kanbanBtn.classList.remove('active'); }
     renderItems();
   }
 }
@@ -1134,270 +1135,262 @@ function renderItemsCurrentView(){
 // ── END KANBAN ──
 
 function renderItems(){
-  var filtered=activeFreq?items.filter(function(it){return it.freq===activeFreq;}):items;
-  var tb=document.getElementById('items-body');
-  if(!tb)return;
+  var allFiltered = activeFreq ? items.filter(function(it){ return it.freq === activeFreq; }) : items;
+
+  // Apply search filter
+  var q = (window._trackerSearch||'').toLowerCase().trim();
+  var filtered = q ? allFiltered.filter(function(it){
+    return (it.name||'').toLowerCase().includes(q) ||
+           (it.stakeholder||'').toLowerCase().includes(q) ||
+           (it.assignee||'').toLowerCase().includes(q) ||
+           (it.dept||'').toLowerCase().includes(q) ||
+           (it.email||'').toLowerCase().includes(q);
+  }) : allFiltered;
+
+  // ── Summary stats strip ──
+  var statsEl = document.getElementById('tracker-summary');
+  if(statsEl){
+    var td   = today();
+    var total   = allFiltered.length;
+    var overdueN  = allFiltered.filter(function(it){ return !it.done && it.due_date && it.due_date < td; }).length;
+    var pendingN  = allFiltered.filter(function(it){ return !it.done && it.due_date && it.due_date >= td; }).length;
+    var doneN     = allFiltered.filter(function(it){ return it.done; }).length;
+    var pct       = total ? Math.round(doneN/total*100) : 0;
+    statsEl.innerHTML =
+      '<div class="tracker-stat"><div class="tracker-stat-icon" style="background:#ede9fe">📋</div><div><div class="tracker-stat-val" style="color:var(--primary)">'+total+'</div><div class="tracker-stat-lbl">Total items</div></div></div>'+
+      '<div class="tracker-stat"><div class="tracker-stat-icon" style="background:#fdeaea">⚠️</div><div><div class="tracker-stat-val" style="color:#ef4444">'+overdueN+'</div><div class="tracker-stat-lbl">Overdue</div></div></div>'+
+      '<div class="tracker-stat"><div class="tracker-stat-icon" style="background:#fef3e2">⏳</div><div><div class="tracker-stat-val" style="color:#f59e0b">'+pendingN+'</div><div class="tracker-stat-lbl">Pending</div></div></div>'+
+      '<div class="tracker-stat"><div class="tracker-stat-icon" style="background:#e0f7f2">✅</div><div><div class="tracker-stat-val" style="color:#10b981">'+pct+'%</div><div class="tracker-stat-lbl">Complete ('+doneN+'/'+total+')</div></div></div>';
+  }
+
+  // ── Cards grid ──
+  var grid = document.getElementById('tracker-cards-grid');
+  if(!grid) return;
+  grid.innerHTML = '';
 
   if(!filtered.length){
-    var emptyTr=document.createElement('tr');
-    var emptyTd=document.createElement('td');
-    emptyTd.colSpan=9;
-    emptyTd.style.cssText='padding:40px;text-align:center';
-    var d1=document.createElement('div');d1.style.cssText='font-size:32px;margin-bottom:10px';d1.textContent='📋';
-    var d2=document.createElement('div');d2.style.cssText='font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px';d2.textContent='No compliance items yet';
-    var d3=document.createElement('div');d3.style.cssText='font-size:13px;color:var(--text3);margin-bottom:16px';d3.textContent='Add your first compliance task to get started';
-    var b=document.createElement('button');b.className='btn btn-primary';b.style.margin='0 auto';b.textContent='+ Add first item';
-    b.onclick=function(){openPanel('item-panel');};
-    emptyTd.appendChild(d1);emptyTd.appendChild(d2);emptyTd.appendChild(d3);emptyTd.appendChild(b);
-    emptyTr.appendChild(emptyTd);tb.appendChild(emptyTr);
+    grid.innerHTML = '<div class="tracker-empty"><div class="tracker-empty-icon">📋</div><div class="tracker-empty-title">'+(q?'No results for "'+q+'"':'No compliance items yet')+'</div><div class="tracker-empty-sub">'+(q?'Try a different search term':'Add your first compliance task to get started')+'</div>'+(q?'':'<button class="btn btn-primary" onclick="openPanel('item-panel')">+ Add first item</button>')+'</div>';
     return;
   }
 
-  while(tb.firstChild) tb.removeChild(tb.firstChild);
+  // Helpers
+  var priColors = {
+    Critical:{ bar:'#ef4444', bg:'#fdeaea', text:'#d93f3f' },
+    High:    { bar:'#f59e0b', bg:'#fef3e2', text:'#b45309' },
+    Medium:  { bar:'#4f52d9', bg:'#ede9fe', text:'#4338ca' },
+    Low:     { bar:'#10b981', bg:'#e0f7f2', text:'#065f46' }
+  };
+  var avColors = ['#5b5ef4','#10b981','#f59e0b','#ef4444','#3b82f6','#7c3aed','#0891b2'];
 
-  // Priority colour helper
-  function priClass(p){
-    if(!p||p==='Low') return 'pri-low';
-    if(p==='Medium') return 'pri-medium';
-    if(p==='High') return 'pri-high';
-    if(p==='Critical') return 'pri-critical';
-    return 'pri-medium';
+  function makeAvatar(name){
+    if(!name) return '';
+    var p=name.trim().split(' ');
+    var ini=((p[0]?p[0][0]:'')+( p[1]?p[1][0]:'')).toUpperCase();
+    var ci=name.charCodeAt(0)%avColors.length;
+    return '<span class="tc-avatar" style="background:'+avColors[ci]+'" title="'+name+'">'+ini+'</span>';
   }
-  // Assignee initials avatar
-  function avHtml(name,bg){
-    if(!name) return '<span style="color:var(--text3);font-size:12px">—</span>';
-    var parts=name.trim().split(' ');
-    var initials=(parts[0]?parts[0][0]:'')+(parts[1]?parts[1][0]:'');
-    var colors=['#5b5ef4','#10b981','#f59e0b','#ef4444','#3b82f6','#7c3aed','#0891b2'];
-    var ci=name.charCodeAt(0)%colors.length;
-    return '<span class="assignee-av" style="background:'+colors[ci]+';width:26px;height:26px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;margin-right:5px">'+initials.toUpperCase()+'</span><span style="font-size:12px;color:var(--text)">'+name+'</span>';
-  }
-  // Framework tags
-  function fwHtml(tags){
-    if(!tags) return '<span style="color:var(--text3);font-size:11px">—</span>';
-    var arr=tags.split(',').map(function(t){return t.trim();}).filter(Boolean);
-    if(!arr.length) return '<span style="color:var(--text3);font-size:11px">—</span>';
-    return arr.slice(0,2).map(function(t){return '<span class="fw-tag">'+t+'</span>';}).join('')+(arr.length>2?'<span class="fw-tag">+'+( arr.length-2)+'</span>':'');
+
+  function statusChip(it){
+    var s=getStatus(it);
+    var st=it.item_status&&it.item_status!=='Pending'?it.item_status:s;
+    if(st==='Done'||it.done) return '<span class="status-chip sc-done">✓ Done</span>';
+    if(st==='Overdue'||s==='overdue') return '<span class="status-chip sc-overdue pulse-overdue">⚠ Overdue</span>';
+    if(st==='In Progress') return '<span class="status-chip" style="background:var(--info-light);color:var(--info)">⏱ In Progress</span>';
+    return '<span class="status-chip sc-pending">○ Pending</span>';
   }
 
   filtered.forEach(function(it){
-    var s=getStatus(it);
-    // Prefer explicit item_status if set
-    var displayStatus=it.item_status&&it.item_status!=='Pending'?it.item_status:s;
-    var statusHtml='';
-    if(displayStatus==='Done'||s==='done'){
-      statusHtml='<span class="status-chip sc-done"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>Done</span>';
-    } else if(displayStatus==='Overdue'||s==='overdue'){
-      statusHtml='<span class="status-chip sc-overdue pulse-overdue"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Overdue</span>';
-    } else if(displayStatus==='In Progress'){
-      statusHtml='<span class="status-chip" style="background:var(--info-light);color:var(--info)"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>In Progress</span>';
-    } else {
-      statusHtml='<span class="status-chip sc-pending"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>Pending</span>';
-    }
+    var pc   = priColors[it.priority] || priColors.Medium;
+    var s    = getStatus(it);
+    var isOverdue = s==='overdue' && !it.done;
+    var isDone    = it.done || it.item_status==='Done';
+    var dueColor  = isOverdue ? '#ef4444' : isDone ? 'var(--text3)' : 'var(--text2)';
+    var personName= it.assignee || it.stakeholder || '';
 
-    var canT=can('toggle');
-    var actHtml='';
-    if(can('delete')) actHtml+='<button class="action-btn danger" data-del="'+it.id+'">Delete</button>';
+    var card = document.createElement('div');
+    card.className = 'tc';
+    card.setAttribute('data-id', it.id);
 
-    var tr=document.createElement('tr');
-    tr.className='item-row';
-    tr.setAttribute('data-id',it.id);
+    // Evidence html
+    var evArr = it.evidence_files ? it.evidence_files.split('||').filter(Boolean) : [];
+    var evHtml2 = evArr.length
+      ? evArr.map(function(f){ return '<span class="ev-file-chip">📎 '+f+'</span>'; }).join('')
+      : '<span style="color:var(--text3);font-size:12px">No evidence attached</span>';
 
-    var td1=document.createElement('td');
-    td1.style.paddingLeft='20px';
-    td1.innerHTML='<div class="task-name-cell"><svg class="task-arrow" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg><span class="task-text" title="'+it.name+'">'+it.name+'</span></div>';
+    // Framework html
+    var fwArr = it.framework_tags ? it.framework_tags.split(',').map(function(t){ return t.trim(); }).filter(Boolean) : [];
+    var fwHtml = fwArr.length ? fwArr.map(function(t){ return '<span class="fw-tag">'+t+'</span>'; }).join('') : '<span style="color:var(--text3);font-size:12px">No frameworks mapped</span>';
 
-    // Assignee column
-    var td2=document.createElement('td');
-    td2.innerHTML='<div style="display:flex;align-items:center">'+avHtml(it.assignee||it.stakeholder)+'</div>';
+    // Activity log html
+    var actArr = [];
+    try{ actArr = it.activity_log ? (typeof it.activity_log==='string'?JSON.parse(it.activity_log):it.activity_log) : []; }catch(e){}
+    var actLogHtml = actArr.length
+      ? actArr.slice().reverse().map(function(a){ return '<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border2);font-size:12px"><span style="color:var(--text3);flex-shrink:0">'+a.ts.split('T')[0]+'</span><span style="font-weight:600;color:var(--text)">'+a.user+'</span><span style="color:var(--text2)">'+a.action+'</span></div>'; }).join('')
+      : '<div style="color:var(--text3);font-size:12px;padding:8px 0">No activity recorded yet</div>';
 
-    var td3=document.createElement('td');
-    td3.innerHTML='<span style="color:var(--text2)">'+(it.dept||'—')+'</span>';
+    card.innerHTML =
+      // Colour bar
+      '<div class="tc-bar" style="background:'+pc.bar+'"></div>'+
+      // Body
+      '<div class="tc-body">'+
+        '<div class="tc-header">'+
+          '<div class="tc-name">'+it.name+'</div>'+
+          '<div class="tc-status">'+statusChip(it)+'</div>'+
+        '</div>'+
+        '<div class="tc-meta">'+
+          (it.dept?'<span class="tc-chip">🏢 '+it.dept+'</span>':'')+
+          '<span class="tc-chip" style="background:'+pc.bg+';color:'+pc.text+';border-color:'+pc.bar+'40">'+( it.priority||'Medium')+'</span>'+
+          (it.freq&&FL[it.freq]?'<span class="tc-chip" style="background:var(--primary-light);color:var(--primary);border-color:rgba(79,82,217,.2)">'+FL[it.freq]+'</span>':'')+
+          (fwArr.length?'<span class="tc-chip">🔖 '+fwArr.slice(0,2).join(', ')+(fwArr.length>2?' +'+( fwArr.length-2):'')+'</span>':'')+
+        '</div>'+
+        '<div class="tc-footer">'+
+          '<div class="tc-person">'+
+            makeAvatar(personName)+
+            (personName?'<span>'+personName.split(' ')[0]+'</span>':'<span style="color:var(--text3)">Unassigned</span>')+
+          '</div>'+
+          (it.due_date?'<span class="tc-due" style="color:'+dueColor+'">📅 '+it.due_date+'</span>':'<span class="tc-due" style="color:var(--text3)">No due date</span>')+
+        '</div>'+
+      '</div>'+
+      // Action buttons
+      '<div class="tc-actions">'+
+        (can('toggle')?(isDone?'<button class="tc-btn pending-btn" data-toggle="'+it.id+'">↩ Mark pending</button>':'<button class="tc-btn done-btn" data-toggle="'+it.id+'">✓ Mark done</button>'):'')+
+        (can('email')?'<button class="tc-btn fu-btn" data-email="'+it.id+'">✉ Follow-up</button>':'')+
+        (can('delete')?'<button class="tc-btn del-btn" data-del="'+it.id+'">🗑 Delete</button>':'')+
+        (can('add')?'<button class="tc-btn" onclick="editItem('+it.id+')">✏ Edit</button>':'')+
+      '</div>'+
+      // Expandable detail section (hidden by default)
+      '<div class="tc-detail" id="tc-detail-'+it.id+'" style="display:none">'+
+        '<div class="tc-detail-tabs">'+
+          '<button class="tc-dtab active" data-pane="tc-overview-'+it.id+'">Overview</button>'+
+          '<button class="tc-dtab" data-pane="tc-evidence-'+it.id+'">Evidence</button>'+
+          '<button class="tc-dtab" data-pane="tc-framework-'+it.id+'">Framework</button>'+
+          '<button class="tc-dtab" data-pane="tc-activity-'+it.id+'">Activity</button>'+
+        '</div>'+
+        // Overview pane
+        '<div class="tc-dpane active" id="tc-overview-'+it.id+'">'+
+          '<div class="tc-dgrid">'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Stakeholder</div><div class="tc-dfield-val">'+(it.stakeholder||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Assignee</div><div class="tc-dfield-val">'+(it.assignee||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Department</div><div class="tc-dfield-val">'+(it.dept||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Priority</div><div class="tc-dfield-val"><span style="background:'+pc.bg+';color:'+pc.text+';padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700">'+(it.priority||'Medium')+'</span></div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Frequency</div><div class="tc-dfield-val">'+(FL[it.freq]||it.freq||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Category</div><div class="tc-dfield-val">'+(it.category||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Due date</div><div class="tc-dfield-val" style="color:'+dueColor+';font-weight:600">'+(it.due_date||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Email</div><div class="tc-dfield-val" style="font-size:12px;color:#4f52d9;word-break:break-all">'+(it.email||'—')+'</div></div>'+
+            '<div class="tc-dfield"><div class="tc-dfield-label">Status</div><div class="tc-dfield-val">'+statusChip(it)+'</div></div>'+
+          '</div>'+
+          (it.notes?'<div class="tc-dfield"><div class="tc-dfield-label">Notes</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border)">'+it.notes+'</div></div>':'')+
+        '</div>'+
+        // Evidence pane
+        '<div class="tc-dpane" id="tc-evidence-'+it.id+'">'+
+          '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px">'+evHtml2+'</div>'+
+          (can('add')?'<label class="ev-upload-zone" style="display:inline-block;cursor:pointer"><input type="file" style="display:none" multiple onchange="addEvidenceToItem(this,'+it.id+')"><div style="font-size:12px;font-weight:600;color:var(--text2)">📎 Upload evidence</div></label>':'')+
+        '</div>'+
+        // Framework pane
+        '<div class="tc-dpane" id="tc-framework-'+it.id+'">'+
+          '<div style="display:flex;flex-wrap:wrap;gap:6px">'+fwHtml+'</div>'+
+        '</div>'+
+        // Activity pane
+        '<div class="tc-dpane" id="tc-activity-'+it.id+'">'+
+          actLogHtml+
+        '</div>'+
+      '</div>';
 
-    // Priority column
-    var td4=document.createElement('td');
-    td4.innerHTML='<span class="'+priClass(it.priority)+'">'+(it.priority||'Medium')+'</span>';
-
-    var td5=document.createElement('td');
-    td5.innerHTML='<span class="badge b-'+it.freq+'">'+FL[it.freq]+'</span>';
-
-    var td6=document.createElement('td');
-    var dueColor=s==='overdue'?'color:#d93f3f;font-weight:600':s==='done'?'color:var(--text3)':'color:var(--text)';
-    td6.innerHTML='<span style="'+dueColor+'">'+(it.due_date||'—')+'</span>';
-
-    var td7=document.createElement('td');
-    td7.innerHTML=statusHtml;
-    if(canT){
-      td7.style.cursor='pointer';
-      td7.title='Click to toggle status';
-      td7.setAttribute('data-toggle',it.id);
-    }
-
-    // Framework mapping column
-    var td8=document.createElement('td');
-    td8.innerHTML=fwHtml(it.framework_tags);
-
-    var td9=document.createElement('td');
-    td9.innerHTML=actHtml;
-
-    tr.appendChild(td1);tr.appendChild(td2);tr.appendChild(td3);tr.appendChild(td4);
-    tr.appendChild(td5);tr.appendChild(td6);tr.appendChild(td7);tr.appendChild(td8);tr.appendChild(td9);
-    tb.appendChild(tr);
-
-    // ── Expand row on click — with tabbed detail panel ──
-    tr.addEventListener('click',function(e){
-      if(e.target.closest('[data-toggle],[data-del],[data-email]')) return;
-      var detailId='detail-'+it.id;
-      var isOpen=tr.classList.contains('expanded');
-      tb.querySelectorAll('.item-row.expanded').forEach(function(r){r.classList.remove('expanded');});
-      tb.querySelectorAll('.detail-row').forEach(function(d){d.remove();});
+    // ── Card click: expand/collapse detail ──
+    card.querySelector('.tc-body').addEventListener('click', function(e){
+      if(e.target.closest('.tc-btn,.tc-actions')) return;
+      var detail = document.getElementById('tc-detail-'+it.id);
+      var isOpen = detail.style.display !== 'none';
+      // Close all other cards first
+      document.querySelectorAll('.tc.expanded').forEach(function(c){
+        c.classList.remove('expanded');
+        c.querySelector('.tc-detail').style.display='none';
+      });
       if(!isOpen){
-        tr.classList.add('expanded');
-        var scoreColor=s==='overdue'?'#d93f3f':s==='done'?'#0d9e7e':'#4f52d9';
-
-        // Build activity log HTML
-        var actLog=[];
-        try{ actLog=JSON.parse(it.activity_log||'[]'); }catch(e){}
-        var actLogHtml=actLog.length?actLog.slice().reverse().map(function(l){
-          return '<div class="act-log-item"><div class="act-log-dot"></div><div><div class="act-log-text">'+l.action+'<span style="color:var(--primary);font-weight:600"> · '+l.user+'</span></div><div class="act-log-time">'+new Date(l.ts).toLocaleString()+'</div></div></div>';
-        }).join(''):'<div style="color:var(--text3);font-size:12px;padding:8px 0">No activity logged yet.</div>';
-
-        // Evidence files
-        var evFiles=it.evidence_files?it.evidence_files.split('||').filter(Boolean):[];
-        var evHtml2=evFiles.length?evFiles.map(function(f){
-          return '<span class="ev-file-chip">📎 '+f+'</span>';
-        }).join(''):'<div style="color:var(--text3);font-size:12px">No evidence files attached.</div>';
-
-        // Framework full list
-        var fwFull=it.framework_tags?it.framework_tags.split(',').filter(Boolean).map(function(t){return '<span class="fw-tag" style="font-size:11px;padding:4px 10px">'+t.trim()+'</span>';}).join(''):'<span style="color:var(--text3);font-size:12px">No frameworks mapped.</span>';
-
-        var detailTr=document.createElement('tr');
-        detailTr.className='detail-row';
-        detailTr.id=detailId;
-        var detailTd=document.createElement('td');
-        detailTd.colSpan=9;
-        detailTd.style.cssText='padding:0;white-space:normal;overflow:visible';
-
-        detailTd.innerHTML='<div style="background:var(--surface2);border-left:3px solid '+scoreColor+';padding:0 20px 16px">'+
-          // Tab bar
-          '<div class="detail-tab-bar" style="padding-top:12px">'+
-            '<button class="detail-tab active" data-tab="overview-'+it.id+'">Overview</button>'+
-            '<button class="detail-tab" data-tab="evidence-'+it.id+'">Evidence</button>'+
-            '<button class="detail-tab" data-tab="framework-'+it.id+'">Framework</button>'+
-            '<button class="detail-tab" data-tab="activity-'+it.id+'">Activity log</button>'+
-          '</div>'+
-
-          // Tab: Overview
-          '<div id="overview-'+it.id+'" class="detail-tab-pane" style="display:block">'+
-            '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Full task name</div>'+
-            '<div style="font-size:14px;font-weight:600;color:var(--text);word-break:break-word">'+it.name+'</div></div>'+
-            '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-bottom:14px">'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Stakeholder</div><div style="font-size:13px;color:var(--text);font-weight:500">'+it.stakeholder+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Assignee</div><div style="font-size:13px;color:var(--text);font-weight:500">'+(it.assignee||'—')+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Department</div><div style="font-size:13px;color:var(--text)">'+(it.dept||'—')+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Priority</div><div style="margin-top:2px"><span class="'+priClass(it.priority)+'">'+(it.priority||'Medium')+'</span></div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Frequency</div><div style="font-size:13px;color:var(--text)">'+FL[it.freq]+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Due date</div><div style="font-size:13px;color:'+scoreColor+';font-weight:600">'+(it.due_date||'—')+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Status</div><div style="margin-top:2px">'+statusHtml+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Category</div><div style="font-size:13px;color:var(--text)">'+(it.category||'—')+'</div></div>'+
-              '<div><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:12px;color:#4f52d9;word-break:break-all">'+(it.email||'—')+'</div></div>'+
-            '</div>'+
-            (it.notes?'<div style="margin-bottom:12px"><div style="font-size:10px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px">Notes</div><div style="font-size:13px;color:var(--text);background:var(--surface);padding:10px 12px;border-radius:8px;border:1px solid var(--border);word-break:break-word">'+it.notes+'</div></div>':'')+
-            '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">'+
-              (canT?'<button class="action-btn" data-toggle="'+it.id+'" style="background:'+(it.done?'rgba(224,125,26,.1)':'rgba(13,158,126,.1)')+';border-color:'+(it.done?'rgba(224,125,26,.3)':'rgba(13,158,126,.3)')+';color:'+(it.done?'#e07d1a':'#0d9e7e')+'">'+(it.done?'Mark as pending':'Mark as done')+'</button>':'')+
-              (can('email')?'<button class="btn btn-primary btn-sm" data-email="'+it.id+'">Send follow-up</button>':'')+
-              (can('delete')?'<button class="action-btn danger" data-del="'+it.id+'">Delete item</button>':'')+
-            '</div>'+
-          '</div>'+
-
-          // Tab: Evidence
-          '<div id="evidence-'+it.id+'" class="detail-tab-pane" style="display:none">'+
-            '<div style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--text)">Attached evidence files</div>'+
-            '<div style="margin-bottom:12px;display:flex;flex-wrap:wrap;gap:6px">'+evHtml2+'</div>'+
-            (can('add')?'<label class="ev-upload-zone" style="display:block;cursor:pointer;max-width:340px"><input type="file" style="display:none" multiple onchange="addEvidenceToItem(this,'+it.id+')"><div style="font-size:18px;margin-bottom:3px">📎</div><div style="font-size:12px;font-weight:600;color:var(--text2)">Upload more evidence</div><div style="font-size:11px;color:var(--text3)">Click to select files</div></label>':'<div style="font-size:12px;color:var(--text3)">No permission to upload.</div>')+
-          '</div>'+
-
-          // Tab: Framework
-          '<div id="framework-'+it.id+'" class="detail-tab-pane" style="display:none">'+
-            '<div style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--text)">Mapped compliance frameworks</div>'+
-            '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">'+fwFull+'</div>'+
-            '<div style="font-size:11px;color:var(--text3)">Edit the item to update framework mappings.</div>'+
-          '</div>'+
-
-          // Tab: Activity log
-          '<div id="activity-'+it.id+'" class="detail-tab-pane" style="display:none">'+
-            '<div style="margin-bottom:10px;font-size:13px;font-weight:600;color:var(--text)">Activity log</div>'+
-            '<div>'+actLogHtml+'</div>'+
-          '</div>'+
-        '</div>';
-
-        detailTr.appendChild(detailTd);
-        tr.parentNode.insertBefore(detailTr,tr.nextSibling);
-
-        // Wire tabs
-        detailTd.querySelectorAll('.detail-tab').forEach(function(tab){
-          tab.addEventListener('click',function(){
-            detailTd.querySelectorAll('.detail-tab').forEach(function(t){t.classList.remove('active');});
-            detailTd.querySelectorAll('.detail-tab-pane').forEach(function(p){p.style.display='none';});
-            tab.classList.add('active');
-            var pane=document.getElementById(tab.getAttribute('data-tab'));
-            if(pane) pane.style.display='block';
-          });
-        });
+        card.classList.add('expanded');
+        detail.style.display='block';
+        card.scrollIntoView({behavior:'smooth',block:'nearest'});
       }
     });
-  });
 
-  // Wire toggle buttons
-  tb.querySelectorAll('[data-toggle]').forEach(function(el){
-    el.addEventListener('click',async function(e){
-      e.stopPropagation();
-      var it=items.find(function(x){return x.id==el.getAttribute('data-toggle');});
-      if(it){
-        var updateBody={done:!it.done,item_status:it.done?'Pending':'Done'};
-        if(!it.done&&it.due_date){var nd=calcNextDueDate(it.freq,it.due_date);if(nd)updateBody.due_date=nd;}
-        // Append to activity log
-        var actLog=[];try{actLog=JSON.parse(it.activity_log||'[]');}catch(e2){}
+    // ── Tab switching ──
+    card.querySelectorAll('.tc-dtab').forEach(function(tab){
+      tab.addEventListener('click', function(e){
+        e.stopPropagation();
+        var detailEl = document.getElementById('tc-detail-'+it.id);
+        detailEl.querySelectorAll('.tc-dtab').forEach(function(t){ t.classList.remove('active'); });
+        detailEl.querySelectorAll('.tc-dpane').forEach(function(p){ p.classList.remove('active'); p.style.display='none'; });
+        tab.classList.add('active');
+        var pane = document.getElementById(tab.getAttribute('data-pane'));
+        if(pane){ pane.classList.add('active'); pane.style.display='block'; }
+      });
+    });
+
+    // ── Wire toggle (mark done/pending) ──
+    var toggleBtn = card.querySelector('[data-toggle]');
+    if(toggleBtn){
+      toggleBtn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        toggleBtn.disabled=true;
+        var updateBody={done:!it.done, item_status:it.done?'Pending':'Done'};
+        if(!it.done&&it.due_date){ var nd=calcNextDueDate(it.freq,it.due_date); if(nd) updateBody.due_date=nd; }
+        var actLog=[]; try{ actLog=it.activity_log?(typeof it.activity_log==='string'?JSON.parse(it.activity_log):it.activity_log):[]; }catch(e2){}
         actLog.push({ts:new Date().toISOString(),user:currentUser?currentUser.name:'User',action:(it.done?'Marked as Pending':'Marked as Done')});
-        updateBody.activity_log=actLog; // jsonb column — must NOT be pre-stringified
-        await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
-        writeAuditLog('UPDATE','Compliance Item',(it.done?'Marked pending: ':'Marked done: ')+it.name,{prev_status:it.done?'Done':'Pending',new_status:it.done?'Pending':'Done'});
+        updateBody.activity_log=actLog;
+        var res = await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
+        if(res&&!res.ok){
+          var et=await res.text(); alert('Update failed ('+res.status+'): '+et);
+          toggleBtn.disabled=false; return;
+        }
+        writeAuditLog('UPDATE','Compliance Item',(it.done?'Marked pending: ':'Marked done: ')+it.name);
         if(!it.done) showDueDateToast(it.freq,updateBody.due_date||it.due_date);
         await loadAll();
-      }
-    });
-  });
-  tb.querySelectorAll('[data-del]').forEach(function(el){
-    el.addEventListener('click',async function(e){
-      e.stopPropagation();
-      if(!confirm('Delete this item? This cannot be undone.'))return;
-      var itemId = el.getAttribute('data-del');
-      var itDel  = items.find(function(x){return String(x.id)===String(itemId);});
-      try{
-        var delRes = await api('grc_items?id=eq.'+itemId,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
-        if(delRes && !delRes.ok){
-          var errTxt = await delRes.text();
-          // 403 means RLS is blocking — guide the user to fix it in Supabase
-          if(delRes.status===403){
-            alert('Delete blocked by Supabase Row Level Security (RLS).\n\nFix: Go to Supabase Dashboard → Table Editor → grc_items → RLS Policies → add a DELETE policy for your role, OR disable RLS on this table.');
-          } else {
-            alert('Delete failed ('+delRes.status+'): '+errTxt);
-          }
-          return;
+      });
+    }
+
+    // ── Wire follow-up ──
+    var fuBtn = card.querySelector('[data-email]');
+    if(fuBtn){ fuBtn.addEventListener('click',function(e){ e.stopPropagation(); goEmail(it.id); }); }
+
+    // ── Wire delete ──
+    var delBtn = card.querySelector('[data-del]');
+    if(delBtn){
+      delBtn.addEventListener('click', async function(e){
+        e.stopPropagation();
+        if(!confirm('Delete "'+it.name+'"? This cannot be undone.')) return;
+        delBtn.disabled=true;
+        var res = await api('grc_items?id=eq.'+it.id,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+        if(res&&!res.ok){
+          var et=await res.text();
+          if(res.status===403){
+            alert('Delete blocked by Row Level Security.
+
+Fix in Supabase SQL Editor:
+ALTER TABLE grc_items DISABLE ROW LEVEL SECURITY;');
+          } else { alert('Delete failed ('+res.status+'): '+et); }
+          delBtn.disabled=false; return;
         }
-        writeAuditLog('DELETE','Compliance Item','Deleted item: '+(itDel?itDel.name:itemId));
+        writeAuditLog('DELETE','Compliance Item','Deleted: '+it.name);
         await loadAll();
-      } catch(ex){
-        alert('Delete failed: '+ex.message);
-      }
-    });
+      });
+    }
+
+    grid.appendChild(card);
   });
-  tb.querySelectorAll('[data-email]').forEach(function(el){
-    el.addEventListener('click',function(e){
-      e.stopPropagation();
-      goEmail(el.getAttribute('data-email'));
-    });
-  });
+}
+
+// Helper: open edit panel for a specific item
+function editItem(itemId){
+  var it = items.find(function(x){ return x.id == itemId; });
+  if(!it) return;
+  openPanel('item-panel');
+  setTimeout(function(){
+    var fields = ['i-name','i-stake','i-email','i-dept','i-freq','i-due','i-cat','i-notes','i-priority','i-assignee','i-status'];
+    var vals   = [it.name,it.stakeholder,it.email,it.dept,it.freq,it.due_date,it.category,it.notes,it.priority,it.assignee,it.item_status||'Pending'];
+    fields.forEach(function(f,i){ var el=document.getElementById(f); if(el) el.value=vals[i]||''; });
+    var hidEl = document.getElementById('i-edit-id');
+    if(hidEl) hidEl.value=itemId;
+  }, 200);
 }
 
 
