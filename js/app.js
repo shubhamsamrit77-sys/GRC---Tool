@@ -1359,7 +1359,7 @@ function renderItems(){
         // Append to activity log
         var actLog=[];try{actLog=JSON.parse(it.activity_log||'[]');}catch(e2){}
         actLog.push({ts:new Date().toISOString(),user:currentUser?currentUser.name:'User',action:(it.done?'Marked as Pending':'Marked as Done')});
-        updateBody.activity_log=JSON.stringify(actLog);
+        updateBody.activity_log=actLog; // jsonb column — must NOT be pre-stringified
         await api('grc_items?id=eq.'+it.id,{method:'PATCH',body:updateBody,extra:{'Prefer':'return=minimal'}});
         writeAuditLog('UPDATE','Compliance Item',(it.done?'Marked pending: ':'Marked done: ')+it.name,{prev_status:it.done?'Done':'Pending',new_status:it.done?'Pending':'Done'});
         if(!it.done) showDueDateToast(it.freq,updateBody.due_date||it.due_date);
@@ -1370,11 +1370,26 @@ function renderItems(){
   tb.querySelectorAll('[data-del]').forEach(function(el){
     el.addEventListener('click',async function(e){
       e.stopPropagation();
-      if(!confirm('Delete this item?'))return;
-      var itDel=items.find(function(x){return x.id==el.getAttribute('data-del');});
-      await api('grc_items?id=eq.'+el.getAttribute('data-del'),{method:'DELETE',extra:{'Prefer':'return=minimal'}});
-      writeAuditLog('DELETE','Compliance Item','Deleted item: '+(itDel?itDel.name:el.getAttribute('data-del')));
-      await loadAll();
+      if(!confirm('Delete this item? This cannot be undone.'))return;
+      var itemId = el.getAttribute('data-del');
+      var itDel  = items.find(function(x){return String(x.id)===String(itemId);});
+      try{
+        var delRes = await api('grc_items?id=eq.'+itemId,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+        if(delRes && !delRes.ok){
+          var errTxt = await delRes.text();
+          // 403 means RLS is blocking — guide the user to fix it in Supabase
+          if(delRes.status===403){
+            alert('Delete blocked by Supabase Row Level Security (RLS).\n\nFix: Go to Supabase Dashboard → Table Editor → grc_items → RLS Policies → add a DELETE policy for your role, OR disable RLS on this table.');
+          } else {
+            alert('Delete failed ('+delRes.status+'): '+errTxt);
+          }
+          return;
+        }
+        writeAuditLog('DELETE','Compliance Item','Deleted item: '+(itDel?itDel.name:itemId));
+        await loadAll();
+      } catch(ex){
+        alert('Delete failed: '+ex.message);
+      }
     });
   });
   tb.querySelectorAll('[data-email]').forEach(function(el){
@@ -1386,7 +1401,24 @@ function renderItems(){
 }
 
 
-function goEmail(id){document.getElementById('nav-email').onclick();setTimeout(function(){document.getElementById('fu-select').value=id;},200);}
+function goEmail(id){
+  // Navigate to the email section
+  var navEl = document.getElementById('nav-email');
+  if(!navEl){ alert('Email tracker section not found. Please check your sidebar.'); return; }
+  navEl.onclick();
+  // Wait for the section to render, then select the item
+  var attempts = 0;
+  var interval = setInterval(function(){
+    var sel = document.getElementById('fu-select');
+    if(sel){
+      sel.value = id;
+      // Trigger change so the form populates
+      sel.dispatchEvent(new Event('change'));
+      clearInterval(interval);
+    }
+    if(++attempts > 20) clearInterval(interval);
+  }, 100);
+}
 
 // ── Evidence upload helpers ──
 function handleItemEvUpload(input){
