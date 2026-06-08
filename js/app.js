@@ -497,6 +497,20 @@ function handleOAuthCallback(){
 
 // ── END GOOGLE OAUTH ──────────────────────────────────────────────
 
+// Wire Google button safely after DOM is ready
+(function(){
+  function wireGoogleBtn(){
+    var gbtn = document.getElementById('login-google-btn');
+    if(gbtn){ gbtn.onclick = doGoogleLogin; return; }
+    setTimeout(wireGoogleBtn, 100);
+  }
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', wireGoogleBtn);
+  } else {
+    wireGoogleBtn();
+  }
+})();
+
 document.getElementById('login-btn').onclick=async function(){
   var email=document.getElementById('l-email').value.trim().toLowerCase();
   var pass=document.getElementById('l-pass').value.trim();
@@ -1169,7 +1183,7 @@ function renderItems(){
   grid.innerHTML = '';
 
   if(!filtered.length){
-    grid.innerHTML = '<div class="tracker-empty"><div class="tracker-empty-icon">📋</div><div class="tracker-empty-title">'+(q?'No results for "'+q+'"':'No compliance items yet')+'</div><div class="tracker-empty-sub">'+(q?'Try a different search term':'Add your first compliance task to get started')+'</div>'+(q?'':'<button class="btn btn-primary" onclick="openPanel('item-panel')">+ Add first item</button>')+'</div>';
+    grid.innerHTML = '<div class="tracker-empty"><div class="tracker-empty-icon">📋</div><div class="tracker-empty-title">'+(q?'No results for &quot;'+q+'&quot;':'No compliance items yet')+'</div><div class="tracker-empty-sub">'+(q?'Try a different search term':'Add your first compliance task to get started')+'</div>'+(q?'':'<button class="btn btn-primary" onclick="openPanel(&quot;item-panel&quot;)">+ Add first item</button>')+'</div>';
     return;
   }
 
@@ -1363,10 +1377,7 @@ function renderItems(){
         if(res&&!res.ok){
           var et=await res.text();
           if(res.status===403){
-            alert('Delete blocked by Row Level Security.
-
-Fix in Supabase SQL Editor:
-ALTER TABLE grc_items DISABLE ROW LEVEL SECURITY;');
+            alert('Delete blocked by Row Level Security.\n\nFix: Go to Supabase SQL Editor and run:\nALTER TABLE grc_items DISABLE ROW LEVEL SECURITY;');
           } else { alert('Delete failed ('+res.status+'): '+et); }
           delBtn.disabled=false; return;
         }
