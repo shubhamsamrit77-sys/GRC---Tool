@@ -3,7 +3,6 @@
    Split from index.html
 ════════════════════════════════════════ */
 
-<style>
 /* ═══════════════════════════════════════════
    CLARIX — Premium Design System
    Light & Dark Mode
@@ -1180,7 +1179,6 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
 }
 
 
-<style>
 .mobile-bottom-nav{
   display:none;
   position:fixed;bottom:0;left:0;right:0;z-index:280;
@@ -1220,7 +1218,6 @@ input::placeholder,textarea::placeholder{color:var(--text3)}
   /* Push content above the bottom nav */
   .content{padding-bottom:70px!important}
 }
-</style>
 
 /* ════════════════════════════════════════════════
    NEW IMPLEMENTATION TRACKER — Card Layout
