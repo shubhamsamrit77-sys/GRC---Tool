@@ -5414,7 +5414,7 @@ function renderEvidence(){
 }
 function openEvidenceSubmitPanel(ev){document.getElementById('ev-submit-id').value=ev.id;var subEl=document.getElementById('ev-submit-sub');if(subEl)subEl.textContent='For: '+ev.title+' ('+ev.owner+')';var descBox=document.getElementById('ev-submit-desc-box');if(descBox)descBox.innerHTML='<strong>Required:</strong> '+(ev.description||ev.title||'—')+(ev.deadline?'<br><strong>Deadline:</strong> '+ev.deadline:'');document.getElementById('ev-link').value='';document.getElementById('ev-submit-notes').value='';openPanel('ev-submit-panel');}
 async function submitEvidence(){var id=document.getElementById('ev-submit-id').value;var link=document.getElementById('ev-link').value.trim();var notes=document.getElementById('ev-submit-notes').value.trim();if(!link){alert('Please provide the evidence link.');return;}var res=await api('grc_evidence?id=eq.'+id,{method:'PATCH',body:{status:'Submitted',evidence_link:link,submission_notes:notes,submitted_at:new Date().toISOString()},extra:{'Prefer':'return=minimal'}});if(res&&res.ok){closePanel();writeAuditLog('UPDATE','Evidence','Submitted evidence',{id:id});showDueDateToast('','Evidence submitted!');await loadAll();}}
-async function saveAudit(){if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}var name=document.getElementById('audit-name').value.trim();if(!name){alert('Please enter an audit name.');return;}var body={name:name,audit_type:document.getElementById('audit-type').value,start_date:document.getElementById('audit-start').value||null,end_date:document.getElementById('audit-end').value||null,auditor:document.getElementById('audit-auditor').value.trim(),description:document.getElementById('audit-desc').value.trim()};var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog('CREATE','Audit','Created audit: '+name);showDueDateToast('','Audit created!');await loadAll();}else alert('Error. Make sure grc_audits table exists in Supabase.');}
+async function saveAudit(){if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}var name=document.getElementById('audit-name').value.trim();if(!name){alert('Please enter an audit name.');return;}var body={name:name,audit_type:document.getElementById('audit-type').value,start_date:document.getElementById('audit-start').value||null,end_date:document.getElementById('audit-end').value||null,auditor:document.getElementById('audit-auditor').value.trim(),description:document.getElementById('audit-desc').value.trim(),status:'Upcoming'};var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog('CREATE','Audit','Created audit: '+name);showDueDateToast('','Audit created!');await loadAll();}else alert('Error. Make sure grc_audits table exists in Supabase.');}
 async function saveEvidence(){if(!can('actions')){noPermission('Only admin and manager can manage evidence.');return;}var editId=document.getElementById('ev-edit-id').value;var title=document.getElementById('ev-title').value.trim();var owner=document.getElementById('ev-owner').value.trim();var dept=document.getElementById('ev-dept').value.trim();var deadline=document.getElementById('ev-deadline').value;var auditId=document.getElementById('ev-audit').value;if(!title){alert('Enter a title.');return;}if(!owner){alert('Assign an owner.');return;}if(!dept){alert('Enter team/department.');return;}if(!deadline){alert('Set a deadline.');return;}if(!auditId){alert('Select an audit first.');return;}var body={title:title,description:document.getElementById('ev-desc').value.trim(),audit_id:auditId,evidence_type:document.getElementById('ev-type').value,owner:owner,department:dept,email:document.getElementById('ev-email').value.trim(),deadline:deadline,priority:document.getElementById('ev-priority').value,control_ref:document.getElementById('ev-control').value.trim(),notes:document.getElementById('ev-notes').value.trim(),status:'Pending'};var res=editId?await api('grc_evidence?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}}):await api('grc_evidence',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();document.getElementById('ev-edit-id').value='';['ev-title','ev-desc','ev-owner','ev-dept','ev-email','ev-deadline','ev-control','ev-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog(editId?'UPDATE':'CREATE','Evidence',editId?'Updated evidence':'Created evidence: '+title,{owner:owner,deadline:deadline});showDueDateToast('',editId?'Updated!':'Evidence request created!');await loadAll();}else alert('Error. Make sure grc_evidence table exists.');}
 function editEvidence(ev){document.getElementById('evidence-panel-title').textContent='Edit evidence request';document.getElementById('ev-edit-id').value=ev.id;document.getElementById('ev-title').value=ev.title||'';document.getElementById('ev-desc').value=ev.description||'';document.getElementById('ev-audit').value=ev.audit_id||'';document.getElementById('ev-type').value=ev.evidence_type||'Screenshot';document.getElementById('ev-owner').value=ev.owner||'';document.getElementById('ev-dept').value=ev.department||'';document.getElementById('ev-email').value=ev.email||'';document.getElementById('ev-deadline').value=ev.deadline||'';document.getElementById('ev-priority').value=ev.priority||'Medium';document.getElementById('ev-control').value=ev.control_ref||'';document.getElementById('ev-notes').value=ev.notes||'';openPanel('evidence-panel');}
 function updateEvidenceBadge(){var cnt=evidenceItems.filter(function(e){var s=getEvidenceStatus(e);return s==='pending'||s==='overdue'||s==='submitted';}).length;var b=document.getElementById('evidence-badge');if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}}
@@ -5971,13 +5971,16 @@ function calGetAllEvents(filterType){
   // 3. Audit start & end dates
   if(!filterType || filterType === 'all' || filterType === 'audit'){
     audits.forEach(function(a){
+      var statusDot = a.status==='In Progress' ? '#10b981' :
+                      a.status==='On Hold'     ? '#f59e0b' :
+                      a.status==='Completed'   ? '#9ca3af' : '#4f52d9';
       if(a.start_date){
         evts.push({
           date:  a.start_date,
           title: a.name,
           type:  'ev-audit',
-          dot:   '#10b981',
-          badge: 'Audit start',
+          dot:   statusDot,
+          badge: a.status==='In Progress' ? '🟢 In Progress' : a.status==='Upcoming' ? '📅 Upcoming' : (a.status||'Audit'),
           meta:  (a.audit_type||'') + (a.auditor ? ' · '+a.auditor : ''),
           nav:   'nav-evidence'
         });
@@ -5987,7 +5990,7 @@ function calGetAllEvents(filterType){
           date:  a.end_date,
           title: a.name,
           type:  'ev-audit',
-          dot:   '#10b981',
+          dot:   statusDot,
           badge: 'Audit end',
           meta:  (a.audit_type||'') + (a.auditor ? ' · '+a.auditor : ''),
           nav:   'nav-evidence'
@@ -6066,11 +6069,158 @@ function calBuildSummary(allEvts){
 }
 
 // ── Main render function ──
+// ════════════════════════════════════════════════
+// SCHEDULE AUDIT — save from calendar panel
+// ════════════════════════════════════════════════
+
+async function saveScheduledAudit(){
+  if(!can('actions')){ noPermission('Only admin and manager can schedule audits.'); return; }
+  var name    = (document.getElementById('sa-name')||{}).value||'';
+  var start   = (document.getElementById('sa-start')||{}).value||'';
+  if(!name.trim()){ alert('Please enter an audit name.'); return; }
+  if(!start){       alert('Please select a start date.');  return; }
+
+  var btn = document.querySelector('#schedule-audit-panel .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+
+  var body = {
+    name:        name.trim(),
+    audit_type:  (document.getElementById('sa-type')||{}).value||'Internal',
+    status:      (document.getElementById('sa-status')||{}).value||'Upcoming',
+    start_date:  start||null,
+    end_date:    (document.getElementById('sa-end')||{}).value||null,
+    auditor:     (document.getElementById('sa-auditor')||{}).value.trim()||'',
+    description: ((document.getElementById('sa-desc')||{}).value||'').trim()+
+                 ((document.getElementById('sa-framework')||{}).value ?
+                   ' [Framework: '+(document.getElementById('sa-framework')||{}).value+']' : '')
+  };
+
+  var res = await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
+  if(res&&res.ok){
+    closePanel();
+    ['sa-name','sa-start','sa-end','sa-auditor','sa-desc'].forEach(function(id){
+      var el=document.getElementById(id); if(el) el.value='';
+    });
+    writeAuditLog('CREATE','Audit','Scheduled audit: '+name+' starting '+start);
+    showDueDateToast('','Audit scheduled and added to calendar!');
+    await loadAll();
+    renderCalendar();
+  } else {
+    var et = res ? await res.text() : 'Network error';
+    alert('Error saving audit: '+et);
+    if(btn){ btn.disabled=false; btn.textContent='Save & add to calendar'; }
+  }
+}
+
+// ── Render upcoming audits timeline strip ──────────
+function renderUpcomingAudits(){
+  var el = document.getElementById('cal-upcoming-strip');
+  if(!el) return;
+
+  var tod = today();
+  // Get audits in next 90 days that are not completed
+  var future = audits.filter(function(a){
+    return a.start_date && a.start_date >= tod && a.status !== 'Completed';
+  }).sort(function(a,b){ return a.start_date > b.start_date ? 1 : -1; });
+
+  // Also get ongoing audits (started but not ended/completed)
+  var ongoing = audits.filter(function(a){
+    return a.start_date && a.start_date <= tod &&
+           (!a.end_date || a.end_date >= tod) &&
+           a.status !== 'Completed';
+  });
+
+  if(!future.length && !ongoing.length){
+    el.innerHTML = '';
+    return;
+  }
+
+  var statusColors = {
+    'Upcoming':    { bg:'#ede9fe', text:'#4f52d9', border:'rgba(79,82,217,.2)' },
+    'In Progress': { bg:'#e0f7f2', text:'#0d9e7e', border:'rgba(13,158,126,.2)' },
+    'On Hold':     { bg:'#fef3e2', text:'#b45309', border:'rgba(180,83,9,.2)' },
+    'Completed':   { bg:'#f0fdf4', text:'#166534', border:'rgba(22,101,52,.2)' }
+  };
+
+  function daysUntil(dateStr){
+    var diff = new Date(dateStr).getTime() - new Date(tod).getTime();
+    return Math.ceil(diff / 86400000);
+  }
+  function daysLabel(d){
+    if(d === 0) return 'today';
+    if(d === 1) return 'tomorrow';
+    if(d < 0)   return Math.abs(d)+'d ago';
+    return 'in '+d+' days';
+  }
+
+  var html = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:4px">'+
+    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
+      '<div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px">'+
+        '<span style="font-size:16px">📅</span> Audit schedule'+
+        (ongoing.length ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#e0f7f2;color:#0d9e7e">'+ongoing.length+' ongoing</span>' : '')+
+        (future.length  ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#4f52d9">'+future.length+' upcoming</span>' : '')+
+      '</div>'+
+    '</div>';
+
+  var allShow = ongoing.concat(future).slice(0, 6);
+  html += '<div style="display:flex;flex-direction:column;gap:8px">';
+
+  allShow.forEach(function(a){
+    var sc = statusColors[a.status] || statusColors['Upcoming'];
+    var du = a.start_date ? daysUntil(a.start_date) : null;
+    var isOngoing = a.start_date <= tod && (!a.end_date || a.end_date >= tod);
+    var dLabel = isOngoing ? 'Ongoing' : (du !== null ? daysLabel(du) : '');
+
+    // Progress bar for ongoing audits
+    var progressHtml = '';
+    if(isOngoing && a.start_date && a.end_date){
+      var total = new Date(a.end_date).getTime() - new Date(a.start_date).getTime();
+      var done  = new Date(tod).getTime() - new Date(a.start_date).getTime();
+      var pct   = Math.min(100, Math.max(0, Math.round(done/total*100)));
+      progressHtml = '<div style="margin-top:6px;height:4px;background:var(--border);border-radius:4px;overflow:hidden">'+
+        '<div style="height:100%;width:'+pct+'%;background:#0d9e7e;border-radius:4px;transition:width .3s"></div></div>'+
+        '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+pct+'% through audit period</div>';
+    }
+
+    html +=
+      '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">'+
+        '<div style="width:42px;text-align:center;flex-shrink:0">'+
+          '<div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1">'+
+            (a.start_date ? a.start_date.split('-')[2] : '—')+
+          '</div>'+
+          '<div style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase">'+
+            (a.start_date ? CAL_MONTHS[parseInt(a.start_date.split('-')[1])-1].substring(0,3) : '')+
+          '</div>'+
+        '</div>'+
+        '<div style="flex:1;min-width:0">'+
+          '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+
+            '<span style="font-size:13px;font-weight:600;color:var(--text)">'+a.name+'</span>'+
+            '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+sc.bg+';color:'+sc.text+';border:1px solid '+sc.border+'">'+
+              (isOngoing ? '🟢 In Progress' : a.status)+
+            '</span>'+
+          '</div>'+
+          '<div style="font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap">'+
+            '<span>'+a.audit_type+'</span>'+
+            (a.auditor ? '<span>👤 '+a.auditor+'</span>' : '')+
+            (a.end_date ? '<span>Ends '+a.end_date+'</span>' : '')+
+            '<span style="font-weight:600;color:'+(isOngoing?'#0d9e7e':'var(--primary)')+'">⏱ '+dLabel+'</span>'+
+          '</div>'+
+          progressHtml+
+        '</div>'+
+      '</div>';
+  });
+
+  html += '</div></div>';
+  el.innerHTML = html;
+}
+
+
 function renderCalendar(){
   var filter   = (document.getElementById('cal-filter')||{}).value || 'all';
   var allEvts  = calGetAllEvents(filter);
 
   calBuildSummary(allEvts);
+  renderUpcomingAudits();
 
   // Update month/year title
   var titleEl = document.getElementById('cal-month-title');
