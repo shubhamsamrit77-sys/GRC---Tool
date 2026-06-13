@@ -611,6 +611,122 @@
 
       </div>
 
+      <!-- EMAIL TRACKER -->
+      <div id="s-emailtracker" class="sec">
+
+        <!-- Header -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">Email Tracker</div>
+            <div style="font-size:13px;color:var(--text2);margin-top:2px">Track all compliance follow-up emails and monitor replies</div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <select id="et-filter-status" onchange="renderEmailTracker()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+              <option value="">All emails</option>
+              <option value="waiting">Waiting reply</option>
+              <option value="overdue">Overdue</option>
+              <option value="replied">Replied</option>
+            </select>
+            <button class="btn btn-primary" onclick="openCompose()" style="display:inline-flex;align-items:center;gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Compose &amp; Track
+            </button>
+          </div>
+        </div>
+
+        <!-- Summary metrics -->
+        <div id="et-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px"></div>
+
+        <!-- Table -->
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th style="min-width:200px;padding-left:16px">Subject</th>
+              <th style="min-width:130px">Stakeholder</th>
+              <th style="min-width:160px">Email</th>
+              <th style="min-width:100px">Sent</th>
+              <th style="min-width:110px">Reply deadline</th>
+              <th style="min-width:110px">Status</th>
+              <th style="min-width:200px">Actions</th>
+            </tr></thead>
+            <tbody id="et-tbody"></tbody>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- COMPOSE & TRACK MODAL -->
+      <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:16px">
+          <!-- Modal header -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0">
+            <div>
+              <div style="font-size:16px;font-weight:800;color:var(--text)">Compose &amp; Track Email</div>
+              <div style="font-size:12px;color:var(--text3);margin-top:2px">Write the email, send via Gmail, and track the reply</div>
+            </div>
+            <button onclick="closeCompose()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text2);font-size:18px;line-height:1">×</button>
+          </div>
+          <!-- Modal body -->
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+            <div class="p2">
+              <div class="pf"><label>Stakeholder name *</label><input id="et-stakeholder" placeholder="e.g. Rahul Sharma"></div>
+              <div class="pf"><label>Stakeholder email *</label><input id="et-email" type="email" placeholder="rahul@company.com"></div>
+            </div>
+            <div class="p2">
+              <div class="pf"><label>Category</label>
+                <select id="et-category">
+                  <option value="Follow-up">Follow-up</option>
+                  <option value="Reminder">Reminder</option>
+                  <option value="Escalation">Escalation</option>
+                  <option value="Acknowledgement">Acknowledgement</option>
+                  <option value="Evidence request">Evidence request</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div class="pf"><label>Date sent</label><input id="et-date" type="date"></div>
+            </div>
+            <div class="pf"><label>Email subject *</label><input id="et-subject" placeholder="e.g. Reminder: Monthly server patch review overdue"></div>
+            <div class="pf">
+              <label style="display:flex;align-items:center;justify-content:space-between">
+                <span>Email body</span>
+                <span style="font-size:11px;color:var(--text3)">This is for your reference / copy-paste</span>
+              </label>
+              <textarea id="et-body" placeholder="Write the email content here…" style="min-height:120px;resize:vertical;font-family:inherit;line-height:1.7;font-size:13px"></textarea>
+            </div>
+            <div class="pf">
+              <label>Reply expected within (days)</label>
+              <div style="display:flex;align-items:center;gap:10px">
+                <input id="et-days" type="number" value="2" min="1" max="30" style="width:80px">
+                <span style="font-size:12px;color:var(--text3)">days — Clarix will mark it overdue if no reply by then</span>
+              </div>
+            </div>
+          </div>
+          <!-- Modal footer -->
+          <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--surface2);border-radius:0 0 16px 16px">
+            <button class="btn" onclick="closeCompose()">Cancel</button>
+            <button class="btn" onclick="openGmail()" style="display:inline-flex;align-items:center;gap:6px">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              Open in Gmail
+            </button>
+            <button class="btn btn-primary" id="save-email-btn" onclick="saveTrackedEmail()">Save &amp; Track</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- REPLY CONFIRM MODAL -->
+      <div id="reply-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.55);z-index:601;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:400px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:16px">
+          <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">Mark as replied</div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Email: <strong id="reply-confirm-subject"></strong></div>
+          <div style="font-size:13px;color:var(--text2);margin-bottom:16px">When did you receive the reply?</div>
+          <div class="pf" style="margin-bottom:20px"><label>Reply received on</label><input id="reply-date-input" type="date"></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn" onclick="closeReplyConfirm()">Cancel</button>
+            <button class="btn btn-primary" id="confirm-reply-btn">Confirm reply</button>
+          </div>
+        </div>
+      </div>
+
       <!-- EVIDENCE COLLECTION -->
       <div id="s-evidence" class="sec">
 
