@@ -5684,16 +5684,15 @@ function calGetAllEvents(filterType){
   var evts = [];
   var tod  = today();
 
-  // 1. Compliance items — pending/overdue due dates only
-  if(!filterType || filterType === 'all' || filterType === 'compliance'){
+  if(!filterType || filterType==='all' || filterType==='compliance'){
     items.forEach(function(it){
       if(!it.due_date) return;
       var st = getStatus(it);
-      if(st === 'done') return;
-      var isOv = st === 'overdue';
+      if(st==='done') return;
+      var isOv = st==='overdue';
       evts.push({
         date:  it.due_date,
-        title: it.name,
+        title: it.name || 'Compliance task',
         type:  isOv ? 'ev-overdue' : 'ev-compliance',
         dot:   isOv ? '#ef4444' : '#5b5ef4',
         badge: isOv ? 'Overdue' : 'Compliance',
@@ -5703,28 +5702,25 @@ function calGetAllEvents(filterType){
     });
   }
 
-  // 2. Evidence deadlines
-  if(!filterType || filterType === 'all' || filterType === 'evidence'){
+  if(!filterType || filterType==='all' || filterType==='evidence'){
     evidenceItems.forEach(function(ev){
       if(!ev.deadline) return;
-      if(ev.status === 'Approved') return;
-      var auditObj = audits.find(function(a){ return a.id === ev.audit_id; });
-      var auditName = auditObj ? auditObj.name : '';
-      var isOv = ev.deadline < tod && ev.status !== 'Submitted';
+      if(ev.status==='Approved') return;
+      var auditObj = audits.find(function(a){ return a.id===ev.audit_id; });
+      var isOv = ev.deadline < tod && ev.status!=='Submitted';
       evts.push({
         date:  ev.deadline,
-        title: ev.title,
+        title: ev.title || 'Evidence request',
         type:  isOv ? 'ev-overdue' : 'ev-evidence',
         dot:   isOv ? '#ef4444' : '#f59e0b',
-        badge: ev.status === 'Submitted' ? 'Submitted' : isOv ? 'Overdue' : 'Evidence',
-        meta:  (ev.owner||'') + (auditName ? ' · '+auditName : ''),
+        badge: ev.status==='Submitted' ? 'Submitted' : isOv ? 'Overdue' : 'Evidence',
+        meta:  (ev.owner||'') + (auditObj ? ' · '+auditObj.name : ''),
         nav:   'nav-evidence'
       });
     });
   }
 
-  // 3. Audit start & end dates
-  if(!filterType || filterType === 'all' || filterType === 'audit'){
+  if(!filterType || filterType==='all' || filterType==='audit'){
     audits.forEach(function(a){
       var statusDot = a.status==='In Progress' ? '#10b981' :
                       a.status==='On Hold'     ? '#f59e0b' :
@@ -5732,7 +5728,7 @@ function calGetAllEvents(filterType){
       if(a.start_date){
         evts.push({
           date:  a.start_date,
-          title: a.name,
+          title: a.name || 'Audit',
           type:  'ev-audit',
           dot:   statusDot,
           badge: a.status==='In Progress' ? '🟢 In Progress' : a.status==='Upcoming' ? '📅 Upcoming' : (a.status||'Audit'),
@@ -5740,10 +5736,10 @@ function calGetAllEvents(filterType){
           nav:   'nav-evidence'
         });
       }
-      if(a.end_date && a.end_date !== a.start_date){
+      if(a.end_date && a.end_date!==a.start_date){
         evts.push({
           date:  a.end_date,
-          title: a.name,
+          title: (a.name||'Audit') + ' (end)',
           type:  'ev-audit',
           dot:   statusDot,
           badge: 'Audit end',
@@ -5754,14 +5750,13 @@ function calGetAllEvents(filterType){
     });
   }
 
-  // 4. Action due dates (open/in-progress only)
-  if(!filterType || filterType === 'all' || filterType === 'action'){
+  if(!filterType || filterType==='all' || filterType==='action'){
     actions.forEach(function(ac){
-      if(!ac.due_date || ac.status === 'Closed') return;
-      var isOv = getActionStatus(ac) === 'overdue';
+      if(!ac.due_date || ac.status==='Closed') return;
+      var isOv = typeof getActionStatus==='function' ? getActionStatus(ac)==='overdue' : ac.due_date < today();
       evts.push({
         date:  ac.due_date,
-        title: ac.title,
+        title: ac.title || 'Action item',
         type:  isOv ? 'ev-overdue' : 'ev-action',
         dot:   isOv ? '#ef4444' : '#7c3aed',
         badge: isOv ? 'Overdue' : 'Action',
@@ -5771,17 +5766,17 @@ function calGetAllEvents(filterType){
     });
   }
 
-  // 5. High risks (score >=15, not closed) — flag on today for awareness
-  if(!filterType || filterType === 'all' || filterType === 'risk'){
+  if(!filterType || filterType==='all' || filterType==='risk'){
+    var tod2 = today();
     risks.forEach(function(r){
       var score = (r.likelihood||1) * (r.impact||1);
-      if(score < 15 || r.status === 'Closed') return;
+      if(score < 15 || r.status==='Closed') return;
       evts.push({
-        date:  tod,
-        title: r.name,
+        date:  tod2,
+        title: r.name || 'High risk',
         type:  'ev-risk',
         dot:   '#ef4444',
-        badge: 'High risk (' + score + ')',
+        badge: 'High risk ('+score+')',
         meta:  (r.category||'') + (r.owner ? ' · '+r.owner : ''),
         nav:   'nav-risks'
       });
@@ -5791,7 +5786,7 @@ function calGetAllEvents(filterType){
   return evts;
 }
 
-// ── Build summary metric cards ──
+// ── Summary metric cards ──
 function calBuildSummary(allEvts){
   var sumEl = document.getElementById('cal-summary');
   if(!sumEl) return;
@@ -5800,233 +5795,177 @@ function calBuildSummary(allEvts){
   var tod = today();
   var in7 = new Date(); in7.setDate(in7.getDate()+7);
   var in7Str = in7.toISOString().split('T')[0];
-
   var monPrefix = calYear+'-'+String(calMonth+1).padStart(2,'0');
+
   var thisMonth = allEvts.filter(function(e){ return e.date && e.date.startsWith(monPrefix); }).length;
-  var overdue   = allEvts.filter(function(e){ return e.type === 'ev-overdue'; }).length;
-  var next7     = allEvts.filter(function(e){ return e.date && e.date >= tod && e.date <= in7Str && e.type !== 'ev-overdue'; }).length;
+  var overdue   = allEvts.filter(function(e){ return e.type==='ev-overdue'; }).length;
+  var next7     = allEvts.filter(function(e){ return e.date && e.date>=tod && e.date<=in7Str && e.type!=='ev-overdue'; }).length;
   var total     = allEvts.length;
 
-  [
-    {l:'This month', v:thisMonth, c:'var(--primary)', t:'#5b5ef4'},
-    {l:'Overdue',    v:overdue,   c:'var(--danger)',  t:'#ef4444'},
-    {l:'Next 7 days',v:next7,    c:'var(--warning)', t:'#f59e0b'},
-    {l:'Total events',v:total,   c:'var(--text)',    t:'#10b981'}
-  ].forEach(function(m){
+  var metrics = [
+    {l:'This month', v:thisMonth, color:'var(--primary)', cls:'mc-total'},
+    {l:'Overdue',    v:overdue,   color:'var(--danger)',  cls:'mc-over'},
+    {l:'Next 7 days',v:next7,    color:'var(--warning)', cls:'mc-pct'},
+    {l:'Total events',v:total,   color:'var(--text)',    cls:'mc-done'}
+  ];
+
+  metrics.forEach(function(m){
     var card = document.createElement('div');
-    card.className = 'metric-card';
-    card.innerHTML =
-      '<div style="position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0;background:'+m.t+'"></div>'+
-      '<div class="mc-label" style="margin-top:4px">'+m.l+'</div>'+
-      '<div class="mc-val" style="color:'+m.c+'">'+m.v+'</div>';
+    card.className = 'metric-card '+m.cls;
+    var val = document.createElement('div');
+    val.className = 'mc-val';
+    val.style.color = m.color;
+    val.textContent = m.v;
+    var lbl = document.createElement('div');
+    lbl.className = 'mc-label';
+    lbl.textContent = m.l;
+    card.appendChild(val);
+    card.appendChild(lbl);
     sumEl.appendChild(card);
   });
 }
 
-// ── Main render function ──
-// ════════════════════════════════════════════════
-// SCHEDULE AUDIT — save from calendar panel
-// ════════════════════════════════════════════════
-
-async function saveScheduledAudit(){
-  if(!can('actions')){ noPermission('Only admin and manager can schedule audits.'); return; }
-  var name    = (document.getElementById('sa-name')||{}).value||'';
-  var start   = (document.getElementById('sa-start')||{}).value||'';
-  if(!name.trim()){ alert('Please enter an audit name.'); return; }
-  if(!start){       alert('Please select a start date.');  return; }
-
-  var btn = document.querySelector('#schedule-audit-panel .btn-primary');
-  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
-
-  var body = {
-    name:        name.trim(),
-    audit_type:  (document.getElementById('sa-type')||{}).value||'Internal',
-    status:      (document.getElementById('sa-status')||{}).value||'Upcoming',
-    start_date:  start||null,
-    end_date:    (document.getElementById('sa-end')||{}).value||null,
-    auditor:     (document.getElementById('sa-auditor')||{}).value.trim()||'',
-    description: ((document.getElementById('sa-desc')||{}).value||'').trim()+
-                 ((document.getElementById('sa-framework')||{}).value ?
-                   ' [Framework: '+(document.getElementById('sa-framework')||{}).value+']' : '')
-  };
-
-  var res = await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
-  if(res&&res.ok){
-    closePanel();
-    ['sa-name','sa-start','sa-end','sa-auditor','sa-desc'].forEach(function(id){
-      var el=document.getElementById(id); if(el) el.value='';
-    });
-    writeAuditLog('CREATE','Audit','Scheduled audit: '+name+' starting '+start);
-    showDueDateToast('','Audit scheduled and added to calendar!');
-    await loadAll();
-    renderCalendar();
-  } else {
-    var et = res ? await res.text() : 'Network error';
-    alert('Error saving audit: '+et);
-    if(btn){ btn.disabled=false; btn.textContent='Save & add to calendar'; }
-  }
-}
-
-// ── Render upcoming audits timeline strip ──────────
+// ── Upcoming audits strip ──
 function renderUpcomingAudits(){
   var el = document.getElementById('cal-upcoming-strip');
   if(!el) return;
 
   var tod = today();
-  // Get audits in next 90 days that are not completed
   var future = audits.filter(function(a){
-    return a.start_date && a.start_date >= tod && a.status !== 'Completed';
-  }).sort(function(a,b){ return a.start_date > b.start_date ? 1 : -1; });
+    return a.start_date && a.start_date>=tod && a.status!=='Completed';
+  }).sort(function(a,b){ return a.start_date>b.start_date?1:-1; });
 
-  // Also get ongoing audits (started but not ended/completed)
   var ongoing = audits.filter(function(a){
-    return a.start_date && a.start_date <= tod &&
-           (!a.end_date || a.end_date >= tod) &&
-           a.status !== 'Completed';
+    return a.start_date && a.start_date<=tod &&
+           (!a.end_date || a.end_date>=tod) && a.status!=='Completed';
   });
 
-  if(!future.length && !ongoing.length){
-    el.innerHTML = '';
-    return;
-  }
+  if(!future.length && !ongoing.length){ el.innerHTML=''; return; }
 
   var statusColors = {
-    'Upcoming':    { bg:'#ede9fe', text:'#4f52d9', border:'rgba(79,82,217,.2)' },
-    'In Progress': { bg:'#e0f7f2', text:'#0d9e7e', border:'rgba(13,158,126,.2)' },
-    'On Hold':     { bg:'#fef3e2', text:'#b45309', border:'rgba(180,83,9,.2)' },
-    'Completed':   { bg:'#f0fdf4', text:'#166534', border:'rgba(22,101,52,.2)' }
+    'Upcoming':    {bg:'#ede9fe',text:'#4f52d9',border:'rgba(79,82,217,.2)'},
+    'In Progress': {bg:'#e0f7f2',text:'#0d9e7e',border:'rgba(13,158,126,.2)'},
+    'On Hold':     {bg:'#fef3e2',text:'#b45309',border:'rgba(180,83,9,.2)'},
+    'Completed':   {bg:'#f0fdf4',text:'#166534',border:'rgba(22,101,52,.2)'}
   };
 
   function daysUntil(dateStr){
-    var diff = new Date(dateStr).getTime() - new Date(tod).getTime();
-    return Math.ceil(diff / 86400000);
+    return Math.ceil((new Date(dateStr).getTime()-new Date(tod).getTime())/86400000);
   }
   function daysLabel(d){
-    if(d === 0) return 'today';
-    if(d === 1) return 'tomorrow';
-    if(d < 0)   return Math.abs(d)+'d ago';
+    if(d===0) return 'today';
+    if(d===1) return 'tomorrow';
+    if(d<0)   return Math.abs(d)+'d ago';
     return 'in '+d+' days';
   }
 
-  var html = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:4px">'+
-    '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">'+
-      '<div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:7px">'+
-        '<span style="font-size:16px">📅</span> Audit schedule'+
-        (ongoing.length ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#e0f7f2;color:#0d9e7e">'+ongoing.length+' ongoing</span>' : '')+
-        (future.length  ? '<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#4f52d9">'+future.length+' upcoming</span>' : '')+
-      '</div>'+
-    '</div>';
+  var html = '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">'+
+    '<div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
+      '<span style="font-size:16px">📅</span> Audit schedule'+
+      (ongoing.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#e0f7f2;color:#0d9e7e">'+ongoing.length+' ongoing</span>':'')+
+      (future.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#4f52d9">'+future.length+' upcoming</span>':'')+
+    '</div><div style="display:flex;flex-direction:column;gap:8px">';
 
-  var allShow = ongoing.concat(future).slice(0, 6);
-  html += '<div style="display:flex;flex-direction:column;gap:8px">';
-
-  allShow.forEach(function(a){
-    var sc = statusColors[a.status] || statusColors['Upcoming'];
+  ongoing.concat(future).slice(0,5).forEach(function(a){
+    var sc = statusColors[a.status]||statusColors['Upcoming'];
+    var isOngoing = a.start_date<=tod && (!a.end_date||a.end_date>=tod);
     var du = a.start_date ? daysUntil(a.start_date) : null;
-    var isOngoing = a.start_date <= tod && (!a.end_date || a.end_date >= tod);
-    var dLabel = isOngoing ? 'Ongoing' : (du !== null ? daysLabel(du) : '');
-
-    // Progress bar for ongoing audits
+    var dLabel = isOngoing ? 'Ongoing' : (du!==null?daysLabel(du):'');
     var progressHtml = '';
     if(isOngoing && a.start_date && a.end_date){
-      var total = new Date(a.end_date).getTime() - new Date(a.start_date).getTime();
-      var done  = new Date(tod).getTime() - new Date(a.start_date).getTime();
-      var pct   = Math.min(100, Math.max(0, Math.round(done/total*100)));
+      var tot2 = new Date(a.end_date).getTime()-new Date(a.start_date).getTime();
+      var done = new Date(tod).getTime()-new Date(a.start_date).getTime();
+      var pct  = Math.min(100,Math.max(0,Math.round(done/tot2*100)));
       progressHtml = '<div style="margin-top:6px;height:4px;background:var(--border);border-radius:4px;overflow:hidden">'+
-        '<div style="height:100%;width:'+pct+'%;background:#0d9e7e;border-radius:4px;transition:width .3s"></div></div>'+
+        '<div style="height:100%;width:'+pct+'%;background:#0d9e7e;border-radius:4px"></div></div>'+
         '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+pct+'% through audit period</div>';
     }
-
-    html +=
-      '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">'+
-        '<div style="width:42px;text-align:center;flex-shrink:0">'+
-          '<div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1">'+
-            (a.start_date ? a.start_date.split('-')[2] : '—')+
-          '</div>'+
-          '<div style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase">'+
-            (a.start_date ? CAL_MONTHS[parseInt(a.start_date.split('-')[1])-1].substring(0,3) : '')+
-          '</div>'+
+    html += '<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">'+
+      '<div style="width:42px;text-align:center;flex-shrink:0">'+
+        '<div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1">'+(a.start_date?a.start_date.split('-')[2]:'—')+'</div>'+
+        '<div style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase">'+(a.start_date?CAL_MONTHS[parseInt(a.start_date.split('-')[1])-1].substring(0,3):'')+'</div>'+
+      '</div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+
+          '<span style="font-size:13px;font-weight:600;color:var(--text)">'+(a.name||'Audit')+'</span>'+
+          '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+sc.bg+';color:'+sc.text+';border:1px solid '+sc.border+'">'+
+            (isOngoing?'🟢 In Progress':a.status)+
+          '</span>'+
         '</div>'+
-        '<div style="flex:1;min-width:0">'+
-          '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+
-            '<span style="font-size:13px;font-weight:600;color:var(--text)">'+a.name+'</span>'+
-            '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+sc.bg+';color:'+sc.text+';border:1px solid '+sc.border+'">'+
-              (isOngoing ? '🟢 In Progress' : a.status)+
-            '</span>'+
-          '</div>'+
-          '<div style="font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap">'+
-            '<span>'+a.audit_type+'</span>'+
-            (a.auditor ? '<span>👤 '+a.auditor+'</span>' : '')+
-            (a.end_date ? '<span>Ends '+a.end_date+'</span>' : '')+
-            '<span style="font-weight:600;color:'+(isOngoing?'#0d9e7e':'var(--primary)')+'">⏱ '+dLabel+'</span>'+
-          '</div>'+
-          progressHtml+
-        '</div>'+
-      '</div>';
+        '<div style="font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap">'+
+          '<span>'+(a.audit_type||'Internal')+'</span>'+
+          (a.auditor?'<span>👤 '+a.auditor+'</span>':'')+
+          (a.end_date?'<span>Ends '+a.end_date+'</span>':'')+
+          '<span style="font-weight:600;color:'+(isOngoing?'#0d9e7e':'var(--primary)')+'">⏱ '+dLabel+'</span>'+
+        '</div>'+progressHtml+
+      '</div></div>';
   });
 
   html += '</div></div>';
   el.innerHTML = html;
 }
 
-
+// ── Main render ──
 function renderCalendar(){
-  var filter   = (document.getElementById('cal-filter')||{}).value || 'all';
-  var allEvts  = calGetAllEvents(filter);
+  try{
+    var filter  = '';
+    var filterEl = document.getElementById('cal-filter');
+    if(filterEl) filter = filterEl.value || 'all';
+    var allEvts = calGetAllEvents(filter);
 
-  calBuildSummary(allEvts);
-  renderUpcomingAudits();
+    calBuildSummary(allEvts);
+    renderUpcomingAudits();
 
-  // Update month/year title
-  var titleEl = document.getElementById('cal-month-title');
-  if(titleEl) titleEl.textContent = CAL_MONTHS[calMonth] + ' ' + calYear;
+    var titleEl = document.getElementById('cal-month-title');
+    if(titleEl) titleEl.textContent = CAL_MONTHS[calMonth]+' '+calYear;
 
-  // Build event map keyed by date string YYYY-MM-DD
-  var evMap = {};
-  allEvts.forEach(function(ev){
-    if(!ev.date) return;
-    if(!evMap[ev.date]) evMap[ev.date] = [];
-    evMap[ev.date].push(ev);
-  });
-
-  // Sort each day's events: overdue first
-  Object.keys(evMap).forEach(function(dt){
-    evMap[dt].sort(function(a,b){
-      var order = {'ev-overdue':0,'ev-compliance':1,'ev-evidence':2,'ev-audit':3,'ev-action':4,'ev-risk':5};
-      return (order[a.type]||9) - (order[b.type]||9);
+    // Build event map keyed by date string YYYY-MM-DD
+    var evMap = {};
+    allEvts.forEach(function(ev){
+      if(!ev.date) return;
+      if(!evMap[ev.date]) evMap[ev.date] = [];
+      evMap[ev.date].push(ev);
     });
-  });
 
-  var grid = document.getElementById('cal-days-grid');
-  if(!grid) return;
-  while(grid.firstChild) grid.removeChild(grid.firstChild);
+    // Sort: overdue first
+    Object.keys(evMap).forEach(function(dt){
+      evMap[dt].sort(function(a,b){
+        var ord = {'ev-overdue':0,'ev-compliance':1,'ev-evidence':2,'ev-audit':3,'ev-action':4,'ev-risk':5};
+        return (ord[a.type]||9)-(ord[b.type]||9);
+      });
+    });
 
-  var firstWeekday = new Date(calYear, calMonth, 1).getDay();  // 0=Sun
-  var daysInMonth  = new Date(calYear, calMonth+1, 0).getDate();
-  var daysInPrev   = new Date(calYear, calMonth,   0).getDate();
-  var todStr       = today();
+    var grid = document.getElementById('cal-days-grid');
+    if(!grid) return;
+    while(grid.firstChild) grid.removeChild(grid.firstChild);
 
-  // Previous-month filler cells
-  for(var p = firstWeekday - 1; p >= 0; p--){
-    grid.appendChild(buildCalCell(calYear, calMonth-1, daysInPrev-p, evMap, todStr, true));
-  }
+    var firstWeekday = new Date(calYear, calMonth, 1).getDay();
+    var daysInMonth  = new Date(calYear, calMonth+1, 0).getDate();
+    var daysInPrev   = new Date(calYear, calMonth,   0).getDate();
+    var todStr       = today();
 
-  // Current month cells
-  for(var d = 1; d <= daysInMonth; d++){
-    grid.appendChild(buildCalCell(calYear, calMonth, d, evMap, todStr, false));
-  }
+    // Prev-month filler
+    for(var p=firstWeekday-1; p>=0; p--){
+      grid.appendChild(buildCalCell(calYear, calMonth-1, daysInPrev-p, evMap, todStr, true));
+    }
+    // Current month
+    for(var d=1; d<=daysInMonth; d++){
+      grid.appendChild(buildCalCell(calYear, calMonth, d, evMap, todStr, false));
+    }
+    // Next-month filler
+    var filled = firstWeekday+daysInMonth;
+    var trail  = filled%7===0?0:7-(filled%7);
+    for(var n=1; n<=trail; n++){
+      grid.appendChild(buildCalCell(calYear, calMonth+1, n, evMap, todStr, true));
+    }
 
-  // Next-month filler cells (complete last row)
-  var filled = firstWeekday + daysInMonth;
-  var trail  = filled % 7 === 0 ? 0 : 7 - (filled % 7);
-  for(var n = 1; n <= trail; n++){
-    grid.appendChild(buildCalCell(calYear, calMonth+1, n, evMap, todStr, true));
-  }
-
-  // Re-highlight selected day if still visible
-  if(calSelectedDate){
-    var sel = grid.querySelector('[data-date="'+calSelectedDate+'"]');
-    if(sel) sel.classList.add('selected');
+    // Re-apply selected highlight
+    if(calSelectedDate){
+      var sel = grid.querySelector('[data-date="'+calSelectedDate+'"]');
+      if(sel) sel.classList.add('selected');
+    }
+  }catch(calErr){
+    console.warn('Calendar render error:', calErr.message);
   }
 }
 
@@ -6036,44 +5975,38 @@ function buildCalCell(year, month, day, evMap, todStr, otherMonth){
   var yr  = dateObj.getFullYear();
   var mo  = dateObj.getMonth();
   var dy  = dateObj.getDate();
-  var dateStr = yr + '-' + String(mo+1).padStart(2,'0') + '-' + String(dy).padStart(2,'0');
-
-  var isToday    = dateStr === todStr;
-  var isSelected = dateStr === calSelectedDate;
+  var dateStr = yr+'-'+String(mo+1).padStart(2,'0')+'-'+String(dy).padStart(2,'0');
+  var isToday    = dateStr===todStr;
+  var isSelected = dateStr===calSelectedDate;
 
   var cell = document.createElement('div');
-  cell.className = 'cal-day' +
-    (otherMonth  ? ' other-month' : '') +
-    (isToday     ? ' today'       : '') +
+  cell.className = 'cal-day'+
+    (otherMonth  ? ' other-month' : '')+
+    (isToday     ? ' today'       : '')+
     (isSelected  ? ' selected'    : '');
   cell.setAttribute('data-date', dateStr);
 
-  // Day number
   var numDiv = document.createElement('div');
   numDiv.className = 'cal-day-num';
   numDiv.textContent = dy;
   cell.appendChild(numDiv);
 
-  // Events
-  var dayEvts = evMap[dateStr] || [];
+  var dayEvts = evMap[dateStr]||[];
   var MAX_SHOW = 3;
 
   dayEvts.slice(0, MAX_SHOW).forEach(function(ev){
     var pill = document.createElement('div');
-    pill.className = 'cal-event ' + ev.type;
+    pill.className = 'cal-event '+ev.type;
     pill.textContent = ev.title;
-    pill.title = ev.badge + ' — ' + ev.title + (ev.meta ? ' (' + ev.meta + ')' : '');
-    pill.onclick = function(e){
-      e.stopPropagation();
-      calSelectDay(dateStr, evMap[dateStr]||[]);
-    };
+    pill.title = ev.badge+' — '+ev.title+(ev.meta?' ('+ev.meta+')':'');
+    pill.onclick = function(e){ e.stopPropagation(); calSelectDay(dateStr, evMap[dateStr]||[]); };
     cell.appendChild(pill);
   });
 
-  if(dayEvts.length > MAX_SHOW){
+  if(dayEvts.length>MAX_SHOW){
     var more = document.createElement('div');
     more.className = 'cal-more';
-    more.textContent = '+' + (dayEvts.length - MAX_SHOW) + ' more';
+    more.textContent = '+'+(dayEvts.length-MAX_SHOW)+' more';
     more.onclick = function(e){ e.stopPropagation(); calSelectDay(dateStr, dayEvts); };
     cell.appendChild(more);
   }
@@ -6084,7 +6017,6 @@ function buildCalCell(year, month, day, evMap, todStr, otherMonth){
 
 // ── Day detail panel ──
 function calSelectDay(dateStr, dayEvts){
-  // Update selection highlight
   document.querySelectorAll('.cal-day.selected').forEach(function(c){ c.classList.remove('selected'); });
   var selCell = document.querySelector('.cal-day[data-date="'+dateStr+'"]');
   if(selCell) selCell.classList.add('selected');
@@ -6093,21 +6025,19 @@ function calSelectDay(dateStr, dayEvts){
   var detailEl = document.getElementById('cal-day-detail');
   var listEl   = document.getElementById('cal-detail-list');
   var titleEl  = document.getElementById('cal-detail-date-title');
-  if(!detailEl || !listEl) return;
+  if(!detailEl||!listEl) return;
 
-  // Format date for title
   var parts = dateStr.split('-');
   var d = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
   var dayNames = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  if(titleEl) titleEl.textContent =
-    dayNames[d.getDay()] + ', ' + CAL_MONTHS[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+  if(titleEl) titleEl.textContent = dayNames[d.getDay()]+', '+CAL_MONTHS[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
 
   while(listEl.firstChild) listEl.removeChild(listEl.firstChild);
 
   if(!dayEvts.length){
     var empty = document.createElement('div');
     empty.style.cssText = 'padding:28px 16px;text-align:center;font-size:13px;color:var(--text3)';
-    empty.textContent = 'No events on this day — all clear!';
+    empty.innerHTML = '<div style="font-size:28px;margin-bottom:8px">✅</div>No events on this day — all clear!';
     listEl.appendChild(empty);
   } else {
     dayEvts.forEach(function(ev){
@@ -6120,8 +6050,7 @@ function calSelectDay(dateStr, dayEvts){
       dot.style.background = ev.dot;
 
       var info = document.createElement('div');
-      info.style.flex = '1';
-      info.style.minWidth = '0';
+      info.style.cssText = 'flex:1;min-width:0';
 
       var name = document.createElement('div');
       name.className = 'cal-detail-name';
@@ -6129,7 +6058,7 @@ function calSelectDay(dateStr, dayEvts){
 
       var meta = document.createElement('div');
       meta.className = 'cal-detail-meta';
-      meta.textContent = ev.badge + (ev.meta ? ' · ' + ev.meta : '');
+      meta.textContent = ev.badge+(ev.meta?' · '+ev.meta:'');
 
       info.appendChild(name);
       info.appendChild(meta);
@@ -6137,17 +6066,16 @@ function calSelectDay(dateStr, dayEvts){
       var badge = document.createElement('span');
       badge.className = 'badge';
       var typeStyles = {
-        'ev-compliance': 'background:var(--primary-light);color:var(--primary)',
-        'ev-evidence':   'background:var(--warning-light);color:var(--warning)',
-        'ev-audit':      'background:var(--success-light);color:var(--success)',
-        'ev-action':     'background:rgba(124,58,237,.12);color:#7c3aed',
-        'ev-risk':       'background:var(--danger-light);color:var(--danger)',
-        'ev-overdue':    'background:var(--danger-light);color:var(--danger)'
+        'ev-compliance':'background:var(--primary-light);color:var(--primary)',
+        'ev-evidence':'background:var(--warning-light);color:var(--warning)',
+        'ev-audit':'background:var(--success-light);color:var(--success)',
+        'ev-action':'background:rgba(124,58,237,.12);color:#7c3aed',
+        'ev-risk':'background:var(--danger-light);color:var(--danger)',
+        'ev-overdue':'background:var(--danger-light);color:var(--danger)'
       };
-      badge.style.cssText = (typeStyles[ev.type]||'') + ';white-space:nowrap;font-size:10px';
+      badge.style.cssText = (typeStyles[ev.type]||'')+';white-space:nowrap;font-size:10px';
       badge.textContent = ev.badge;
 
-      // Click to navigate
       (function(navId){
         item.onclick = function(){
           var navBtn = document.getElementById(navId);
@@ -6155,7 +6083,7 @@ function calSelectDay(dateStr, dayEvts){
           detailEl.style.display = 'none';
           calSelectedDate = null;
         };
-      })(ev.nav || 'nav-items');
+      })(ev.nav||'nav-items');
 
       item.appendChild(dot);
       item.appendChild(info);
@@ -6165,27 +6093,25 @@ function calSelectDay(dateStr, dayEvts){
   }
 
   detailEl.style.display = '';
-  setTimeout(function(){
-    detailEl.scrollIntoView({behavior:'smooth', block:'nearest'});
-  }, 50);
+  setTimeout(function(){ detailEl.scrollIntoView({behavior:'smooth',block:'nearest'}); }, 50);
 }
 
 // ── Navigation ──
 function calNext(){
   calMonth++;
-  if(calMonth > 11){ calMonth = 0; calYear++; }
+  if(calMonth>11){ calMonth=0; calYear++; }
   calSelectedDate = null;
-  var det = document.getElementById('cal-day-detail');
-  if(det) det.style.display = 'none';
+  var det=document.getElementById('cal-day-detail');
+  if(det) det.style.display='none';
   renderCalendar();
 }
 
 function calPrev(){
   calMonth--;
-  if(calMonth < 0){ calMonth = 11; calYear--; }
+  if(calMonth<0){ calMonth=11; calYear--; }
   calSelectedDate = null;
-  var det = document.getElementById('cal-day-detail');
-  if(det) det.style.display = 'none';
+  var det=document.getElementById('cal-day-detail');
+  if(det) det.style.display='none';
   renderCalendar();
 }
 
@@ -6194,10 +6120,11 @@ function calGoToday(){
   calYear  = now.getFullYear();
   calMonth = now.getMonth();
   calSelectedDate = null;
-  var det = document.getElementById('cal-day-detail');
-  if(det) det.style.display = 'none';
+  var det=document.getElementById('cal-day-detail');
+  if(det) det.style.display='none';
   renderCalendar();
 }
+
 
 // ════════════════════════════════════════════════
 // POLICY MANAGEMENT
