@@ -615,11 +615,11 @@
       <div id="s-emailtracker" class="sec">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
           <div>
-            <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">Email Tracker</div>
-            <div style="font-size:13px;color:var(--text2);margin-top:2px">Track all compliance follow-up emails and monitor replies</div>
+            <div style="font-size:18px;font-weight:800;color:#111827;letter-spacing:-.3px">Email Tracker</div>
+            <div style="font-size:13px;color:#6b7280;margin-top:2px">Track all compliance follow-up emails and monitor replies</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="et-filter-status" onchange="renderEmailTracker()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+            <select id="et-filter-status" onchange="renderEmailTracker()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#374151;outline:none">
               <option value="">All emails</option><option value="waiting">Waiting reply</option>
               <option value="overdue">Overdue</option><option value="replied">Replied</option>
             </select>
@@ -639,7 +639,7 @@
               <th style="min-width:100px">Sent</th>
               <th style="min-width:110px">Deadline</th>
               <th style="min-width:110px">Status</th>
-              <th style="min-width:200px">Actions</th>
+              <th style="min-width:180px">Actions</th>
             </tr></thead>
             <tbody id="et-tbody"></tbody>
           </table>
@@ -647,40 +647,40 @@
       </div>
 
       <!-- COMPOSE MODAL -->
-      <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.55);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:16px">
+      <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);margin:16px">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:20px 24px 0">
-            <div><div style="font-size:16px;font-weight:800;color:var(--text)">Compose &amp; Track Email</div><div style="font-size:12px;color:var(--text3);margin-top:2px">Write the email then send via your mail client</div></div>
-            <button onclick="closeCompose()" style="background:none;border:1px solid var(--border);border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--text2);font-size:18px;line-height:1">&#xD7;</button>
+            <div><div style="font-size:15px;font-weight:800;color:#111827">Compose &amp; Track Email</div><div style="font-size:12px;color:#9ca3af;margin-top:2px">Write the email, send via your mail client, track the reply</div></div>
+            <button onclick="closeCompose()" style="background:none;border:1px solid #e5e7eb;border-radius:8px;padding:5px 10px;cursor:pointer;color:#6b7280;font-size:18px;line-height:1">&#xD7;</button>
           </div>
-          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:14px">
+          <div style="padding:20px 24px;display:flex;flex-direction:column;gap:13px">
             <div class="p2">
               <div class="pf"><label>Stakeholder name *</label><input id="et-stakeholder" placeholder="e.g. Rahul Sharma"></div>
               <div class="pf"><label>Stakeholder email *</label><input id="et-email" type="email" placeholder="rahul@company.com"></div>
             </div>
             <div class="p2">
-              <div class="pf"><label>Category</label><select id="et-category"><option value="Follow-up">Follow-up</option><option value="Reminder">Reminder</option><option value="Escalation">Escalation</option><option value="Acknowledgement">Acknowledgement</option><option value="Evidence request">Evidence request</option><option value="Other">Other</option></select></div>
+              <div class="pf"><label>Category</label><select id="et-category"><option>Follow-up</option><option>Reminder</option><option>Escalation</option><option>Acknowledgement</option><option>Evidence request</option><option>Other</option></select></div>
               <div class="pf"><label>Date sent</label><input id="et-date" type="date"></div>
             </div>
-            <div class="pf"><label>Email subject *</label><input id="et-subject" placeholder="e.g. Reminder: Monthly server patch review overdue"></div>
-            <div class="pf"><label>Email body</label><textarea id="et-body" placeholder="Write your email here…" style="min-height:120px;resize:vertical;font-family:inherit;line-height:1.7;font-size:13px"></textarea></div>
-            <div class="pf"><label>Reply expected within (days)</label><div style="display:flex;align-items:center;gap:10px"><input id="et-days" type="number" value="2" min="1" max="30" style="width:80px"><span style="font-size:12px;color:var(--text3)">Clarix marks it overdue if no reply by then</span></div></div>
+            <div class="pf"><label>Subject *</label><input id="et-subject" placeholder="e.g. Reminder: Monthly server patch review overdue"></div>
+            <div class="pf"><label>Body</label><textarea id="et-body" placeholder="Write your email here…" style="min-height:100px;resize:vertical;font-family:inherit;line-height:1.6;font-size:13px"></textarea></div>
+            <div class="pf"><label>Reply expected within</label><div style="display:flex;align-items:center;gap:10px"><input id="et-days" type="number" value="2" min="1" max="30" style="width:80px"><span style="font-size:12px;color:#9ca3af">days — Clarix marks overdue if no reply by then</span></div></div>
           </div>
-          <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;background:var(--surface2);border-radius:0 0 16px 16px">
+          <div style="padding:14px 24px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end;background:#f9fafb;border-radius:0 0 16px 16px">
             <button class="btn" onclick="closeCompose()">Cancel</button>
-            <button class="btn" onclick="openGmail()" style="display:inline-flex;align-items:center;gap:6px">&#9993; Open in Gmail</button>
+            <button class="btn" onclick="openGmail()" style="display:inline-flex;align-items:center;gap:5px">&#9993; Gmail</button>
             <button class="btn btn-primary" id="save-email-btn" onclick="saveTrackedEmail()">Save &amp; Track</button>
           </div>
         </div>
       </div>
 
       <!-- REPLY CONFIRM MODAL -->
-      <div id="reply-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(15,17,23,.55);z-index:601;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;width:100%;max-width:400px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.25);margin:16px">
-          <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px">Mark as replied</div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:4px">Email: <strong id="reply-confirm-subject"></strong></div>
-          <div style="font-size:13px;color:var(--text2);margin-bottom:16px">When did you receive the reply?</div>
-          <div class="pf" style="margin-bottom:20px"><label>Reply received on</label><input id="reply-date-input" type="date"></div>
+      <div id="reply-confirm-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:601;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:16px;width:100%;max-width:400px;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.15);margin:16px">
+          <div style="font-size:15px;font-weight:800;color:#111827;margin-bottom:5px">Mark as replied</div>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:3px">Email: <strong id="reply-confirm-subject"></strong></div>
+          <div style="font-size:13px;color:#6b7280;margin-bottom:14px">When did you receive the reply?</div>
+          <div class="pf" style="margin-bottom:18px"><label>Reply date</label><input id="reply-date-input" type="date"></div>
           <div style="display:flex;gap:8px;justify-content:flex-end">
             <button class="btn" onclick="closeReplyConfirm()">Cancel</button>
             <button class="btn btn-primary" id="confirm-reply-btn">Confirm reply</button>
@@ -1049,71 +1049,93 @@
       <!-- AUDIT CALENDAR -->
       <div id="s-calendar" class="sec">
 
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
+        <!-- ── Page header ── -->
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
-            <div style="font-size:18px;font-weight:800;color:var(--text);letter-spacing:-.3px">Audit Calendar</div>
-            <div style="font-size:13px;color:var(--text2);margin-top:2px">All compliance deadlines, evidence due dates and audit events in one view</div>
+            <div style="font-size:18px;font-weight:800;color:#111827;letter-spacing:-.3px">Audit Calendar</div>
+            <div style="font-size:13px;color:#6b7280;margin-top:2px">All compliance deadlines, cert renewals, VA/PT scans and audit events — with priority-based reminders</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="cal-filter" onchange="renderCalendar()" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit;background:var(--surface);color:var(--text);outline:none">
+            <select id="cal-filter" onchange="renderCalendar()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#374151;outline:none;cursor:pointer">
               <option value="all">All events</option>
-              <option value="compliance">Compliance only</option>
-              <option value="evidence">Evidence only</option>
+              <option value="cert">Cert &amp; compliance only</option>
               <option value="audit">Audits only</option>
+              <option value="compliance">Tasks only</option>
+              <option value="evidence">Evidence only</option>
               <option value="action">Actions only</option>
               <option value="risk">High risks only</option>
             </select>
-            <button class="btn" onclick="calGoToday()">Today</button>
-            <button class="btn btn-primary" onclick="openPanel('schedule-audit-panel')" style="display:inline-flex;align-items:center;gap:6px">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+            <button class="btn" onclick="calGoToday()" style="font-size:13px;background:#fff;border:1.5px solid #e5e7eb">Today</button>
+            <button class="btn" onclick="openPanel('cert-tracker-panel')" style="font-size:13px;display:inline-flex;align-items:center;gap:5px;background:#fff;border:1.5px solid #e5e7eb">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Cert tracker
+            </button>
+            <button class="btn btn-primary" onclick="openPanel('schedule-audit-panel')" style="display:inline-flex;align-items:center;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               Schedule audit
             </button>
           </div>
         </div>
 
+        <!-- ── Summary cards ── -->
         <div id="cal-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px"></div>
+
+        <!-- ── Cert notifications + audit schedule strip ── -->
         <div id="cal-upcoming-strip" style="margin-bottom:18px"></div>
 
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
-            <button class="btn" onclick="calPrev()" style="padding:6px 14px;font-size:16px;line-height:1">&#8592;</button>
-            <div id="cal-month-title" style="font-size:16px;font-weight:700;color:var(--text);min-width:180px;text-align:center"></div>
-            <button class="btn" onclick="calNext()" style="padding:6px 14px;font-size:16px;line-height:1">&#8594;</button>
+        <!-- ── Calendar grid card ── -->
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+
+          <!-- Month nav -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid #f3f4f6">
+            <button class="btn" onclick="calPrev()" style="padding:6px 14px;font-size:16px;line-height:1;background:#f9fafb;border:1px solid #e5e7eb">&#8592;</button>
+            <div id="cal-month-title" style="font-size:16px;font-weight:700;color:#111827;min-width:180px;text-align:center"></div>
+            <button class="btn" onclick="calNext()" style="padding:6px 14px;font-size:16px;line-height:1;background:#f9fafb;border:1px solid #e5e7eb">&#8594;</button>
           </div>
-          <div style="display:grid;grid-template-columns:repeat(7,1fr);background:var(--surface2);border-bottom:1px solid var(--border)">
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">SUN</div>
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">MON</div>
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">TUE</div>
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">WED</div>
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">THU</div>
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">FRI</div>
-            <div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.5px">SAT</div>
+
+          <!-- Day headers -->
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f9fafb;border-bottom:1px solid #f3f4f6">
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">SUN</div>
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">MON</div>
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">TUE</div>
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">WED</div>
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">THU</div>
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">FRI</div>
+            <div style="padding:8px 6px;text-align:center;font-size:11px;font-weight:700;color:#9ca3af;letter-spacing:.6px">SAT</div>
           </div>
-          <div id="cal-days-grid" style="display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid var(--border2)"></div>
-          <div style="display:flex;gap:16px;flex-wrap:wrap;padding:12px 18px;border-top:1px solid var(--border);background:var(--surface2)">
-            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(91,94,244,.3)"></span>Compliance</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(245,158,11,.3)"></span>Evidence</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(16,185,129,.3)"></span>Audit</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(124,58,237,.3)"></span>Action</span>
-            <span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--text2)"><span style="width:10px;height:10px;border-radius:3px;background:rgba(239,68,68,.3)"></span>Overdue / Risk</span>
+
+          <!-- Day cells -->
+          <div id="cal-days-grid" style="display:grid;grid-template-columns:repeat(7,1fr);border-left:1px solid #f3f4f6"></div>
+
+          <!-- Legend -->
+          <div style="display:flex;gap:16px;flex-wrap:wrap;padding:11px 20px;border-top:1px solid #f3f4f6;background:#f9fafb;align-items:center">
+            <span style="font-size:10px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px">Legend:</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#dbeafe;border:1px solid #93c5fd;flex-shrink:0"></span>Compliance task</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#fef9c3;border:1px solid #fde047;flex-shrink:0"></span>Evidence</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#dcfce7;border:1px solid #86efac;flex-shrink:0"></span>Audit</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#ede9fe;border:1px solid #c4b5fd;flex-shrink:0"></span>Action</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#fef3c7;border:1px solid #fcd34d;flex-shrink:0"></span>🔔 Cert prep</span>
+            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#fee2e2;border:1px solid #fca5a5;flex-shrink:0"></span>Overdue / Expiry</span>
+            <span style="margin-left:auto;font-size:10px;color:#9ca3af">🔴 = P1 Critical &nbsp;|&nbsp; 🟡 = P2 High</span>
           </div>
         </div>
 
-        <div id="cal-day-detail" style="display:none;margin-top:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm)">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border)">
-            <div id="cal-detail-date-title" style="font-size:14px;font-weight:700;color:var(--text)"></div>
-            <button class="btn" onclick="document.getElementById('cal-day-detail').style.display='none';calSelectedDate=null;" style="padding:4px 10px;font-size:12px">✕ Close</button>
+        <!-- ── Day detail panel ── -->
+        <div id="cal-day-detail" style="display:none;margin-top:14px;background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)">
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid #f3f4f6;background:#f9fafb">
+            <div id="cal-detail-date-title" style="font-size:13px;font-weight:700;color:#111827"></div>
+            <button onclick="document.getElementById('cal-day-detail').style.display='none';calSelectedDate=null;" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:2px 6px">✕</button>
           </div>
-          <div id="cal-detail-list" style="padding:12px;display:flex;flex-direction:column;gap:6px"></div>
+          <div id="cal-detail-list" style="padding:12px;display:flex;flex-direction:column;gap:6px;max-height:400px;overflow-y:auto"></div>
         </div>
 
       </div>
       <!-- ═══ SCHEDULE AUDIT PANEL ═══ -->
-            <div id="schedule-audit-panel" class="slide-panel" style="max-width:520px">
+      <div id="schedule-audit-panel" class="slide-panel" style="max-width:520px">
         <div class="panel-header">
           <div>
             <div class="panel-title">📅 Schedule an audit</div>
-            <div class="panel-sub">Add a new audit event to the calendar</div>
+            <div class="panel-sub">Add an audit event — it appears on the calendar immediately</div>
           </div>
           <button class="panel-close" onclick="closePanel()">✕</button>
         </div>
@@ -1122,7 +1144,7 @@
             <label class="pf-label">Audit name *</label>
             <input id="sa-name" class="pf-input" placeholder="e.g. ISO 27001 Internal Audit Q3 2026">
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="p2">
             <div class="pf">
               <label class="pf-label">Audit type</label>
               <select id="sa-type" class="pf-input">
@@ -1138,7 +1160,7 @@
               </select>
             </div>
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div class="p2">
             <div class="pf">
               <label class="pf-label">Start date *</label>
               <input id="sa-start" type="date" class="pf-input">
@@ -1150,25 +1172,123 @@
           </div>
           <div class="pf">
             <label class="pf-label">Lead auditor</label>
-            <input id="sa-auditor" class="pf-input" placeholder="Name of the lead auditor or firm">
+            <input id="sa-auditor" class="pf-input" placeholder="Name of lead auditor or firm">
           </div>
           <div class="pf">
-            <label class="pf-label">Framework</label>
+            <label class="pf-label">Framework / Regulator</label>
             <select id="sa-framework" class="pf-input">
               <option value="">None / General</option><option>ISO 27001</option><option>SOC 2</option>
-              <option>GDPR</option><option>NIST CSF</option><option>PCI DSS</option>
-              <option>HIPAA</option><option>ISO 9001</option>
+              <option>PCI DSS</option><option>RBI</option><option>NPCI</option><option>DPDP</option>
+              <option>SEBI</option><option>IRDAI</option><option>GDPR</option><option>NIST CSF</option><option>HIPAA</option>
             </select>
           </div>
           <div class="pf">
             <label class="pf-label">Scope / description</label>
-            <textarea id="sa-desc" class="pf-input" rows="4" placeholder="What does this audit cover? Which departments, systems or controls?"></textarea>
+            <textarea id="sa-desc" class="pf-input" rows="3" placeholder="What does this audit cover? Which departments, systems or controls?"></textarea>
           </div>
         </div>
         <div class="panel-footer">
           <button class="btn btn-primary" style="flex:1" onclick="saveScheduledAudit()">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:6px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
             Save &amp; add to calendar
+          </button>
+          <button class="btn" onclick="closePanel()">Cancel</button>
+        </div>
+      </div>
+
+      <!-- ═══ CERT TRACKER PANEL ═══ -->
+      <div id="cert-tracker-panel" class="slide-panel" style="max-width:560px">
+        <div class="panel-header">
+          <div>
+            <div class="panel-title">🛡️ Certificate &amp; Compliance Tracker</div>
+            <div class="panel-sub">Track expiry dates — Clarix auto-notifies you before each deadline</div>
+          </div>
+          <button class="panel-close" onclick="closePanel()">✕</button>
+        </div>
+        <div class="panel-body">
+
+          <!-- Existing certs list -->
+          <div id="cert-tracker-list-wrap" style="margin-bottom:18px"></div>
+
+          <!-- Divider -->
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <div style="flex:1;height:1px;background:#f3f4f6"></div>
+            <span style="font-size:11px;font-weight:600;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">Add new certificate</span>
+            <div style="flex:1;height:1px;background:#f3f4f6"></div>
+          </div>
+
+          <!-- Lead time reference card -->
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:11px 13px;margin-bottom:16px;font-size:11px;color:#92400e">
+            <div style="font-weight:700;margin-bottom:5px">⏰ Auto-reminder lead times:</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:3px 12px;line-height:1.8">
+              <span>🔴 RBI / NPCI / SEBI / IRDAI — <strong>60 days</strong></span>
+              <span>🔴 PCI DSS Annual — <strong>60 days</strong></span>
+              <span>🟡 VA External / Internal — <strong>30 days</strong> per quarter</span>
+              <span>🟡 Pen Test (Annual) — <strong>60 days</strong></span>
+              <span>🟣 DPDP / GDPR — <strong>45 days</strong></span>
+              <span>🟢 ISO 27001 / SOC 2 — <strong>60 days</strong></span>
+            </div>
+          </div>
+
+          <!-- Add form -->
+          <div class="pf">
+            <label class="pf-label">Certificate / compliance name *</label>
+            <input id="ct-name" class="pf-input" placeholder="e.g. PCI DSS Annual Certification">
+          </div>
+          <div class="p2">
+            <div class="pf">
+              <label class="pf-label">Certificate type *</label>
+              <select id="ct-type" class="pf-input" onchange="document.getElementById('ct-frequency').value=(this.value.indexOf('VA')>-1?'Quarterly':'Annual')">
+                <option value="PCI DSS">PCI DSS Annual</option>
+                <option value="ISO 27001">ISO 27001</option>
+                <option value="SOC 2">SOC 2 Type II</option>
+                <option value="RBI">RBI Compliance</option>
+                <option value="NPCI">NPCI Compliance</option>
+                <option value="DPDP">DPDP Act</option>
+                <option value="SEBI">SEBI Audit</option>
+                <option value="IRDAI">IRDAI Audit</option>
+                <option value="VA External">VA — External Scan</option>
+                <option value="VA Internal">VA — Internal Scan</option>
+                <option value="PT Annual">Pen Test (Annual)</option>
+                <option value="GDPR">GDPR Review</option>
+                <option value="NIST CSF">NIST CSF Review</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+            <div class="pf">
+              <label class="pf-label">Frequency</label>
+              <select id="ct-frequency" class="pf-input">
+                <option value="Annual">Annual</option>
+                <option value="Quarterly">Quarterly</option>
+                <option value="Semi-annual">Semi-annual</option>
+                <option value="Monthly">Monthly</option>
+                <option value="Custom">Custom</option>
+              </select>
+            </div>
+          </div>
+          <div class="p2">
+            <div class="pf">
+              <label class="pf-label">Expiry / renewal date *</label>
+              <input id="ct-expiry" type="date" class="pf-input">
+            </div>
+            <div class="pf">
+              <label class="pf-label">Owner / responsible</label>
+              <input id="ct-owner" class="pf-input" placeholder="e.g. Shubham Samrit">
+            </div>
+          </div>
+          <div class="pf">
+            <label class="pf-label">Regulator / authority</label>
+            <input id="ct-regulator" class="pf-input" placeholder="e.g. RBI, NPCI, DPDP Authority">
+          </div>
+          <div class="pf">
+            <label class="pf-label">Notes</label>
+            <textarea id="ct-notes" class="pf-input" rows="2" placeholder="Any additional context, scope or notes…"></textarea>
+          </div>
+        </div>
+        <div class="panel-footer">
+          <button class="btn btn-primary" style="flex:1" onclick="saveCertTracker()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:5px"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            Save certificate
           </button>
           <button class="btn" onclick="closePanel()">Cancel</button>
         </div>

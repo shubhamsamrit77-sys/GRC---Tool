@@ -30,6 +30,7 @@ function openPanel(id){
     'evidence-panel': can('actions'),
     'ev-submit-panel': can('actions'),
     'schedule-audit-panel': can('actions'),
+    'cert-tracker-panel': can('actions'),
     'policy-panel': can('add'),
     'policy-view-panel': true
   };
@@ -263,7 +264,7 @@ document.addEventListener('visibilitychange', function(){
 });
 
 
-var items=[],logs=[],risks=[],users=[],actions=[],audits=[],evidenceItems=[],controlMappings=[],policies=[],auditLogs=[];var atPage=0,atPageSize=50;var calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calSelectedDate=null,currentUser=null,currentEmail=null,activeFreq='';
+var items=[],logs=[],risks=[],users=[],actions=[],audits=[],evidenceItems=[],controlMappings=[],policies=[],auditLogs=[],certTrackers=[];var atPage=0,atPageSize=50;var calYear=new Date().getFullYear(),calMonth=new Date().getMonth(),calSelectedDate=null,currentUser=null,currentEmail=null,activeFreq='';
 var FL={daily:'Daily',weekly:'Weekly',monthly:'Monthly',quarterly:'Quarterly',halfyearly:'Half-yearly',yearly:'Yearly'};
 var RC={admin:'#4f52d9',manager:'#0d9e7e',viewer:'#0369a1',stakeholder:'#e07d1a'};
 
@@ -718,6 +719,7 @@ async function loadAll(){
     var r7=await fetch(base+'grc_control_mappings?select=*',{method:'GET',headers:headers,mode:'cors'});
     var r8=await fetch(base+'grc_policies?select=*&order=created_at.desc',{method:'GET',headers:headers,mode:'cors'});
     var r9=await fetch(base+'grc_audit_trail?select=*&order=created_at.desc&limit=50',{method:'GET',headers:headers,mode:'cors'}).catch(function(){return {ok:false};});
+    var r10=await fetch(base+'grc_cert_tracker?select=*&order=cert_expiry.asc',{method:'GET',headers:headers,mode:'cors'}).catch(function(){return {ok:false};});
 
     if(!r1.ok||!r2.ok||!r3.ok){
       throw new Error('HTTP error: '+(r1.ok?r2.ok?r3.status:r2.status:r1.status));
@@ -753,6 +755,8 @@ async function loadAll(){
     policies=Array.isArray(d8)?d8:[];
     var d9=[];try{if(r9&&r9.ok)d9=await r9.json();}catch(e){d9=[];}
     auditLogs=Array.isArray(d9)?d9:[];
+    var d10=[];try{if(r10&&r10.ok)d10=await r10.json();}catch(e){d10=[];}
+    certTrackers=Array.isArray(d10)?d10:[];
     
     document.getElementById('conn-dot').style.background='#0d9e7e';
     document.getElementById('conn-lbl').style.color='#0d9e7e';
@@ -1975,14 +1979,13 @@ function getSystemPrompt(){
 
 // ── Main chat handler ──
 function sendAIMessage(){
-  var inputEl = document.getElementById('ai-chat-input');
+  var inputEl=document.getElementById('ai-chat-input');
   if(!inputEl) return;
-  var question = inputEl.value.trim();
-  if(!question) return;
-  inputEl.value = '';
-  askAI(question);
+  var q=inputEl.value.trim();
+  if(!q) return;
+  inputEl.value='';
+  askAI(q);
 }
-
 
 function askAI(question){
   if(!question || !question.trim()) return;
@@ -5689,89 +5692,291 @@ function openPdfFullscreen(){
 var CAL_MONTHS = ['January','February','March','April','May','June',
                   'July','August','September','October','November','December'];
 
+// ── Priority config ──────────────────────────────────────────────
+var CAL_REGULATORS = {
+  'RBI':  {color:'#dc2626',bg:'rgba(220,38,38,.1)',  label:'RBI',   priority:1},
+  'NPCI': {color:'#d97706',bg:'rgba(217,119,6,.1)',  label:'NPCI',  priority:2},
+  'DPDP': {color:'#7c3aed',bg:'rgba(124,58,237,.1)', label:'DPDP',  priority:2},
+  'SEBI': {color:'#dc2626',bg:'rgba(220,38,38,.1)',  label:'SEBI',  priority:1},
+  'IRDAI':{color:'#dc2626',bg:'rgba(220,38,38,.1)',  label:'IRDAI', priority:1},
+  'PCI':  {color:'#0369a1',bg:'rgba(3,105,161,.1)',  label:'PCI DSS',priority:2},
+  'ISO':  {color:'#047857',bg:'rgba(4,120,87,.1)',   label:'ISO',   priority:3},
+  'SOC':  {color:'#0f766e',bg:'rgba(15,118,110,.1)', label:'SOC 2', priority:3},
+  'GDPR': {color:'#1d4ed8',bg:'rgba(29,78,216,.1)',  label:'GDPR',  priority:2},
+  'NIST': {color:'#374151',bg:'rgba(55,65,81,.1)',   label:'NIST',  priority:3},
+  'VA':   {color:'#b45309',bg:'rgba(180,83,9,.1)',   label:'VA/PT', priority:2},
+  'PT':   {color:'#b45309',bg:'rgba(180,83,9,.1)',   label:'VA/PT', priority:2}
+};
+
+// ── Cert type lead-time rules ────────────────────────────────────
+var CERT_LEAD_TIMES = {
+  'PCI DSS':          {lead:60, label:'PCI DSS Annual',      freq:'Annual',    dot:'#0369a1', priority:1},
+  'ISO 27001':        {lead:60, label:'ISO 27001',           freq:'Annual',    dot:'#047857', priority:2},
+  'SOC 2':            {lead:60, label:'SOC 2',               freq:'Annual',    dot:'#0f766e', priority:2},
+  'RBI':              {lead:60, label:'RBI Compliance',       freq:'Annual',    dot:'#dc2626', priority:1},
+  'NPCI':             {lead:60, label:'NPCI Compliance',      freq:'Annual',    dot:'#d97706', priority:1},
+  'DPDP':             {lead:45, label:'DPDP Act',             freq:'Annual',    dot:'#7c3aed', priority:1},
+  'SEBI':             {lead:60, label:'SEBI Audit',           freq:'Annual',    dot:'#dc2626', priority:1},
+  'IRDAI':            {lead:60, label:'IRDAI Audit',          freq:'Annual',    dot:'#dc2626', priority:1},
+  'VA External':      {lead:30, label:'VA External Scan',     freq:'Quarterly', dot:'#b45309', priority:2},
+  'VA Internal':      {lead:30, label:'VA Internal Scan',     freq:'Quarterly', dot:'#b45309', priority:2},
+  'PT Annual':        {lead:60, label:'Penetration Test',     freq:'Annual',    dot:'#b45309', priority:2},
+  'GDPR':             {lead:45, label:'GDPR Review',          freq:'Annual',    dot:'#1d4ed8', priority:2},
+  'NIST CSF':         {lead:45, label:'NIST CSF Review',      freq:'Annual',    dot:'#374151', priority:3},
+  'Custom':           {lead:30, label:'Custom Audit',         freq:'Custom',    dot:'#6b7280', priority:3}
+};
+
+function getCertLeadDays(ct){ return (CERT_LEAD_TIMES[ct]||CERT_LEAD_TIMES['Custom']).lead; }
+
+// ── Compute notification date (expiry minus lead days) ──────────
+function certNotifyDate(certExpiry, certType){
+  if(!certExpiry) return null;
+  var d = new Date(certExpiry);
+  d.setDate(d.getDate() - getCertLeadDays(certType||'Custom'));
+  return d.toISOString().split('T')[0];
+}
+
+// ── Get regulator badge config ───────────────────────────────────
+function getRegulatorStyle(name){
+  var upper = (name||'').toUpperCase();
+  for(var k in CAL_REGULATORS){
+    if(upper.indexOf(k) > -1) return CAL_REGULATORS[k];
+  }
+  return null;
+}
+
+// ── Collect ALL calendar events ──────────────────────────────────
 function calGetAllEvents(filterType){
   var evts=[], tod=today();
+
   if(!filterType||filterType==='all'||filterType==='compliance'){
     items.forEach(function(it){
       if(!it.due_date) return;
       var st=getStatus(it); if(st==='done') return;
       var isOv=st==='overdue';
-      evts.push({date:it.due_date,title:it.name||'Compliance task',type:isOv?'ev-overdue':'ev-compliance',dot:isOv?'#ef4444':'#5b5ef4',badge:isOv?'Overdue':'Compliance',meta:(it.stakeholder||'')+(it.dept?' · '+it.dept:''),nav:'nav-items'});
+      var reg=getRegulatorStyle(it.name||'');
+      evts.push({date:it.due_date,title:it.name||'Compliance task',
+        type:isOv?'ev-overdue':'ev-compliance',dot:reg?reg.color:'#5b5ef4',
+        badge:isOv?'Overdue':'Compliance',
+        meta:(it.stakeholder||'')+(it.dept?' · '+it.dept:''),
+        priority:reg?reg.priority:3,nav:'nav-items',regulator:reg});
     });
   }
+
   if(!filterType||filterType==='all'||filterType==='evidence'){
     evidenceItems.forEach(function(ev){
       if(!ev.deadline||ev.status==='Approved') return;
       var ao=audits.find(function(a){return a.id===ev.audit_id;});
       var isOv=ev.deadline<tod&&ev.status!=='Submitted';
-      evts.push({date:ev.deadline,title:ev.title||'Evidence request',type:isOv?'ev-overdue':'ev-evidence',dot:isOv?'#ef4444':'#f59e0b',badge:ev.status==='Submitted'?'Submitted':isOv?'Overdue':'Evidence',meta:(ev.owner||'')+(ao?' · '+ao.name:''),nav:'nav-evidence'});
+      evts.push({date:ev.deadline,title:ev.title||'Evidence request',
+        type:isOv?'ev-overdue':'ev-evidence',dot:isOv?'#ef4444':'#f59e0b',
+        badge:ev.status==='Submitted'?'Submitted':isOv?'Overdue':'Evidence',
+        meta:(ev.owner||'')+(ao?' · '+ao.name:''),priority:3,nav:'nav-evidence'});
     });
   }
+
   if(!filterType||filterType==='all'||filterType==='audit'){
     audits.forEach(function(a){
-      var sd=a.status==='In Progress'?'#10b981':a.status==='On Hold'?'#f59e0b':a.status==='Completed'?'#9ca3af':'#4f52d9';
-      if(a.start_date) evts.push({date:a.start_date,title:a.name||'Audit',type:'ev-audit',dot:sd,badge:a.status==='In Progress'?'🟢 In Progress':a.status==='Upcoming'?'📅 Upcoming':(a.status||'Audit'),meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''),nav:'nav-evidence'});
-      if(a.end_date&&a.end_date!==a.start_date) evts.push({date:a.end_date,title:(a.name||'Audit')+' (end)',type:'ev-audit',dot:sd,badge:'Audit end',meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''),nav:'nav-evidence'});
+      var reg=getRegulatorStyle(a.name||'');
+      var dot=reg?reg.color:(a.status==='In Progress'?'#10b981':a.status==='On Hold'?'#f59e0b':a.status==='Completed'?'#9ca3af':'#4f52d9');
+      var pri=reg?reg.priority:3;
+      var badge=a.status==='In Progress'?'🟢 In Progress':a.status==='Upcoming'?'📅 Upcoming':(a.status||'Audit');
+      if(a.start_date) evts.push({date:a.start_date,title:a.name||'Audit',type:'ev-audit',dot:dot,badge:badge,meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''),priority:pri,nav:'nav-evidence',regulator:reg,durationDays:a.end_date?Math.ceil((new Date(a.end_date)-new Date(a.start_date))/86400000):null});
+      if(a.end_date&&a.end_date!==a.start_date) evts.push({date:a.end_date,title:(a.name||'Audit')+' ends',type:'ev-audit',dot:dot,badge:'Audit end',meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''),priority:pri,nav:'nav-evidence',regulator:reg});
     });
   }
+
   if(!filterType||filterType==='all'||filterType==='action'){
     actions.forEach(function(ac){
       if(!ac.due_date||ac.status==='Closed') return;
       var isOv=typeof getActionStatus==='function'?getActionStatus(ac)==='overdue':ac.due_date<tod;
-      evts.push({date:ac.due_date,title:ac.title||'Action item',type:isOv?'ev-overdue':'ev-action',dot:isOv?'#ef4444':'#7c3aed',badge:isOv?'Overdue':'Action',meta:(ac.owner||'')+(ac.priority?' · '+ac.priority:''),nav:'nav-actions'});
+      evts.push({date:ac.due_date,title:ac.title||'Action item',type:isOv?'ev-overdue':'ev-action',dot:isOv?'#ef4444':'#7c3aed',badge:isOv?'Overdue':'Action',meta:(ac.owner||'')+(ac.priority?' · '+ac.priority:''),priority:3,nav:'nav-actions'});
     });
   }
+
   if(!filterType||filterType==='all'||filterType==='risk'){
     risks.forEach(function(r){
       var score=(r.likelihood||1)*(r.impact||1);
       if(score<15||r.status==='Closed') return;
-      evts.push({date:tod,title:r.name||'High risk',type:'ev-risk',dot:'#ef4444',badge:'High risk ('+score+')',meta:(r.category||'')+(r.owner?' · '+r.owner:''),nav:'nav-risks'});
+      evts.push({date:tod,title:r.name||'High risk',type:'ev-risk',dot:'#ef4444',badge:'🔴 High risk ('+score+')',meta:(r.category||'')+(r.owner?' · '+r.owner:''),priority:2,nav:'nav-risks'});
     });
   }
+
+  // ── CERT TRACKER EVENTS ──────────────────────────────────────
+  if(!filterType||filterType==='all'||filterType==='cert'){
+    certTrackers.forEach(function(ct){
+      if(!ct.cert_expiry) return;
+      var reg=getRegulatorStyle(ct.cert_type||ct.cert_name||'');
+      var cfg=CERT_LEAD_TIMES[ct.cert_type]||CERT_LEAD_TIMES['Custom'];
+      var dot=reg?reg.color:cfg.dot;
+      var pri=reg?reg.priority:cfg.priority;
+
+      // 1) Expiry event
+      var isExpired=ct.cert_expiry<=tod;
+      evts.push({date:ct.cert_expiry,title:(ct.cert_name||ct.cert_type||'Certificate')+' expires',
+        type:isExpired?'ev-overdue':'ev-cert-expiry',dot:isExpired?'#ef4444':dot,
+        badge:isExpired?'⚠️ EXPIRED':'Certificate expiry',
+        meta:(ct.cert_type||'')+(ct.owner?' · '+ct.owner:''),
+        priority:isExpired?0:pri,nav:'nav-calendar',regulator:reg,isCert:true,certId:ct.id});
+
+      // 2) Notification / "start audit prep" event
+      var notifyDate=certNotifyDate(ct.cert_expiry, ct.cert_type);
+      if(notifyDate && notifyDate>=tod){
+        var leadDays=getCertLeadDays(ct.cert_type);
+        var notifyLabel='🔔 Start '+cfg.label+' prep ('+leadDays+'d before expiry)';
+        evts.push({date:notifyDate,title:notifyLabel,
+          type:'ev-cert-notify',dot:dot,
+          badge:'⏰ Start audit prep',
+          meta:(ct.cert_name||ct.cert_type||'')+(ct.owner?' · '+ct.owner:''),
+          priority:pri,nav:'nav-calendar',regulator:reg,isCert:true,certId:ct.id});
+      }
+
+      // 3) For quarterly scans (VA) - add all 4 quarter events
+      if(ct.cert_type==='VA External'||ct.cert_type==='VA Internal'){
+        for(var q=1;q<=3;q++){
+          var qDate=new Date(ct.cert_expiry);
+          qDate.setMonth(qDate.getMonth()-(q*3));
+          var qStr=qDate.toISOString().split('T')[0];
+          var nDate=new Date(qDate);
+          nDate.setDate(nDate.getDate()-30);
+          var nStr=nDate.toISOString().split('T')[0];
+          if(qStr>=tod){
+            evts.push({date:qStr,title:(ct.cert_name||ct.cert_type)+' Q'+(4-q)+' due',
+              type:'ev-cert-expiry',dot:dot,badge:'VA Quarterly scan',
+              meta:ct.cert_type+(ct.owner?' · '+ct.owner:''),
+              priority:pri,nav:'nav-calendar',regulator:reg,isCert:true});
+          }
+          if(nStr>=tod){
+            evts.push({date:nStr,title:'🔔 Prepare '+ct.cert_type+' Q'+(4-q)+' (30d notice)',
+              type:'ev-cert-notify',dot:dot,badge:'⏰ VA prep reminder',
+              meta:ct.cert_type+(ct.owner?' · '+ct.owner:''),
+              priority:pri,nav:'nav-calendar',regulator:reg,isCert:true});
+          }
+        }
+      }
+    });
+  }
+
   return evts;
 }
 
+// ── Summary metric cards ─────────────────────────────────────────
 function calBuildSummary(allEvts){
   var sumEl=document.getElementById('cal-summary'); if(!sumEl) return;
   while(sumEl.firstChild) sumEl.removeChild(sumEl.firstChild);
   var tod=today(), in7=new Date(); in7.setDate(in7.getDate()+7);
   var in7Str=in7.toISOString().split('T')[0];
   var monPrefix=calYear+'-'+String(calMonth+1).padStart(2,'0');
-  var thisMonth=allEvts.filter(function(e){return e.date&&e.date.startsWith(monPrefix);}).length;
-  var overdue=allEvts.filter(function(e){return e.type==='ev-overdue';}).length;
+  var overdue=allEvts.filter(function(e){return e.type==='ev-overdue'||(e.isCert&&e.date<tod&&e.type==='ev-cert-expiry');}).length;
+  var certs=allEvts.filter(function(e){return e.isCert&&e.type==='ev-cert-notify';}).length;
   var next7=allEvts.filter(function(e){return e.date&&e.date>=tod&&e.date<=in7Str&&e.type!=='ev-overdue';}).length;
-  [{l:'This month',v:thisMonth,color:'var(--primary)'},{l:'Overdue',v:overdue,color:'var(--danger)'},{l:'Next 7 days',v:next7,color:'var(--warning)'},{l:'Total events',v:allEvts.length,color:'var(--text)'}].forEach(function(m){
+  var critical=allEvts.filter(function(e){return e.priority===1;}).length;
+  [{l:'Overdue / Expired',v:overdue,color:'#dc2626',icon:'🔴'},
+   {l:'Cert notifications',v:certs,color:'#d97706',icon:'🔔'},
+   {l:'Next 7 days',v:next7,color:'#0369a1',icon:'📅'},
+   {l:'Critical (P1)',v:critical,color:'#7c3aed',icon:'⚠️'}
+  ].forEach(function(m){
     var card=document.createElement('div'); card.className='metric-card';
     var val=document.createElement('div'); val.className='mc-val'; val.style.color=m.color; val.textContent=m.v;
-    var lbl=document.createElement('div'); lbl.className='mc-label'; lbl.textContent=m.l;
+    var lbl=document.createElement('div'); lbl.className='mc-label'; lbl.textContent=m.icon+' '+m.l;
     card.appendChild(val); card.appendChild(lbl); sumEl.appendChild(card);
   });
 }
 
+// ── Audit schedule strip ─────────────────────────────────────────
 function renderUpcomingAudits(){
   var el=document.getElementById('cal-upcoming-strip'); if(!el) return;
   var tod=today();
   var future=audits.filter(function(a){return a.start_date&&a.start_date>=tod&&a.status!=='Completed';}).sort(function(a,b){return a.start_date>b.start_date?1:-1;});
   var ongoing=audits.filter(function(a){return a.start_date&&a.start_date<=tod&&(!a.end_date||a.end_date>=tod)&&a.status!=='Completed';});
-  if(!future.length&&!ongoing.length){el.innerHTML='';return;}
-  var sc={'Upcoming':{bg:'#ede9fe',t:'#4f52d9',b:'rgba(79,82,217,.2)'},'In Progress':{bg:'#e0f7f2',t:'#0d9e7e',b:'rgba(13,158,126,.2)'},'On Hold':{bg:'#fef3e2',t:'#b45309',b:'rgba(180,83,9,.2)'},'Completed':{bg:'#f0fdf4',t:'#166534',b:'rgba(22,101,52,.2)'}};
+  // Also show cert notifications due within 90 days
+  var in90=new Date(); in90.setDate(in90.getDate()+90); var in90Str=in90.toISOString().split('T')[0];
+  var certNotifs=certTrackers.filter(function(ct){
+    if(!ct.cert_expiry) return false;
+    var nd=certNotifyDate(ct.cert_expiry,ct.cert_type);
+    return nd && nd>=tod && ct.cert_expiry<=in90Str;
+  }).sort(function(a,b){return a.cert_expiry>b.cert_expiry?1:-1;});
+
+  if(!future.length&&!ongoing.length&&!certNotifs.length){el.innerHTML='';return;}
+
+  var sc={'Upcoming':{bg:'#eff6ff',t:'#1d4ed8',b:'rgba(29,78,216,.15)'},'In Progress':{bg:'#f0fdf4',t:'#15803d',b:'rgba(21,128,61,.15)'},'On Hold':{bg:'#fefce8',t:'#a16207',b:'rgba(161,98,7,.15)'},'Completed':{bg:'#f9fafb',t:'#6b7280',b:'rgba(107,114,128,.15)'}};
   function dU(d){return Math.ceil((new Date(d).getTime()-new Date(tod).getTime())/86400000);}
-  function dL(d){return d===0?'today':d===1?'tomorrow':d<0?Math.abs(d)+'d ago':'in '+d+' days';}
-  var CAL_M=['January','February','March','April','May','June','July','August','September','October','November','December'];
-  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px"><div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:12px"><span>📅</span> Audit schedule'+(ongoing.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#e0f7f2;color:#0d9e7e">'+ongoing.length+' ongoing</span>':'')+(future.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#4f52d9">'+future.length+' upcoming</span>':'')+'</div><div style="display:flex;flex-direction:column;gap:8px">';
-  ongoing.concat(future).slice(0,5).forEach(function(a){
-    var c=sc[a.status]||sc['Upcoming'];
-    var isOng=a.start_date<=tod&&(!a.end_date||a.end_date>=tod);
-    var du=a.start_date?dU(a.start_date):null;
-    var dLab=isOng?'Ongoing':(du!==null?dL(du):'');
-    var prog='';
-    if(isOng&&a.start_date&&a.end_date){var tt=new Date(a.end_date).getTime()-new Date(a.start_date).getTime();var dn=new Date(tod).getTime()-new Date(a.start_date).getTime();var pct=Math.min(100,Math.max(0,Math.round(dn/tt*100)));prog='<div style="margin-top:6px;height:4px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#0d9e7e;border-radius:4px"></div></div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+pct+'% through audit period</div>';}
-    html+='<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px"><div style="width:42px;text-align:center;flex-shrink:0"><div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1">'+(a.start_date?a.start_date.split('-')[2]:'—')+'</div><div style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase">'+(a.start_date?CAL_M[parseInt(a.start_date.split('-')[1])-1].substring(0,3):'')+'</div></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px"><span style="font-size:13px;font-weight:600;color:var(--text)">'+(a.name||'Audit')+'</span><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+c.bg+';color:'+c.t+';border:1px solid '+c.b+'">'+(isOng?'🟢 In Progress':(a.status||'Upcoming'))+'</span></div><div style="font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap"><span>'+(a.audit_type||'Internal')+'</span>'+(a.auditor?'<span>👤 '+a.auditor+'</span>':'')+(a.end_date?'<span>Ends '+a.end_date+'</span>':'')+'<span style="font-weight:600;color:'+(isOng?'#0d9e7e':'var(--primary)')+'">⏱ '+dLab+'</span></div>'+prog+'</div></div>';
-  });
-  html+='</div></div>';
+  function dL(d){return d===0?'Today':d===1?'Tomorrow':d<0?Math.abs(d)+'d overdue':'in '+d+' days';}
+  var CAL_M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  var html='<div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden">';
+
+  // ── Cert notifications section ───────────────────────────────
+  if(certNotifs.length){
+    html+='<div style="background:#fffbeb;border-bottom:1px solid #fde68a;padding:12px 18px">';
+    html+='<div style="font-size:12px;font-weight:700;color:#92400e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">🔔 Upcoming certificate & compliance deadlines</div>';
+    html+='<div style="display:flex;flex-direction:column;gap:6px">';
+    certNotifs.forEach(function(ct){
+      var cfg=CERT_LEAD_TIMES[ct.cert_type]||CERT_LEAD_TIMES['Custom'];
+      var reg=getRegulatorStyle(ct.cert_type||ct.cert_name||'');
+      var dot=reg?reg.color:cfg.dot;
+      var expDays=dU(ct.cert_expiry);
+      var notifyDays=dU(certNotifyDate(ct.cert_expiry,ct.cert_type));
+      var isPast=notifyDays<0;
+      html+='<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:#fff;border:1px solid '+(isPast?'#fca5a5':'#fde68a')+';border-radius:8px">';
+      html+='<div style="width:8px;height:8px;border-radius:50%;background:'+dot+';flex-shrink:0"></div>';
+      html+='<div style="flex:1;min-width:0">';
+      html+='<div style="font-size:12px;font-weight:600;color:#111827">'+(ct.cert_name||ct.cert_type)+'</div>';
+      html+='<div style="font-size:11px;color:#6b7280">Cert expires <strong>'+ct.cert_expiry+'</strong> · Start prep '+Math.abs(notifyDays)+'d '+(isPast?'ago':'from now')+(ct.owner?' · '+ct.owner:'')+'</div>';
+      html+='</div>';
+      if(reg) html+='<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+reg.bg+';color:'+reg.color+'">'+reg.label+'</span>';
+      html+='<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+(expDays<=30?'#fee2e2':'#fef3c7')+';color:'+(expDays<=30?'#dc2626':'#92400e')+'">Exp: '+dL(expDays)+'</span>';
+      html+='</div>';
+    });
+    html+='</div></div>';
+  }
+
+  // ── Audit schedule ───────────────────────────────────────────
+  if(ongoing.length||future.length){
+    html+='<div style="padding:14px 18px">';
+    html+='<div style="font-size:12px;font-weight:700;color:#6b7280;text-transform:uppercase;letter-spacing:.5px;display:flex;align-items:center;gap:8px;margin-bottom:10px">📋 Audit schedule';
+    if(ongoing.length) html+='<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#f0fdf4;color:#15803d">'+ongoing.length+' ongoing</span>';
+    if(future.length) html+='<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#eff6ff;color:#1d4ed8">'+future.length+' upcoming</span>';
+    html+='</div><div style="display:flex;flex-direction:column;gap:6px">';
+    ongoing.concat(future).slice(0,6).forEach(function(a){
+      var c=sc[a.status]||sc['Upcoming'];
+      var reg=getRegulatorStyle(a.name||'');
+      var isOng=a.start_date<=tod&&(!a.end_date||a.end_date>=tod);
+      var du=a.start_date?dU(a.start_date):null;
+      var dLabel=isOng?'Ongoing':(du!==null?dL(du):'');
+      var prog='';
+      if(isOng&&a.start_date&&a.end_date){
+        var tt=new Date(a.end_date).getTime()-new Date(a.start_date).getTime();
+        var dn=new Date(tod).getTime()-new Date(a.start_date).getTime();
+        var pct=Math.min(100,Math.max(0,Math.round(dn/tt*100)));
+        prog='<div style="margin-top:5px;display:flex;align-items:center;gap:8px"><div style="flex:1;height:3px;background:#e5e7eb;border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#10b981;border-radius:4px"></div></div><span style="font-size:10px;color:#6b7280;white-space:nowrap">'+pct+'%</span></div>';
+      }
+      html+='<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:9px">';
+      html+='<div style="width:36px;text-align:center;flex-shrink:0;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:4px 0">';
+      html+='<div style="font-size:15px;font-weight:800;color:#1d4ed8;line-height:1">'+(a.start_date?a.start_date.split('-')[2]:'—')+'</div>';
+      html+='<div style="font-size:8px;font-weight:600;color:#9ca3af;text-transform:uppercase">'+(a.start_date?CAL_M[parseInt(a.start_date.split('-')[1])-1]:'')+'</div>';
+      html+='</div>';
+      html+='<div style="flex:1;min-width:0">';
+      html+='<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:2px">';
+      html+='<span style="font-size:12px;font-weight:600;color:#111827">'+(a.name||'Audit')+'</span>';
+      html+='<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+c.bg+';color:'+c.t+';border:1px solid '+c.b+'">'+(isOng?'🟢 In Progress':(a.status||'Upcoming'))+'</span>';
+      if(reg) html+='<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+reg.bg+';color:'+reg.color+'">'+reg.label+'</span>';
+      html+='</div>';
+      html+='<div style="font-size:11px;color:#6b7280;display:flex;gap:8px;flex-wrap:wrap">';
+      html+='<span>'+(a.audit_type||'Internal')+'</span>';
+      if(a.auditor) html+='<span>👤 '+a.auditor+'</span>';
+      if(a.end_date) html+='<span>Ends '+a.end_date+'</span>';
+      html+='<span style="font-weight:600;color:'+(isOng?'#15803d':'#1d4ed8')+'">'+dLabel+'</span>';
+      html+='</div>'+prog+'</div></div>';
+    });
+    html+='</div></div>';
+  }
+
+  html+='</div>';
   el.innerHTML=html;
 }
 
+// ── Main calendar render ─────────────────────────────────────────
 function renderCalendar(){
   try{
     var filterEl=document.getElementById('cal-filter');
@@ -5784,7 +5989,9 @@ function renderCalendar(){
     if(titleEl) titleEl.textContent=CAL_M[calMonth]+' '+calYear;
     var evMap={};
     allEvts.forEach(function(ev){if(!ev.date)return;if(!evMap[ev.date])evMap[ev.date]=[];evMap[ev.date].push(ev);});
-    Object.keys(evMap).forEach(function(dt){evMap[dt].sort(function(a,b){var o={'ev-overdue':0,'ev-compliance':1,'ev-evidence':2,'ev-audit':3,'ev-action':4,'ev-risk':5};return(o[a.type]||9)-(o[b.type]||9);});});
+    Object.keys(evMap).forEach(function(dt){
+      evMap[dt].sort(function(a,b){return(a.priority||9)-(b.priority||9);});
+    });
     var grid=document.getElementById('cal-days-grid'); if(!grid) return;
     while(grid.firstChild) grid.removeChild(grid.firstChild);
     var firstWd=new Date(calYear,calMonth,1).getDay();
@@ -5799,26 +6006,41 @@ function renderCalendar(){
   }catch(e){console.warn('Calendar render error:',e.message);}
 }
 
+// ── Build one cell ───────────────────────────────────────────────
 function buildCalCell(year,month,day,evMap,todStr,otherMonth){
   var dateObj=new Date(year,month,day);
   var dateStr=dateObj.getFullYear()+'-'+String(dateObj.getMonth()+1).padStart(2,'0')+'-'+String(dateObj.getDate()).padStart(2,'0');
-  var isToday=dateStr===todStr,isSel=dateStr===calSelectedDate;
+  var isToday=dateStr===todStr, isSel=dateStr===calSelectedDate;
   var cell=document.createElement('div');
   cell.className='cal-day'+(otherMonth?' other-month':'')+(isToday?' today':'')+(isSel?' selected':'');
   cell.setAttribute('data-date',dateStr);
-  var num=document.createElement('div'); num.className='cal-day-num'; num.textContent=dateObj.getDate(); cell.appendChild(num);
+  var num=document.createElement('div'); num.className='cal-day-num'; num.textContent=dateObj.getDate();
+  cell.appendChild(num);
   var dayEvts=evMap[dateStr]||[], MAX=3;
   dayEvts.slice(0,MAX).forEach(function(ev){
-    var pill=document.createElement('div'); pill.className='cal-event '+ev.type; pill.textContent=ev.title;
-    pill.title=ev.badge+' — '+ev.title+(ev.meta?' ('+ev.meta+')':'');
+    var pill=document.createElement('div');
+    pill.className='cal-event '+(ev.type||'ev-compliance');
+    pill.textContent=ev.title;
+    pill.title=(ev.badge||'')+' — '+ev.title+(ev.meta?' ('+ev.meta+')':'');
+    // Priority indicator dot for P1
+    if(ev.priority===1){
+      var pDot=document.createElement('span');
+      pDot.style.cssText='display:inline-block;width:5px;height:5px;border-radius:50%;background:#dc2626;margin-right:3px;vertical-align:middle;flex-shrink:0';
+      pill.insertBefore(pDot, pill.firstChild);
+    }
     pill.onclick=function(e){e.stopPropagation();calSelectDay(dateStr,evMap[dateStr]||[]);};
     cell.appendChild(pill);
   });
-  if(dayEvts.length>MAX){var more=document.createElement('div');more.className='cal-more';more.textContent='+'+(dayEvts.length-MAX)+' more';more.onclick=function(e){e.stopPropagation();calSelectDay(dateStr,dayEvts);};cell.appendChild(more);}
+  if(dayEvts.length>MAX){
+    var more=document.createElement('div'); more.className='cal-more';
+    more.textContent='+'+(dayEvts.length-MAX)+' more';
+    more.onclick=function(e){e.stopPropagation();calSelectDay(dateStr,dayEvts);}; cell.appendChild(more);
+  }
   cell.onclick=function(){calSelectDay(dateStr,evMap[dateStr]||[]);};
   return cell;
 }
 
+// ── Day detail panel ─────────────────────────────────────────────
 function calSelectDay(dateStr,dayEvts){
   document.querySelectorAll('.cal-day.selected').forEach(function(c){c.classList.remove('selected');});
   var selCell=document.querySelector('.cal-day[data-date="'+dateStr+'"]'); if(selCell) selCell.classList.add('selected');
@@ -5831,30 +6053,220 @@ function calSelectDay(dateStr,dayEvts){
   if(titleEl) titleEl.textContent=dayNames[d.getDay()]+', '+CAL_M[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
   while(listEl.firstChild) listEl.removeChild(listEl.firstChild);
   if(!dayEvts.length){
-    var empty=document.createElement('div'); empty.style.cssText='padding:28px 16px;text-align:center;font-size:13px;color:var(--text3)';
-    empty.innerHTML='<div style="font-size:28px;margin-bottom:8px">✅</div>No events on this day — all clear!'; listEl.appendChild(empty);
+    var empty=document.createElement('div');
+    empty.style.cssText='padding:24px 16px;text-align:center;font-size:13px;color:#9ca3af';
+    empty.innerHTML='<div style="font-size:24px;margin-bottom:6px">✅</div>No events — all clear!';
+    listEl.appendChild(empty);
   } else {
+    var PRIORITY_LABELS={0:'EXPIRED',1:'P1 — Critical',2:'P2 — High',3:'P3 — Normal'};
+    var PRIORITY_COLORS={0:'#dc2626',1:'#dc2626',2:'#d97706',3:'#6b7280'};
+    var TYPE_STYLES={'ev-compliance':'background:#eff6ff;color:#1d4ed8','ev-evidence':'background:#fefce8;color:#a16207','ev-audit':'background:#f0fdf4;color:#15803d','ev-action':'background:#faf5ff;color:#7c3aed','ev-risk':'background:#fff1f2;color:#e11d48','ev-overdue':'background:#fff1f2;color:#e11d48','ev-cert-expiry':'background:#fff7ed;color:#c2410c','ev-cert-notify':'background:#fffbeb;color:#92400e'};
     dayEvts.forEach(function(ev){
-      var item=document.createElement('div'); item.className='cal-detail-item'; item.title='Click to navigate';
-      var dot=document.createElement('div'); dot.className='cal-detail-dot'; dot.style.background=ev.dot;
+      var item=document.createElement('div');
+      item.style.cssText='display:flex;align-items:flex-start;gap:10px;padding:10px 12px;background:#f9fafb;border:1px solid #e5e7eb;border-radius:9px;cursor:pointer;transition:background .15s';
+      item.onmouseover=function(){this.style.background='#f3f4f6';};
+      item.onmouseout=function(){this.style.background='#f9fafb';};
+
+      // Left dot
+      var dot=document.createElement('div');
+      dot.style.cssText='width:10px;height:10px;border-radius:50%;background:'+(ev.dot||'#5b5ef4')+';flex-shrink:0;margin-top:2px';
+
       var info=document.createElement('div'); info.style.cssText='flex:1;min-width:0';
-      var name=document.createElement('div'); name.className='cal-detail-name'; name.textContent=ev.title;
-      var meta=document.createElement('div'); meta.className='cal-detail-meta'; meta.textContent=ev.badge+(ev.meta?' · '+ev.meta:'');
-      info.appendChild(name); info.appendChild(meta);
-      var badge=document.createElement('span'); badge.className='badge';
-      var ts={'ev-compliance':'background:var(--primary-light);color:var(--primary)','ev-evidence':'background:var(--warning-light);color:var(--warning)','ev-audit':'background:var(--success-light);color:var(--success)','ev-action':'background:rgba(124,58,237,.12);color:#7c3aed','ev-risk':'background:var(--danger-light);color:var(--danger)','ev-overdue':'background:var(--danger-light);color:var(--danger)'};
-      badge.style.cssText=(ts[ev.type]||'')+';white-space:nowrap;font-size:10px'; badge.textContent=ev.badge;
-      (function(navId){item.onclick=function(){var nb=document.getElementById(navId);if(nb)nb.click();detailEl.style.display='none';calSelectedDate=null;};})(ev.nav||'nav-items');
-      item.appendChild(dot); item.appendChild(info); item.appendChild(badge); listEl.appendChild(item);
+
+      // Title row
+      var titleRow=document.createElement('div');
+      titleRow.style.cssText='display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:2px';
+      var nameEl=document.createElement('span');
+      nameEl.style.cssText='font-size:12px;font-weight:600;color:#111827';
+      nameEl.textContent=ev.title;
+      titleRow.appendChild(nameEl);
+      // Priority badge
+      if(ev.priority<=2){
+        var pb=document.createElement('span');
+        pb.style.cssText='font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;background:'+(ev.priority===1?'#fee2e2':'#fef3c7')+';color:'+(ev.priority===1?'#dc2626':'#92400e')+'';
+        pb.textContent=PRIORITY_LABELS[ev.priority]||'P'+ev.priority;
+        titleRow.appendChild(pb);
+      }
+      if(ev.regulator){
+        var rb=document.createElement('span');
+        rb.style.cssText='font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;background:'+ev.regulator.bg+';color:'+ev.regulator.color;
+        rb.textContent=ev.regulator.label;
+        titleRow.appendChild(rb);
+      }
+      info.appendChild(titleRow);
+
+      // Meta row
+      if(ev.meta||ev.badge){
+        var metaEl=document.createElement('div');
+        metaEl.style.cssText='font-size:11px;color:#6b7280';
+        metaEl.textContent=(ev.badge||'')+(ev.meta?' · '+ev.meta:'');
+        info.appendChild(metaEl);
+      }
+
+      // Duration for audits
+      if(ev.durationDays){
+        var durEl=document.createElement('div');
+        durEl.style.cssText='font-size:10px;color:#9ca3af;margin-top:1px';
+        durEl.textContent='Duration: '+ev.durationDays+' day'+(ev.durationDays!==1?'s':'');
+        info.appendChild(durEl);
+      }
+
+      // Type badge
+      var badge=document.createElement('span');
+      var ts=TYPE_STYLES[ev.type]||'background:#f3f4f6;color:#374151';
+      badge.style.cssText=ts+';font-size:10px;font-weight:600;padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;align-self:flex-start';
+      badge.textContent=ev.badge||ev.type;
+
+      (function(navId){
+        item.onclick=function(){
+          if(navId==='nav-calendar') return;
+          var nb=document.getElementById(navId); if(nb) nb.click();
+          detailEl.style.display='none'; calSelectedDate=null;
+        };
+      })(ev.nav||'nav-items');
+
+      item.appendChild(dot); item.appendChild(info); item.appendChild(badge);
+      listEl.appendChild(item);
     });
   }
   detailEl.style.display='';
   setTimeout(function(){detailEl.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
 }
 
+// ── Nav ──────────────────────────────────────────────────────────
 function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}calSelectedDate=null;var det=document.getElementById('cal-day-detail');if(det)det.style.display='none';renderCalendar();}
 function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}calSelectedDate=null;var det=document.getElementById('cal-day-detail');if(det)det.style.display='none';renderCalendar();}
 function calGoToday(){var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();calSelectedDate=null;var det=document.getElementById('cal-day-detail');if(det)det.style.display='none';renderCalendar();}
+
+// ════════════════════════════════════════════════
+// CERT TRACKER — Save / Delete / Render
+// ════════════════════════════════════════════════
+
+async function saveScheduledAudit(){
+  if(!can('actions')){ noPermission('Only admin and manager can schedule audits.'); return; }
+  var name  = (document.getElementById('sa-name')||{}).value||'';
+  var start = (document.getElementById('sa-start')||{}).value||'';
+  if(!name.trim()){ alert('Please enter an audit name.'); return; }
+  if(!start){ alert('Please select a start date.'); return; }
+  var btn = document.querySelector('#schedule-audit-panel .btn-primary');
+  if(btn){ btn.disabled=true; btn.textContent='Saving…'; }
+  var framework = (document.getElementById('sa-framework')||{}).value||'';
+  var desc      = ((document.getElementById('sa-desc')||{}).value||'').trim();
+  var body = {
+    name:        name.trim(),
+    audit_type:  (document.getElementById('sa-type')||{}).value||'Internal',
+    start_date:  start||null,
+    end_date:    (document.getElementById('sa-end')||{}).value||null,
+    auditor:     (document.getElementById('sa-auditor')||{}).value.trim()||'',
+    description: desc + (framework ? (desc ? ' [Framework: '+framework+']' : '[Framework: '+framework+']') : '')
+  };
+  var res = await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
+  if(res&&res.ok){
+    closePanel();
+    ['sa-name','sa-start','sa-end','sa-auditor','sa-desc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    writeAuditLog('CREATE','Audit','Scheduled audit: '+name+' starting '+start);
+    showDueDateToast('','✅ Audit scheduled and added to calendar!');
+    await loadAll(); renderCalendar();
+  } else {
+    var et = res ? await res.text() : 'Network error';
+    alert('Error saving audit: '+et);
+    if(btn){ btn.disabled=false; btn.textContent='Save & add to calendar'; }
+  }
+}
+
+
+async function saveCertTracker(){
+  if(!can('actions')){noPermission('Only admin and manager can add certificates.');return;}
+  var name  = (document.getElementById('ct-name')||{}).value||'';
+  var type  = (document.getElementById('ct-type')||{}).value||'Custom';
+  var expiry= (document.getElementById('ct-expiry')||{}).value||'';
+  if(!name.trim()){alert('Please enter a certificate name.');return;}
+  if(!expiry){alert('Please select the expiry/renewal date.');return;}
+  var btn=document.querySelector('#cert-tracker-panel .btn-primary');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  var body={
+    cert_name:  name.trim(),
+    cert_type:  type,
+    cert_expiry:expiry,
+    owner:      (document.getElementById('ct-owner')||{}).value.trim()||'',
+    regulator:  (document.getElementById('ct-regulator')||{}).value.trim()||'',
+    frequency:  (document.getElementById('ct-frequency')||{}).value||'Annual',
+    notes:      (document.getElementById('ct-notes')||{}).value.trim()||''
+  };
+  var res=await api('grc_cert_tracker',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});
+  if(res&&res.ok){
+    closePanel();
+    ['ct-name','ct-expiry','ct-owner','ct-regulator','ct-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});
+    writeAuditLog('CREATE','CertTracker','Added cert: '+name+' expires '+expiry);
+    showDueDateToast('','Certificate added — calendar updated!');
+    await loadAll(); renderCalendar();
+  } else {
+    var et=res?await res.text():'Network error';
+    alert('Error saving certificate: '+et);
+    if(btn){btn.disabled=false;btn.textContent='Save certificate';}
+  }
+}
+
+async function deleteCertTracker(id,name){
+  if(!confirm('Delete "'+name+'" from tracker?')) return;
+  var res=await api('grc_cert_tracker?id=eq.'+id,{method:'DELETE',extra:{'Prefer':'return=minimal'}});
+  if(res&&res.ok){writeAuditLog('DELETE','CertTracker','Deleted cert: '+name);await loadAll();renderCalendar();}
+  else alert('Delete failed.');
+}
+
+function renderCertTrackerList(){
+  var el=document.getElementById('cert-tracker-list-wrap'); if(!el) return;
+  if(!certTrackers.length){
+    el.innerHTML='<div style="text-align:center;padding:28px;color:#9ca3af;font-size:13px"><div style="font-size:28px;margin-bottom:8px">📋</div>No certificates tracked yet.<br>Click <strong>+ Add certificate</strong> to start.</div>';
+    return;
+  }
+  var tod=today();
+  var sorted=certTrackers.slice().sort(function(a,b){return(a.cert_expiry||'')>(b.cert_expiry||'')?1:-1;});
+  var html='<div style="display:flex;flex-direction:column;gap:8px">';
+  sorted.forEach(function(ct){
+    var cfg=CERT_LEAD_TIMES[ct.cert_type]||CERT_LEAD_TIMES['Custom'];
+    var reg=getRegulatorStyle(ct.cert_type||ct.cert_name||'');
+    var dot=reg?reg.color:cfg.dot;
+    var nd=certNotifyDate(ct.cert_expiry,ct.cert_type);
+    var expDays=ct.cert_expiry?Math.ceil((new Date(ct.cert_expiry)-new Date(tod))/86400000):null;
+    var isExpired=expDays!==null&&expDays<0;
+    var isUrgent=expDays!==null&&expDays<=30;
+    var isWarn=expDays!==null&&expDays<=60;
+    var statusColor=isExpired?'#dc2626':isUrgent?'#dc2626':isWarn?'#d97706':'#15803d';
+    var statusBg=isExpired?'#fff1f2':isUrgent?'#fff1f2':isWarn?'#fffbeb':'#f0fdf4';
+    var statusText=isExpired?'⛔ Expired':(isUrgent?'🔴 Urgent':(isWarn?'🟡 Due soon':'🟢 OK'));
+    html+='<div style="background:#fff;border:1px solid '+(isExpired?'#fca5a5':isWarn?'#fde68a':'#e5e7eb')+';border-radius:10px;padding:12px 14px;display:flex;align-items:flex-start;gap:10px">';
+    html+='<div style="width:10px;height:10px;border-radius:50%;background:'+dot+';margin-top:3px;flex-shrink:0"></div>';
+    html+='<div style="flex:1;min-width:0">';
+    html+='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">';
+    html+='<span style="font-size:13px;font-weight:700;color:#111827">'+(ct.cert_name||ct.cert_type)+'</span>';
+    if(reg) html+='<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+reg.bg+';color:'+reg.color+'">'+reg.label+'</span>';
+    html+='<span style="font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px;background:'+statusBg+';color:'+statusColor+'">'+statusText+'</span>';
+    html+='</div>';
+    html+='<div style="font-size:11px;color:#6b7280;display:flex;gap:12px;flex-wrap:wrap">';
+    html+='<span>📅 Expires: <strong>'+( ct.cert_expiry||'—')+'</strong></span>';
+    if(expDays!==null) html+='<span style="color:'+statusColor+';font-weight:600">'+(isExpired?Math.abs(expDays)+'d ago':(expDays===0?'Today':expDays+'d left'))+'</span>';
+    html+='<span>⏰ Prep starts: '+(nd||'—')+'</span>';
+    if(ct.frequency) html+='<span>🔄 '+ct.frequency+'</span>';
+    if(ct.owner) html+='<span>👤 '+ct.owner+'</span>';
+    html+='</div>';
+    if(ct.notes) html+='<div style="font-size:11px;color:#9ca3af;margin-top:3px">'+ct.notes+'</div>';
+    html+='</div>';
+    html+='<button data-ctid="'+ct.id+'" data-ctname="'+encodeURIComponent(ct.cert_name||ct.cert_type||'')+'" class="ct-del-btn" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:2px 4px;flex-shrink:0" title="Delete cert">✕</button>';
+    html+='</div>';
+  });
+  html+='</div>';
+  el.innerHTML=html;
+  // Wire delete buttons via event delegation
+  el.querySelectorAll('.ct-del-btn').forEach(function(btn){
+    btn.onclick=function(e){
+      e.stopPropagation();
+      var id=btn.getAttribute('data-ctid');
+      var name=decodeURIComponent(btn.getAttribute('data-ctname')||'');
+      deleteCertTracker(id, name);
+    };
+  });
+}
 
 
 // ════════════════════════════════════════════════
