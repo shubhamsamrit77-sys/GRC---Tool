@@ -1974,6 +1974,16 @@ function getSystemPrompt(){
 }
 
 // ── Main chat handler ──
+function sendAIMessage(){
+  var inputEl = document.getElementById('ai-chat-input');
+  if(!inputEl) return;
+  var question = inputEl.value.trim();
+  if(!question) return;
+  inputEl.value = '';
+  askAI(question);
+}
+
+
 function askAI(question){
   if(!question || !question.trim()) return;
   addMsg(question, 'user');
@@ -5170,7 +5180,7 @@ function renderEvidence(){
 }
 function openEvidenceSubmitPanel(ev){document.getElementById('ev-submit-id').value=ev.id;var subEl=document.getElementById('ev-submit-sub');if(subEl)subEl.textContent='For: '+ev.title+' ('+ev.owner+')';var descBox=document.getElementById('ev-submit-desc-box');if(descBox)descBox.innerHTML='<strong>Required:</strong> '+(ev.description||ev.title||'—')+(ev.deadline?'<br><strong>Deadline:</strong> '+ev.deadline:'');document.getElementById('ev-link').value='';document.getElementById('ev-submit-notes').value='';openPanel('ev-submit-panel');}
 async function submitEvidence(){var id=document.getElementById('ev-submit-id').value;var link=document.getElementById('ev-link').value.trim();var notes=document.getElementById('ev-submit-notes').value.trim();if(!link){alert('Please provide the evidence link.');return;}var res=await api('grc_evidence?id=eq.'+id,{method:'PATCH',body:{status:'Submitted',evidence_link:link,submission_notes:notes,submitted_at:new Date().toISOString()},extra:{'Prefer':'return=minimal'}});if(res&&res.ok){closePanel();writeAuditLog('UPDATE','Evidence','Submitted evidence',{id:id});showDueDateToast('','Evidence submitted!');await loadAll();}}
-async function saveAudit(){if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}var name=document.getElementById('audit-name').value.trim();if(!name){alert('Please enter an audit name.');return;}var body={name:name,audit_type:document.getElementById('audit-type').value,start_date:document.getElementById('audit-start').value||null,end_date:document.getElementById('audit-end').value||null,auditor:document.getElementById('audit-auditor').value.trim(),description:document.getElementById('audit-desc').value.trim(),status:'Upcoming'};var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog('CREATE','Audit','Created audit: '+name);showDueDateToast('','Audit created!');await loadAll();}else alert('Error. Make sure grc_audits table exists in Supabase.');}
+async function saveAudit(){if(!can('actions')){noPermission('Only admin and manager can create audits.');return;}var name=document.getElementById('audit-name').value.trim();if(!name){alert('Please enter an audit name.');return;}var body={name:name,audit_type:document.getElementById('audit-type').value,start_date:document.getElementById('audit-start').value||null,end_date:document.getElementById('audit-end').value||null,auditor:document.getElementById('audit-auditor').value.trim(),description:document.getElementById('audit-desc').value.trim()};var res=await api('grc_audits',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();['audit-name','audit-start','audit-end','audit-auditor','audit-desc'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog('CREATE','Audit','Created audit: '+name);showDueDateToast('','Audit created!');await loadAll();}else alert('Error. Make sure grc_audits table exists in Supabase.');}
 async function saveEvidence(){if(!can('actions')){noPermission('Only admin and manager can manage evidence.');return;}var editId=document.getElementById('ev-edit-id').value;var title=document.getElementById('ev-title').value.trim();var owner=document.getElementById('ev-owner').value.trim();var dept=document.getElementById('ev-dept').value.trim();var deadline=document.getElementById('ev-deadline').value;var auditId=document.getElementById('ev-audit').value;if(!title){alert('Enter a title.');return;}if(!owner){alert('Assign an owner.');return;}if(!dept){alert('Enter team/department.');return;}if(!deadline){alert('Set a deadline.');return;}if(!auditId){alert('Select an audit first.');return;}var body={title:title,description:document.getElementById('ev-desc').value.trim(),audit_id:auditId,evidence_type:document.getElementById('ev-type').value,owner:owner,department:dept,email:document.getElementById('ev-email').value.trim(),deadline:deadline,priority:document.getElementById('ev-priority').value,control_ref:document.getElementById('ev-control').value.trim(),notes:document.getElementById('ev-notes').value.trim(),status:'Pending'};var res=editId?await api('grc_evidence?id=eq.'+editId,{method:'PATCH',body:body,extra:{'Prefer':'return=minimal'}}):await api('grc_evidence',{method:'POST',body:body,extra:{'Prefer':'return=representation'}});if(res&&res.ok){closePanel();document.getElementById('ev-edit-id').value='';['ev-title','ev-desc','ev-owner','ev-dept','ev-email','ev-deadline','ev-control','ev-notes'].forEach(function(id){var el=document.getElementById(id);if(el)el.value='';});writeAuditLog(editId?'UPDATE':'CREATE','Evidence',editId?'Updated evidence':'Created evidence: '+title,{owner:owner,deadline:deadline});showDueDateToast('',editId?'Updated!':'Evidence request created!');await loadAll();}else alert('Error. Make sure grc_evidence table exists.');}
 function editEvidence(ev){document.getElementById('evidence-panel-title').textContent='Edit evidence request';document.getElementById('ev-edit-id').value=ev.id;document.getElementById('ev-title').value=ev.title||'';document.getElementById('ev-desc').value=ev.description||'';document.getElementById('ev-audit').value=ev.audit_id||'';document.getElementById('ev-type').value=ev.evidence_type||'Screenshot';document.getElementById('ev-owner').value=ev.owner||'';document.getElementById('ev-dept').value=ev.department||'';document.getElementById('ev-email').value=ev.email||'';document.getElementById('ev-deadline').value=ev.deadline||'';document.getElementById('ev-priority').value=ev.priority||'Medium';document.getElementById('ev-control').value=ev.control_ref||'';document.getElementById('ev-notes').value=ev.notes||'';openPanel('evidence-panel');}
 function updateEvidenceBadge(){var cnt=evidenceItems.filter(function(e){var s=getEvidenceStatus(e);return s==='pending'||s==='overdue'||s==='submitted';}).length;var b=document.getElementById('evidence-badge');if(b){b.textContent=cnt;b.style.display=cnt>0?'inline-block':'none';}}
@@ -5678,91 +5688,60 @@ function openPdfFullscreen(){
 
 var CAL_MONTHS = ['January','February','March','April','May','June',
                   'July','August','September','October','November','December'];
-var CAL_DAYS   = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
 function calGetAllEvents(filterType){
-  var evts = [];
-  var tod  = today();
-
-  if(!filterType || filterType==='all' || filterType==='compliance'){
+  var evts=[], tod=today();
+  if(!filterType||filterType==='all'||filterType==='compliance'){
     items.forEach(function(it){
       if(!it.due_date) return;
-      var st = getStatus(it);
-      if(st==='done') return;
-      var isOv = st==='overdue';
-      evts.push({ date:it.due_date, title:it.name||'Compliance task',
-        type:isOv?'ev-overdue':'ev-compliance', dot:isOv?'#ef4444':'#5b5ef4',
-        badge:isOv?'Overdue':'Compliance',
-        meta:(it.stakeholder||'')+(it.dept?' · '+it.dept:''), nav:'nav-items' });
+      var st=getStatus(it); if(st==='done') return;
+      var isOv=st==='overdue';
+      evts.push({date:it.due_date,title:it.name||'Compliance task',type:isOv?'ev-overdue':'ev-compliance',dot:isOv?'#ef4444':'#5b5ef4',badge:isOv?'Overdue':'Compliance',meta:(it.stakeholder||'')+(it.dept?' · '+it.dept:''),nav:'nav-items'});
     });
   }
-
-  if(!filterType || filterType==='all' || filterType==='evidence'){
+  if(!filterType||filterType==='all'||filterType==='evidence'){
     evidenceItems.forEach(function(ev){
-      if(!ev.deadline || ev.status==='Approved') return;
-      var auditObj = audits.find(function(a){ return a.id===ev.audit_id; });
-      var isOv = ev.deadline < tod && ev.status!=='Submitted';
-      evts.push({ date:ev.deadline, title:ev.title||'Evidence request',
-        type:isOv?'ev-overdue':'ev-evidence', dot:isOv?'#ef4444':'#f59e0b',
-        badge:ev.status==='Submitted'?'Submitted':isOv?'Overdue':'Evidence',
-        meta:(ev.owner||'')+(auditObj?' · '+auditObj.name:''), nav:'nav-evidence' });
+      if(!ev.deadline||ev.status==='Approved') return;
+      var ao=audits.find(function(a){return a.id===ev.audit_id;});
+      var isOv=ev.deadline<tod&&ev.status!=='Submitted';
+      evts.push({date:ev.deadline,title:ev.title||'Evidence request',type:isOv?'ev-overdue':'ev-evidence',dot:isOv?'#ef4444':'#f59e0b',badge:ev.status==='Submitted'?'Submitted':isOv?'Overdue':'Evidence',meta:(ev.owner||'')+(ao?' · '+ao.name:''),nav:'nav-evidence'});
     });
   }
-
-  if(!filterType || filterType==='all' || filterType==='audit'){
+  if(!filterType||filterType==='all'||filterType==='audit'){
     audits.forEach(function(a){
-      var statusDot = a.status==='In Progress'?'#10b981':a.status==='On Hold'?'#f59e0b':a.status==='Completed'?'#9ca3af':'#4f52d9';
-      if(a.start_date) evts.push({ date:a.start_date, title:a.name||'Audit', type:'ev-audit', dot:statusDot,
-        badge:a.status==='In Progress'?'🟢 In Progress':a.status==='Upcoming'?'📅 Upcoming':(a.status||'Audit'),
-        meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''), nav:'nav-evidence' });
-      if(a.end_date && a.end_date!==a.start_date) evts.push({ date:a.end_date, title:(a.name||'Audit')+' (end)',
-        type:'ev-audit', dot:statusDot, badge:'Audit end',
-        meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''), nav:'nav-evidence' });
+      var sd=a.status==='In Progress'?'#10b981':a.status==='On Hold'?'#f59e0b':a.status==='Completed'?'#9ca3af':'#4f52d9';
+      if(a.start_date) evts.push({date:a.start_date,title:a.name||'Audit',type:'ev-audit',dot:sd,badge:a.status==='In Progress'?'🟢 In Progress':a.status==='Upcoming'?'📅 Upcoming':(a.status||'Audit'),meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''),nav:'nav-evidence'});
+      if(a.end_date&&a.end_date!==a.start_date) evts.push({date:a.end_date,title:(a.name||'Audit')+' (end)',type:'ev-audit',dot:sd,badge:'Audit end',meta:(a.audit_type||'')+(a.auditor?' · '+a.auditor:''),nav:'nav-evidence'});
     });
   }
-
-  if(!filterType || filterType==='all' || filterType==='action'){
+  if(!filterType||filterType==='all'||filterType==='action'){
     actions.forEach(function(ac){
-      if(!ac.due_date || ac.status==='Closed') return;
-      var isOv = typeof getActionStatus==='function' ? getActionStatus(ac)==='overdue' : ac.due_date < tod;
-      evts.push({ date:ac.due_date, title:ac.title||'Action item',
-        type:isOv?'ev-overdue':'ev-action', dot:isOv?'#ef4444':'#7c3aed',
-        badge:isOv?'Overdue':'Action',
-        meta:(ac.owner||'')+(ac.priority?' · '+ac.priority:''), nav:'nav-actions' });
+      if(!ac.due_date||ac.status==='Closed') return;
+      var isOv=typeof getActionStatus==='function'?getActionStatus(ac)==='overdue':ac.due_date<tod;
+      evts.push({date:ac.due_date,title:ac.title||'Action item',type:isOv?'ev-overdue':'ev-action',dot:isOv?'#ef4444':'#7c3aed',badge:isOv?'Overdue':'Action',meta:(ac.owner||'')+(ac.priority?' · '+ac.priority:''),nav:'nav-actions'});
     });
   }
-
-  if(!filterType || filterType==='all' || filterType==='risk'){
+  if(!filterType||filterType==='all'||filterType==='risk'){
     risks.forEach(function(r){
-      var score = (r.likelihood||1)*(r.impact||1);
-      if(score<15 || r.status==='Closed') return;
-      evts.push({ date:tod, title:r.name||'High risk', type:'ev-risk', dot:'#ef4444',
-        badge:'High risk ('+score+')',
-        meta:(r.category||'')+(r.owner?' · '+r.owner:''), nav:'nav-risks' });
+      var score=(r.likelihood||1)*(r.impact||1);
+      if(score<15||r.status==='Closed') return;
+      evts.push({date:tod,title:r.name||'High risk',type:'ev-risk',dot:'#ef4444',badge:'High risk ('+score+')',meta:(r.category||'')+(r.owner?' · '+r.owner:''),nav:'nav-risks'});
     });
   }
-
   return evts;
 }
 
 function calBuildSummary(allEvts){
-  var sumEl = document.getElementById('cal-summary');
-  if(!sumEl) return;
+  var sumEl=document.getElementById('cal-summary'); if(!sumEl) return;
   while(sumEl.firstChild) sumEl.removeChild(sumEl.firstChild);
-  var tod = today();
-  var in7 = new Date(); in7.setDate(in7.getDate()+7);
-  var in7Str = in7.toISOString().split('T')[0];
-  var monPrefix = calYear+'-'+String(calMonth+1).padStart(2,'0');
-  var thisMonth = allEvts.filter(function(e){ return e.date&&e.date.startsWith(monPrefix); }).length;
-  var overdue   = allEvts.filter(function(e){ return e.type==='ev-overdue'; }).length;
-  var next7     = allEvts.filter(function(e){ return e.date&&e.date>=tod&&e.date<=in7Str&&e.type!=='ev-overdue'; }).length;
-  var total     = allEvts.length;
-  [{l:'This month',v:thisMonth,color:'var(--primary)',cls:'mc-total'},
-   {l:'Overdue',   v:overdue,  color:'var(--danger)', cls:'mc-over'},
-   {l:'Next 7 days',v:next7,  color:'var(--warning)',cls:'mc-pct'},
-   {l:'Total events',v:total, color:'var(--text)',   cls:'mc-done'}
-  ].forEach(function(m){
-    var card=document.createElement('div'); card.className='metric-card '+m.cls;
+  var tod=today(), in7=new Date(); in7.setDate(in7.getDate()+7);
+  var in7Str=in7.toISOString().split('T')[0];
+  var monPrefix=calYear+'-'+String(calMonth+1).padStart(2,'0');
+  var thisMonth=allEvts.filter(function(e){return e.date&&e.date.startsWith(monPrefix);}).length;
+  var overdue=allEvts.filter(function(e){return e.type==='ev-overdue';}).length;
+  var next7=allEvts.filter(function(e){return e.date&&e.date>=tod&&e.date<=in7Str&&e.type!=='ev-overdue';}).length;
+  [{l:'This month',v:thisMonth,color:'var(--primary)'},{l:'Overdue',v:overdue,color:'var(--danger)'},{l:'Next 7 days',v:next7,color:'var(--warning)'},{l:'Total events',v:allEvts.length,color:'var(--text)'}].forEach(function(m){
+    var card=document.createElement('div'); card.className='metric-card';
     var val=document.createElement('div'); val.className='mc-val'; val.style.color=m.color; val.textContent=m.v;
     var lbl=document.createElement('div'); lbl.className='mc-label'; lbl.textContent=m.l;
     card.appendChild(val); card.appendChild(lbl); sumEl.appendChild(card);
@@ -5770,51 +5749,24 @@ function calBuildSummary(allEvts){
 }
 
 function renderUpcomingAudits(){
-  var el = document.getElementById('cal-upcoming-strip');
-  if(!el) return;
-  var tod = today();
-  var future = audits.filter(function(a){ return a.start_date&&a.start_date>=tod&&a.status!=='Completed'; })
-               .sort(function(a,b){ return a.start_date>b.start_date?1:-1; });
-  var ongoing = audits.filter(function(a){ return a.start_date&&a.start_date<=tod&&(!a.end_date||a.end_date>=tod)&&a.status!=='Completed'; });
-  if(!future.length&&!ongoing.length){ el.innerHTML=''; return; }
-  var sc={'Upcoming':{bg:'#ede9fe',text:'#4f52d9',border:'rgba(79,82,217,.2)'},'In Progress':{bg:'#e0f7f2',text:'#0d9e7e',border:'rgba(13,158,126,.2)'},'On Hold':{bg:'#fef3e2',text:'#b45309',border:'rgba(180,83,9,.2)'},'Completed':{bg:'#f0fdf4',text:'#166534',border:'rgba(22,101,52,.2)'}};
-  function dU(d){ return Math.ceil((new Date(d).getTime()-new Date(tod).getTime())/86400000); }
-  function dL(d){ return d===0?'today':d===1?'tomorrow':d<0?Math.abs(d)+'d ago':'in '+d+' days'; }
-  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px">'+
-    '<div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:12px">'+
-    '<span style="font-size:16px">📅</span> Audit schedule'+
-    (ongoing.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#e0f7f2;color:#0d9e7e">'+ongoing.length+' ongoing</span>':'')+
-    (future.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#4f52d9">'+future.length+' upcoming</span>':'')+
-    '</div><div style="display:flex;flex-direction:column;gap:8px">';
+  var el=document.getElementById('cal-upcoming-strip'); if(!el) return;
+  var tod=today();
+  var future=audits.filter(function(a){return a.start_date&&a.start_date>=tod&&a.status!=='Completed';}).sort(function(a,b){return a.start_date>b.start_date?1:-1;});
+  var ongoing=audits.filter(function(a){return a.start_date&&a.start_date<=tod&&(!a.end_date||a.end_date>=tod)&&a.status!=='Completed';});
+  if(!future.length&&!ongoing.length){el.innerHTML='';return;}
+  var sc={'Upcoming':{bg:'#ede9fe',t:'#4f52d9',b:'rgba(79,82,217,.2)'},'In Progress':{bg:'#e0f7f2',t:'#0d9e7e',b:'rgba(13,158,126,.2)'},'On Hold':{bg:'#fef3e2',t:'#b45309',b:'rgba(180,83,9,.2)'},'Completed':{bg:'#f0fdf4',t:'#166534',b:'rgba(22,101,52,.2)'}};
+  function dU(d){return Math.ceil((new Date(d).getTime()-new Date(tod).getTime())/86400000);}
+  function dL(d){return d===0?'today':d===1?'tomorrow':d<0?Math.abs(d)+'d ago':'in '+d+' days';}
+  var CAL_M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var html='<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px"><div style="font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;gap:8px;margin-bottom:12px"><span>📅</span> Audit schedule'+(ongoing.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#e0f7f2;color:#0d9e7e">'+ongoing.length+' ongoing</span>':'')+(future.length?'<span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;background:#ede9fe;color:#4f52d9">'+future.length+' upcoming</span>':'')+'</div><div style="display:flex;flex-direction:column;gap:8px">';
   ongoing.concat(future).slice(0,5).forEach(function(a){
     var c=sc[a.status]||sc['Upcoming'];
-    var isOngoing=a.start_date<=tod&&(!a.end_date||a.end_date>=tod);
+    var isOng=a.start_date<=tod&&(!a.end_date||a.end_date>=tod);
     var du=a.start_date?dU(a.start_date):null;
-    var dLabel=isOngoing?'Ongoing':(du!==null?dL(du):'');
+    var dLab=isOng?'Ongoing':(du!==null?dL(du):'');
     var prog='';
-    if(isOngoing&&a.start_date&&a.end_date){
-      var tot2=new Date(a.end_date).getTime()-new Date(a.start_date).getTime();
-      var done=new Date(tod).getTime()-new Date(a.start_date).getTime();
-      var pct=Math.min(100,Math.max(0,Math.round(done/tot2*100)));
-      prog='<div style="margin-top:6px;height:4px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#0d9e7e;border-radius:4px"></div></div>'+
-           '<div style="font-size:10px;color:var(--text3);margin-top:2px">'+pct+'% through audit period</div>';
-    }
-    html+='<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">'+
-      '<div style="width:42px;text-align:center;flex-shrink:0">'+
-        '<div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1">'+(a.start_date?a.start_date.split('-')[2]:'—')+'</div>'+
-        '<div style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase">'+(a.start_date?CAL_MONTHS[parseInt(a.start_date.split('-')[1])-1].substring(0,3):'')+'</div>'+
-      '</div>'+
-      '<div style="flex:1;min-width:0">'+
-        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px">'+
-          '<span style="font-size:13px;font-weight:600;color:var(--text)">'+(a.name||'Audit')+'</span>'+
-          '<span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+c.bg+';color:'+c.text+';border:1px solid '+c.border+'">'+(isOngoing?'🟢 In Progress':a.status)+'</span>'+
-        '</div>'+
-        '<div style="font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap">'+
-          '<span>'+(a.audit_type||'Internal')+'</span>'+(a.auditor?'<span>👤 '+a.auditor+'</span>':'')+
-          (a.end_date?'<span>Ends '+a.end_date+'</span>':'')+
-          '<span style="font-weight:600;color:'+(isOngoing?'#0d9e7e':'var(--primary)')+'">⏱ '+dLabel+'</span>'+
-        '</div>'+prog+
-      '</div></div>';
+    if(isOng&&a.start_date&&a.end_date){var tt=new Date(a.end_date).getTime()-new Date(a.start_date).getTime();var dn=new Date(tod).getTime()-new Date(a.start_date).getTime();var pct=Math.min(100,Math.max(0,Math.round(dn/tt*100)));prog='<div style="margin-top:6px;height:4px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:#0d9e7e;border-radius:4px"></div></div><div style="font-size:10px;color:var(--text3);margin-top:2px">'+pct+'% through audit period</div>';}
+    html+='<div style="display:flex;align-items:flex-start;gap:12px;padding:10px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px"><div style="width:42px;text-align:center;flex-shrink:0"><div style="font-size:18px;font-weight:800;color:var(--primary);line-height:1">'+(a.start_date?a.start_date.split('-')[2]:'—')+'</div><div style="font-size:9px;font-weight:600;color:var(--text3);text-transform:uppercase">'+(a.start_date?CAL_M[parseInt(a.start_date.split('-')[1])-1].substring(0,3):'')+'</div></div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:3px"><span style="font-size:13px;font-weight:600;color:var(--text)">'+(a.name||'Audit')+'</span><span style="font-size:10px;font-weight:700;padding:2px 7px;border-radius:20px;background:'+c.bg+';color:'+c.t+';border:1px solid '+c.b+'">'+(isOng?'🟢 In Progress':(a.status||'Upcoming'))+'</span></div><div style="font-size:11px;color:var(--text2);display:flex;gap:10px;flex-wrap:wrap"><span>'+(a.audit_type||'Internal')+'</span>'+(a.auditor?'<span>👤 '+a.auditor+'</span>':'')+(a.end_date?'<span>Ends '+a.end_date+'</span>':'')+'<span style="font-weight:600;color:'+(isOng?'#0d9e7e':'var(--primary)')+'">⏱ '+dLab+'</span></div>'+prog+'</div></div>';
   });
   html+='</div></div>';
   el.innerHTML=html;
@@ -5828,60 +5780,55 @@ function renderCalendar(){
     calBuildSummary(allEvts);
     renderUpcomingAudits();
     var titleEl=document.getElementById('cal-month-title');
-    if(titleEl) titleEl.textContent=CAL_MONTHS[calMonth]+' '+calYear;
+    var CAL_M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    if(titleEl) titleEl.textContent=CAL_M[calMonth]+' '+calYear;
     var evMap={};
-    allEvts.forEach(function(ev){ if(!ev.date) return; if(!evMap[ev.date]) evMap[ev.date]=[]; evMap[ev.date].push(ev); });
-    Object.keys(evMap).forEach(function(dt){
-      evMap[dt].sort(function(a,b){ var o={'ev-overdue':0,'ev-compliance':1,'ev-evidence':2,'ev-audit':3,'ev-action':4,'ev-risk':5}; return (o[a.type]||9)-(o[b.type]||9); });
-    });
-    var grid=document.getElementById('cal-days-grid');
-    if(!grid) return;
+    allEvts.forEach(function(ev){if(!ev.date)return;if(!evMap[ev.date])evMap[ev.date]=[];evMap[ev.date].push(ev);});
+    Object.keys(evMap).forEach(function(dt){evMap[dt].sort(function(a,b){var o={'ev-overdue':0,'ev-compliance':1,'ev-evidence':2,'ev-audit':3,'ev-action':4,'ev-risk':5};return(o[a.type]||9)-(o[b.type]||9);});});
+    var grid=document.getElementById('cal-days-grid'); if(!grid) return;
     while(grid.firstChild) grid.removeChild(grid.firstChild);
-    var firstWeekday=new Date(calYear,calMonth,1).getDay();
-    var daysInMonth=new Date(calYear,calMonth+1,0).getDate();
-    var daysInPrev=new Date(calYear,calMonth,0).getDate();
+    var firstWd=new Date(calYear,calMonth,1).getDay();
+    var dIM=new Date(calYear,calMonth+1,0).getDate();
+    var dIP=new Date(calYear,calMonth,0).getDate();
     var todStr=today();
-    for(var p=firstWeekday-1;p>=0;p--) grid.appendChild(buildCalCell(calYear,calMonth-1,daysInPrev-p,evMap,todStr,true));
-    for(var d=1;d<=daysInMonth;d++) grid.appendChild(buildCalCell(calYear,calMonth,d,evMap,todStr,false));
-    var filled=firstWeekday+daysInMonth;
-    var trail=filled%7===0?0:7-(filled%7);
+    for(var p=firstWd-1;p>=0;p--) grid.appendChild(buildCalCell(calYear,calMonth-1,dIP-p,evMap,todStr,true));
+    for(var d=1;d<=dIM;d++) grid.appendChild(buildCalCell(calYear,calMonth,d,evMap,todStr,false));
+    var filled=firstWd+dIM; var trail=filled%7===0?0:7-(filled%7);
     for(var n=1;n<=trail;n++) grid.appendChild(buildCalCell(calYear,calMonth+1,n,evMap,todStr,true));
-    if(calSelectedDate){ var sel=grid.querySelector('[data-date="'+calSelectedDate+'"]'); if(sel) sel.classList.add('selected'); }
-  }catch(e){ console.warn('Calendar render error:',e.message); }
+    if(calSelectedDate){var sel=grid.querySelector('[data-date="'+calSelectedDate+'"]');if(sel)sel.classList.add('selected');}
+  }catch(e){console.warn('Calendar render error:',e.message);}
 }
 
 function buildCalCell(year,month,day,evMap,todStr,otherMonth){
   var dateObj=new Date(year,month,day);
   var dateStr=dateObj.getFullYear()+'-'+String(dateObj.getMonth()+1).padStart(2,'0')+'-'+String(dateObj.getDate()).padStart(2,'0');
-  var isToday=dateStr===todStr, isSelected=dateStr===calSelectedDate;
+  var isToday=dateStr===todStr,isSel=dateStr===calSelectedDate;
   var cell=document.createElement('div');
-  cell.className='cal-day'+(otherMonth?' other-month':'')+(isToday?' today':'')+(isSelected?' selected':'');
+  cell.className='cal-day'+(otherMonth?' other-month':'')+(isToday?' today':'')+(isSel?' selected':'');
   cell.setAttribute('data-date',dateStr);
-  var numDiv=document.createElement('div'); numDiv.className='cal-day-num'; numDiv.textContent=dateObj.getDate(); cell.appendChild(numDiv);
-  var dayEvts=evMap[dateStr]||[], MAX_SHOW=3;
-  dayEvts.slice(0,MAX_SHOW).forEach(function(ev){
+  var num=document.createElement('div'); num.className='cal-day-num'; num.textContent=dateObj.getDate(); cell.appendChild(num);
+  var dayEvts=evMap[dateStr]||[], MAX=3;
+  dayEvts.slice(0,MAX).forEach(function(ev){
     var pill=document.createElement('div'); pill.className='cal-event '+ev.type; pill.textContent=ev.title;
     pill.title=ev.badge+' — '+ev.title+(ev.meta?' ('+ev.meta+')':'');
-    pill.onclick=function(e){ e.stopPropagation(); calSelectDay(dateStr,evMap[dateStr]||[]); }; cell.appendChild(pill);
+    pill.onclick=function(e){e.stopPropagation();calSelectDay(dateStr,evMap[dateStr]||[]);};
+    cell.appendChild(pill);
   });
-  if(dayEvts.length>MAX_SHOW){ var more=document.createElement('div'); more.className='cal-more'; more.textContent='+'+(dayEvts.length-MAX_SHOW)+' more'; more.onclick=function(e){ e.stopPropagation(); calSelectDay(dateStr,dayEvts); }; cell.appendChild(more); }
-  cell.onclick=function(){ calSelectDay(dateStr,evMap[dateStr]||[]); };
+  if(dayEvts.length>MAX){var more=document.createElement('div');more.className='cal-more';more.textContent='+'+(dayEvts.length-MAX)+' more';more.onclick=function(e){e.stopPropagation();calSelectDay(dateStr,dayEvts);};cell.appendChild(more);}
+  cell.onclick=function(){calSelectDay(dateStr,evMap[dateStr]||[]);};
   return cell;
 }
 
 function calSelectDay(dateStr,dayEvts){
-  document.querySelectorAll('.cal-day.selected').forEach(function(c){ c.classList.remove('selected'); });
-  var selCell=document.querySelector('.cal-day[data-date="'+dateStr+'"]');
-  if(selCell) selCell.classList.add('selected');
+  document.querySelectorAll('.cal-day.selected').forEach(function(c){c.classList.remove('selected');});
+  var selCell=document.querySelector('.cal-day[data-date="'+dateStr+'"]'); if(selCell) selCell.classList.add('selected');
   calSelectedDate=dateStr;
-  var detailEl=document.getElementById('cal-day-detail');
-  var listEl=document.getElementById('cal-detail-list');
-  var titleEl=document.getElementById('cal-detail-date-title');
+  var detailEl=document.getElementById('cal-day-detail'),listEl=document.getElementById('cal-detail-list'),titleEl=document.getElementById('cal-detail-date-title');
   if(!detailEl||!listEl) return;
-  var parts=dateStr.split('-');
-  var d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  var CAL_M=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var parts=dateStr.split('-'),d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
   var dayNames=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-  if(titleEl) titleEl.textContent=dayNames[d.getDay()]+', '+CAL_MONTHS[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
+  if(titleEl) titleEl.textContent=dayNames[d.getDay()]+', '+CAL_M[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear();
   while(listEl.firstChild) listEl.removeChild(listEl.firstChild);
   if(!dayEvts.length){
     var empty=document.createElement('div'); empty.style.cssText='padding:28px 16px;text-align:center;font-size:13px;color:var(--text3)';
@@ -5895,19 +5842,19 @@ function calSelectDay(dateStr,dayEvts){
       var meta=document.createElement('div'); meta.className='cal-detail-meta'; meta.textContent=ev.badge+(ev.meta?' · '+ev.meta:'');
       info.appendChild(name); info.appendChild(meta);
       var badge=document.createElement('span'); badge.className='badge';
-      var typeStyles={'ev-compliance':'background:var(--primary-light);color:var(--primary)','ev-evidence':'background:var(--warning-light);color:var(--warning)','ev-audit':'background:var(--success-light);color:var(--success)','ev-action':'background:rgba(124,58,237,.12);color:#7c3aed','ev-risk':'background:var(--danger-light);color:var(--danger)','ev-overdue':'background:var(--danger-light);color:var(--danger)'};
-      badge.style.cssText=(typeStyles[ev.type]||'')+';white-space:nowrap;font-size:10px'; badge.textContent=ev.badge;
-      (function(navId){ item.onclick=function(){ var nb=document.getElementById(navId); if(nb)nb.click(); detailEl.style.display='none'; calSelectedDate=null; }; })(ev.nav||'nav-items');
+      var ts={'ev-compliance':'background:var(--primary-light);color:var(--primary)','ev-evidence':'background:var(--warning-light);color:var(--warning)','ev-audit':'background:var(--success-light);color:var(--success)','ev-action':'background:rgba(124,58,237,.12);color:#7c3aed','ev-risk':'background:var(--danger-light);color:var(--danger)','ev-overdue':'background:var(--danger-light);color:var(--danger)'};
+      badge.style.cssText=(ts[ev.type]||'')+';white-space:nowrap;font-size:10px'; badge.textContent=ev.badge;
+      (function(navId){item.onclick=function(){var nb=document.getElementById(navId);if(nb)nb.click();detailEl.style.display='none';calSelectedDate=null;};})(ev.nav||'nav-items');
       item.appendChild(dot); item.appendChild(info); item.appendChild(badge); listEl.appendChild(item);
     });
   }
   detailEl.style.display='';
-  setTimeout(function(){ detailEl.scrollIntoView({behavior:'smooth',block:'nearest'}); },50);
+  setTimeout(function(){detailEl.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
 }
 
-function calNext(){ calMonth++; if(calMonth>11){calMonth=0;calYear++;} calSelectedDate=null; var det=document.getElementById('cal-day-detail'); if(det)det.style.display='none'; renderCalendar(); }
-function calPrev(){ calMonth--; if(calMonth<0){calMonth=11;calYear--;} calSelectedDate=null; var det=document.getElementById('cal-day-detail'); if(det)det.style.display='none'; renderCalendar(); }
-function calGoToday(){ var now=new Date(); calYear=now.getFullYear(); calMonth=now.getMonth(); calSelectedDate=null; var det=document.getElementById('cal-day-detail'); if(det)det.style.display='none'; renderCalendar(); }
+function calNext(){calMonth++;if(calMonth>11){calMonth=0;calYear++;}calSelectedDate=null;var det=document.getElementById('cal-day-detail');if(det)det.style.display='none';renderCalendar();}
+function calPrev(){calMonth--;if(calMonth<0){calMonth=11;calYear--;}calSelectedDate=null;var det=document.getElementById('cal-day-detail');if(det)det.style.display='none';renderCalendar();}
+function calGoToday(){var now=new Date();calYear=now.getFullYear();calMonth=now.getMonth();calSelectedDate=null;var det=document.getElementById('cal-day-detail');if(det)det.style.display='none';renderCalendar();}
 
 
 // ════════════════════════════════════════════════
