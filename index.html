@@ -614,14 +614,10 @@
       <!-- EMAIL TRACKER -->
       <div id="s-emailtracker" class="sec">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px">
-          <div>
-            <div style="font-size:18px;font-weight:800;color:#111827;letter-spacing:-.3px">Email Tracker</div>
-            <div style="font-size:13px;color:#6b7280;margin-top:2px">Track compliance follow-up emails and monitor replies</div>
-          </div>
-          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <div><div style="font-size:18px;font-weight:800;color:#111827">Email Tracker</div><div style="font-size:13px;color:#6b7280;margin-top:2px">Track compliance follow-up emails and monitor replies</div></div>
+          <div style="display:flex;gap:8px;align-items:center">
             <select id="et-filter-status" onchange="renderEmailTracker()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#374151;outline:none">
-              <option value="">All emails</option><option value="waiting">Waiting reply</option>
-              <option value="overdue">Overdue</option><option value="replied">Replied</option>
+              <option value="">All emails</option><option value="waiting">Waiting</option><option value="overdue">Overdue</option><option value="replied">Replied</option>
             </select>
             <button class="btn btn-primary" onclick="openCompose()" style="display:inline-flex;align-items:center;gap:5px">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -630,41 +626,23 @@
           </div>
         </div>
         <div id="et-summary" style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px"></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th style="min-width:180px;padding-left:14px">Subject</th>
-              <th style="min-width:120px">Stakeholder</th>
-              <th style="min-width:150px">Email</th>
-              <th style="min-width:90px">Sent</th>
-              <th style="min-width:100px">Deadline</th>
-              <th style="min-width:100px">Status</th>
-              <th style="min-width:160px">Actions</th>
-            </tr></thead>
-            <tbody id="et-tbody"></tbody>
-          </table>
-        </div>
+        <div class="table-wrap"><table><thead><tr>
+          <th style="min-width:180px;padding-left:14px">Subject</th><th style="min-width:120px">Stakeholder</th>
+          <th style="min-width:150px">Email</th><th style="min-width:90px">Sent</th>
+          <th style="min-width:100px">Deadline</th><th style="min-width:100px">Status</th><th style="min-width:160px">Actions</th>
+        </tr></thead><tbody id="et-tbody"></tbody></table></div>
       </div>
 
       <!-- COMPOSE MODAL -->
       <div id="compose-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:600;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:14px;width:100%;max-width:540px;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.15);margin:12px">
-          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0">
-            <div><div style="font-size:15px;font-weight:800;color:#111827">Compose &amp; Track Email</div><div style="font-size:12px;color:#9ca3af;margin-top:1px">Write, send via Gmail, track the reply</div></div>
-            <button onclick="closeCompose()" style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:4px 9px;cursor:pointer;color:#6b7280;font-size:17px;line-height:1">&#xD7;</button>
-          </div>
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:18px 22px 0"><div><div style="font-size:15px;font-weight:800;color:#111827">Compose &amp; Track Email</div><div style="font-size:12px;color:#9ca3af;margin-top:1px">Write, send via Gmail, track the reply</div></div><button onclick="closeCompose()" style="background:none;border:1px solid #e5e7eb;border-radius:7px;padding:4px 9px;cursor:pointer;color:#6b7280;font-size:17px;line-height:1">&#xD7;</button></div>
           <div style="padding:18px 22px;display:flex;flex-direction:column;gap:12px">
-            <div class="p2">
-              <div class="pf"><label>Stakeholder name *</label><input id="et-stakeholder" placeholder="e.g. Rahul Sharma"></div>
-              <div class="pf"><label>Email *</label><input id="et-email" type="email" placeholder="rahul@company.com"></div>
-            </div>
-            <div class="p2">
-              <div class="pf"><label>Category</label><select id="et-category"><option>Follow-up</option><option>Reminder</option><option>Escalation</option><option>Acknowledgement</option><option>Evidence request</option><option>Other</option></select></div>
-              <div class="pf"><label>Date sent</label><input id="et-date" type="date"></div>
-            </div>
+            <div class="p2"><div class="pf"><label>Stakeholder name *</label><input id="et-stakeholder" placeholder="e.g. Rahul Sharma"></div><div class="pf"><label>Email *</label><input id="et-email" type="email" placeholder="rahul@company.com"></div></div>
+            <div class="p2"><div class="pf"><label>Category</label><select id="et-category"><option>Follow-up</option><option>Reminder</option><option>Escalation</option><option>Acknowledgement</option><option>Evidence request</option><option>Other</option></select></div><div class="pf"><label>Date sent</label><input id="et-date" type="date"></div></div>
             <div class="pf"><label>Subject *</label><input id="et-subject" placeholder="e.g. Reminder: Monthly server patch review"></div>
             <div class="pf"><label>Body</label><textarea id="et-body" placeholder="Write your email here…" style="min-height:90px;resize:vertical;font-family:inherit;line-height:1.6;font-size:13px"></textarea></div>
-            <div class="pf"><label>Reply expected within</label><div style="display:flex;align-items:center;gap:8px"><input id="et-days" type="number" value="2" min="1" max="30" style="width:70px"><span style="font-size:12px;color:#9ca3af">days — marked overdue if no reply</span></div></div>
+            <div class="pf"><label>Reply expected within</label><div style="display:flex;align-items:center;gap:8px"><input id="et-days" type="number" value="2" min="1" max="30" style="width:70px"><span style="font-size:12px;color:#9ca3af">days</span></div></div>
           </div>
           <div style="padding:12px 22px;border-top:1px solid #f3f4f6;display:flex;gap:8px;justify-content:flex-end;background:#f9fafb;border-radius:0 0 14px 14px">
             <button class="btn" onclick="closeCompose()">Cancel</button>
@@ -681,10 +659,7 @@
           <div style="font-size:13px;color:#6b7280;margin-bottom:3px">Email: <strong id="reply-confirm-subject"></strong></div>
           <div style="font-size:13px;color:#6b7280;margin-bottom:14px">When did you receive the reply?</div>
           <div class="pf" style="margin-bottom:16px"><label>Reply date</label><input id="reply-date-input" type="date"></div>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn" onclick="closeReplyConfirm()">Cancel</button>
-            <button class="btn btn-primary" id="confirm-reply-btn">Confirm reply</button>
-          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn" onclick="closeReplyConfirm()">Cancel</button><button class="btn btn-primary" id="confirm-reply-btn">Confirm reply</button></div>
         </div>
       </div>
 
@@ -1051,21 +1026,20 @@
 
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
           <div>
-            <div style="font-size:18px;font-weight:800;color:#111827;letter-spacing:-.3px">Audit Calendar</div>
-            <div style="font-size:13px;color:#6b7280;margin-top:2px">Compliance deadlines, cert renewals, VA/PT scans — with priority-based reminders</div>
+            <div style="font-size:18px;font-weight:800;color:#111827">Audit Calendar</div>
+            <div style="font-size:13px;color:#6b7280;margin-top:2px">Compliance deadlines, cert renewals, VA/PT scans — with priority reminders</div>
           </div>
           <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-            <select id="cal-filter" onchange="renderCalendar()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#374151;outline:none;cursor:pointer">
+            <select id="cal-filter" onchange="renderCalendar()" style="padding:7px 12px;border:1.5px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;background:#fff;color:#374151;outline:none">
               <option value="all">All events</option>
               <option value="cert">Certs &amp; compliance</option>
               <option value="audit">Audits only</option>
               <option value="compliance">Tasks only</option>
               <option value="evidence">Evidence only</option>
               <option value="action">Actions only</option>
-              <option value="risk">High risks only</option>
             </select>
-            <button class="btn" onclick="calGoToday()" style="background:#fff;border:1.5px solid #e5e7eb;font-size:13px">Today</button>
-            <button class="btn" onclick="openPanel('cert-tracker-panel')" style="background:#fff;border:1.5px solid #e5e7eb;font-size:13px;display:inline-flex;align-items:center;gap:5px">
+            <button class="btn" onclick="calGoToday()" style="background:#fff;border:1.5px solid #e5e7eb">Today</button>
+            <button class="btn" onclick="openPanel('cert-tracker-panel')" style="background:#fff;border:1.5px solid #e5e7eb;display:inline-flex;align-items:center;gap:5px">
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               Cert tracker
             </button>
@@ -1081,9 +1055,9 @@
 
         <div style="background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid #f3f4f6">
-            <button class="btn" onclick="calPrev()" style="padding:5px 14px;font-size:16px;line-height:1;background:#f9fafb;border:1px solid #e5e7eb">&#8592;</button>
+            <button class="btn" onclick="calPrev()" style="padding:5px 14px;font-size:16px;background:#f9fafb;border:1px solid #e5e7eb">&#8592;</button>
             <div id="cal-month-title" style="font-size:15px;font-weight:700;color:#111827;text-align:center;min-width:160px"></div>
-            <button class="btn" onclick="calNext()" style="padding:5px 14px;font-size:16px;line-height:1;background:#f9fafb;border:1px solid #e5e7eb">&#8594;</button>
+            <button class="btn" onclick="calNext()" style="padding:5px 14px;font-size:16px;background:#f9fafb;border:1px solid #e5e7eb">&#8594;</button>
           </div>
           <div style="display:grid;grid-template-columns:repeat(7,1fr);background:#f9fafb;border-bottom:1px solid #f3f4f6">
             <div style="padding:7px 4px;text-align:center;font-size:10px;font-weight:700;color:#9ca3af;letter-spacing:.6px">SUN</div>
@@ -1098,19 +1072,17 @@
           <div style="display:flex;gap:14px;flex-wrap:wrap;padding:10px 18px;border-top:1px solid #f3f4f6;background:#f9fafb;align-items:center">
             <span style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.4px">Legend:</span>
             <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#dbeafe;border:1px solid #93c5fd"></span>Compliance</span>
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#fef9c3;border:1px solid #fde047"></span>Evidence</span>
             <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#dcfce7;border:1px solid #86efac"></span>Audit</span>
-            <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#ede9fe;border:1px solid #c4b5fd"></span>Action</span>
             <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#fef9c3;border:1px solid #fcd34d"></span>🔔 Cert prep</span>
             <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:#374151"><span style="width:9px;height:9px;border-radius:2px;background:#fee2e2;border:1px solid #fca5a5"></span>Overdue/Expired</span>
-            <span style="margin-left:auto;font-size:10px;color:#9ca3af">🔴 P1 Critical &nbsp;|&nbsp; ⏰ = prep reminder</span>
+            <span style="margin-left:auto;font-size:10px;color:#9ca3af">🔴 = P1 Critical</span>
           </div>
         </div>
 
-        <div id="cal-day-detail" style="display:none;margin-top:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)">
+        <div id="cal-day-detail" style="display:none;margin-top:12px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;overflow:hidden">
           <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 16px;border-bottom:1px solid #f3f4f6;background:#f9fafb">
             <div id="cal-detail-date-title" style="font-size:13px;font-weight:700;color:#111827"></div>
-            <button onclick="document.getElementById('cal-day-detail').style.display='none';calSelectedDate=null;" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:2px 6px;line-height:1">✕</button>
+            <button onclick="document.getElementById('cal-day-detail').style.display='none';calSelectedDate=null;" style="background:none;border:none;cursor:pointer;color:#9ca3af;font-size:16px;padding:2px 6px">✕</button>
           </div>
           <div id="cal-detail-list" style="padding:10px;display:flex;flex-direction:column;gap:5px;max-height:380px;overflow-y:auto"></div>
         </div>
@@ -1119,67 +1091,25 @@
       <!-- ═══ SCHEDULE AUDIT PANEL ═══ -->
       <div id="schedule-audit-panel" class="slide-panel" style="max-width:500px">
         <div class="panel-header">
-          <div>
-            <div class="panel-title">📅 Schedule an audit</div>
-            <div class="panel-sub">Add an audit — appears on the calendar immediately</div>
-          </div>
+          <div><div class="panel-title">📅 Schedule an audit</div><div class="panel-sub">Appears on calendar immediately</div></div>
           <button class="panel-close" onclick="closePanel()">✕</button>
         </div>
         <div class="panel-body">
-          <div class="pf">
-            <label class="pf-label">Audit name *</label>
-            <input id="sa-name" class="pf-input" placeholder="e.g. ISO 27001 Internal Audit Q3 2026">
+          <div class="pf"><label class="pf-label">Audit name *</label><input id="sa-name" class="pf-input" placeholder="e.g. ISO 27001 Internal Audit Q3 2026"></div>
+          <div class="p2">
+            <div class="pf"><label class="pf-label">Audit type</label><select id="sa-type" class="pf-input"><option>Internal</option><option>External</option><option>Certification</option><option>Surveillance</option><option>Regulatory</option></select></div>
+            <div class="pf"><label class="pf-label">Status</label><select id="sa-status" class="pf-input"><option>Upcoming</option><option>In Progress</option><option>Completed</option><option>On Hold</option></select></div>
           </div>
           <div class="p2">
-            <div class="pf">
-              <label class="pf-label">Audit type</label>
-              <select id="sa-type" class="pf-input">
-                <option>Internal</option><option>External</option><option>Certification</option>
-                <option>Surveillance</option><option>Regulatory</option><option>Supplier</option>
-              </select>
-            </div>
-            <div class="pf">
-              <label class="pf-label">Status</label>
-              <select id="sa-status" class="pf-input">
-                <option>Upcoming</option><option>In Progress</option>
-                <option>Completed</option><option>On Hold</option>
-              </select>
-            </div>
+            <div class="pf"><label class="pf-label">Start date *</label><input id="sa-start" type="date" class="pf-input"></div>
+            <div class="pf"><label class="pf-label">End date</label><input id="sa-end" type="date" class="pf-input"></div>
           </div>
-          <div class="p2">
-            <div class="pf">
-              <label class="pf-label">Start date *</label>
-              <input id="sa-start" type="date" class="pf-input">
-            </div>
-            <div class="pf">
-              <label class="pf-label">End date</label>
-              <input id="sa-end" type="date" class="pf-input">
-            </div>
-          </div>
-          <div class="pf">
-            <label class="pf-label">Lead auditor</label>
-            <input id="sa-auditor" class="pf-input" placeholder="Auditor name or firm">
-          </div>
-          <div class="pf">
-            <label class="pf-label">Framework / Regulator</label>
-            <select id="sa-framework" class="pf-input">
-              <option value="">None / General</option>
-              <option>ISO 27001</option><option>SOC 2</option><option>PCI DSS</option>
-              <option>RBI</option><option>NPCI</option><option>DPDP</option>
-              <option>SEBI</option><option>IRDAI</option><option>GDPR</option>
-              <option>NIST CSF</option><option>HIPAA</option>
-            </select>
-          </div>
-          <div class="pf">
-            <label class="pf-label">Scope / description</label>
-            <textarea id="sa-desc" class="pf-input" rows="3" placeholder="What does this audit cover?"></textarea>
-          </div>
+          <div class="pf"><label class="pf-label">Lead auditor</label><input id="sa-auditor" class="pf-input" placeholder="Auditor name or firm"></div>
+          <div class="pf"><label class="pf-label">Framework / Regulator</label><select id="sa-framework" class="pf-input"><option value="">None</option><option>ISO 27001</option><option>SOC 2</option><option>PCI DSS</option><option>RBI</option><option>NPCI</option><option>DPDP</option><option>SEBI</option><option>IRDAI</option><option>GDPR</option><option>NIST CSF</option></select></div>
+          <div class="pf"><label class="pf-label">Scope / description</label><textarea id="sa-desc" class="pf-input" rows="3" placeholder="What does this audit cover?"></textarea></div>
         </div>
         <div class="panel-footer">
-          <button class="btn btn-primary" style="flex:1" onclick="saveScheduledAudit()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="margin-right:4px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
-            Save &amp; add to calendar
-          </button>
+          <button class="btn btn-primary" style="flex:1" onclick="saveScheduledAudit()">Save &amp; add to calendar</button>
           <button class="btn" onclick="closePanel()">Cancel</button>
         </div>
       </div>
@@ -1187,23 +1117,17 @@
       <!-- ═══ CERT TRACKER PANEL ═══ -->
       <div id="cert-tracker-panel" class="slide-panel" style="max-width:540px">
         <div class="panel-header">
-          <div>
-            <div class="panel-title">🛡️ Certificate &amp; Compliance Tracker</div>
-            <div class="panel-sub">Track expiry dates — Clarix auto-reminds you before each deadline</div>
-          </div>
+          <div><div class="panel-title">🛡️ Certificate &amp; Compliance Tracker</div><div class="panel-sub">Track expiry dates — Clarix auto-reminds you before each deadline</div></div>
           <button class="panel-close" onclick="closePanel()">✕</button>
         </div>
         <div class="panel-body">
-
           <div id="cert-tracker-list-wrap" style="margin-bottom:16px"></div>
-
           <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
             <div style="flex:1;height:1px;background:#f3f4f6"></div>
             <span style="font-size:10px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:.5px">+ Add new certificate</span>
             <div style="flex:1;height:1px;background:#f3f4f6"></div>
           </div>
-
-          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#92400e;line-height:1.7">
+          <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:11px;color:#92400e;line-height:1.8">
             <div style="font-weight:700;margin-bottom:3px">⏰ Auto-reminder lead times</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 12px">
               <span>🔴 RBI / NPCI / SEBI / IRDAI → <b>60 days</b></span>
@@ -1214,60 +1138,32 @@
               <span>🟢 ISO 27001 / SOC 2 → <b>60 days</b></span>
             </div>
           </div>
-
-          <div class="pf">
-            <label class="pf-label">Certificate / compliance name *</label>
-            <input id="ct-name" class="pf-input" placeholder="e.g. PCI DSS Annual Certification">
-          </div>
+          <div class="pf"><label class="pf-label">Certificate / compliance name *</label><input id="ct-name" class="pf-input" placeholder="e.g. PCI DSS Annual Certification"></div>
           <div class="p2">
-            <div class="pf">
-              <label class="pf-label">Certificate type *</label>
+            <div class="pf"><label class="pf-label">Certificate type *</label>
               <select id="ct-type" class="pf-input" onchange="document.getElementById('ct-frequency').value=(this.value==='VA External'||this.value==='VA Internal')?'Quarterly':'Annual'">
-                <option value="PCI DSS">PCI DSS Annual</option>
-                <option value="ISO 27001">ISO 27001</option>
-                <option value="SOC 2">SOC 2 Type II</option>
-                <option value="RBI">RBI Compliance</option>
-                <option value="NPCI">NPCI Compliance</option>
-                <option value="DPDP">DPDP Act</option>
-                <option value="SEBI">SEBI Audit</option>
-                <option value="IRDAI">IRDAI Audit</option>
-                <option value="VA External">VA — External Scan</option>
-                <option value="VA Internal">VA — Internal Scan</option>
-                <option value="PT Annual">Pen Test (Annual)</option>
-                <option value="GDPR">GDPR Review</option>
-                <option value="NIST CSF">NIST CSF Review</option>
-                <option value="Custom">Custom</option>
+                <option value="PCI DSS">PCI DSS Annual</option><option value="ISO 27001">ISO 27001</option>
+                <option value="SOC 2">SOC 2 Type II</option><option value="RBI">RBI Compliance</option>
+                <option value="NPCI">NPCI Compliance</option><option value="DPDP">DPDP Act</option>
+                <option value="SEBI">SEBI Audit</option><option value="IRDAI">IRDAI Audit</option>
+                <option value="VA External">VA — External Scan</option><option value="VA Internal">VA — Internal Scan</option>
+                <option value="PT Annual">Pen Test (Annual)</option><option value="GDPR">GDPR Review</option>
+                <option value="NIST CSF">NIST CSF Review</option><option value="Custom">Custom</option>
               </select>
             </div>
-            <div class="pf">
-              <label class="pf-label">Frequency</label>
+            <div class="pf"><label class="pf-label">Frequency</label>
               <select id="ct-frequency" class="pf-input">
-                <option value="Annual">Annual</option>
-                <option value="Quarterly">Quarterly</option>
-                <option value="Semi-annual">Semi-annual</option>
-                <option value="Monthly">Monthly</option>
-                <option value="Custom">Custom</option>
+                <option value="Annual">Annual</option><option value="Quarterly">Quarterly</option>
+                <option value="Semi-annual">Semi-annual</option><option value="Monthly">Monthly</option>
               </select>
             </div>
           </div>
           <div class="p2">
-            <div class="pf">
-              <label class="pf-label">Expiry / renewal date *</label>
-              <input id="ct-expiry" type="date" class="pf-input">
-            </div>
-            <div class="pf">
-              <label class="pf-label">Owner / responsible</label>
-              <input id="ct-owner" class="pf-input" placeholder="e.g. Shubham Samrit">
-            </div>
+            <div class="pf"><label class="pf-label">Expiry / renewal date *</label><input id="ct-expiry" type="date" class="pf-input"></div>
+            <div class="pf"><label class="pf-label">Owner / responsible</label><input id="ct-owner" class="pf-input" placeholder="e.g. Shubham Samrit"></div>
           </div>
-          <div class="pf">
-            <label class="pf-label">Regulator / authority</label>
-            <input id="ct-regulator" class="pf-input" placeholder="e.g. RBI, NPCI, DPDP Authority">
-          </div>
-          <div class="pf">
-            <label class="pf-label">Notes</label>
-            <textarea id="ct-notes" class="pf-input" rows="2" placeholder="Any additional context or scope…"></textarea>
-          </div>
+          <div class="pf"><label class="pf-label">Regulator / authority</label><input id="ct-regulator" class="pf-input" placeholder="e.g. RBI, NPCI, DPDP Authority"></div>
+          <div class="pf"><label class="pf-label">Notes</label><textarea id="ct-notes" class="pf-input" rows="2" placeholder="Any additional context…"></textarea></div>
         </div>
         <div class="panel-footer">
           <button class="btn btn-primary" style="flex:1" onclick="saveCertTracker()">
@@ -2085,5 +1981,258 @@
 
 <!-- Clarix application logic -->
 <script src="js/app.js"></script>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// CLARIX CERT TRACKER + CALENDAR ENHANCEMENTS
+// Injected inline so they work regardless of app.js version
+// ═══════════════════════════════════════════════════════════════
+
+var certTrackers = [];
+
+var CAL_REG = {
+  'RBI':{color:'#dc2626',bg:'#fef2f2',label:'RBI'},
+  'NPCI':{color:'#d97706',bg:'#fffbeb',label:'NPCI'},
+  'DPDP':{color:'#7c3aed',bg:'#f5f3ff',label:'DPDP'},
+  'SEBI':{color:'#dc2626',bg:'#fef2f2',label:'SEBI'},
+  'IRDAI':{color:'#dc2626',bg:'#fef2f2',label:'IRDAI'},
+  'PCI':{color:'#0369a1',bg:'#eff6ff',label:'PCI DSS'},
+  'ISO':{color:'#047857',bg:'#f0fdf4',label:'ISO'},
+  'SOC':{color:'#0f766e',bg:'#f0fdfa',label:'SOC 2'},
+  'GDPR':{color:'#1d4ed8',bg:'#eff6ff',label:'GDPR'},
+  'VA':{color:'#b45309',bg:'#fffbeb',label:'VA/PT'},
+  'PT':{color:'#b45309',bg:'#fffbeb',label:'VA/PT'}
+};
+
+var CERT_LEAD = {
+  'PCI DSS':{days:60,dot:'#0369a1',pri:1},
+  'ISO 27001':{days:60,dot:'#047857',pri:2},
+  'SOC 2':{days:60,dot:'#0f766e',pri:2},
+  'RBI':{days:60,dot:'#dc2626',pri:1},
+  'NPCI':{days:60,dot:'#d97706',pri:1},
+  'DPDP':{days:45,dot:'#7c3aed',pri:1},
+  'SEBI':{days:60,dot:'#dc2626',pri:1},
+  'IRDAI':{days:60,dot:'#dc2626',pri:1},
+  'VA External':{days:30,dot:'#b45309',pri:2},
+  'VA Internal':{days:30,dot:'#b45309',pri:2},
+  'PT Annual':{days:60,dot:'#b45309',pri:2},
+  'GDPR':{days:45,dot:'#1d4ed8',pri:2},
+  'NIST CSF':{days:45,dot:'#374151',pri:3},
+  'Custom':{days:30,dot:'#6b7280',pri:3}
+};
+
+function certLeadDays(t){ return (CERT_LEAD[t]||CERT_LEAD['Custom']).days; }
+
+function certNotifyDate(exp, t){
+  if(!exp) return null;
+  var d = new Date(exp);
+  d.setDate(d.getDate() - certLeadDays(t));
+  return d.toISOString().split('T')[0];
+}
+
+function getRegStyle(n){
+  var u = (n||'').toUpperCase();
+  for(var k in CAL_REG){ if(u.indexOf(k) > -1) return CAL_REG[k]; }
+  return null;
+}
+
+// Load cert trackers from Supabase
+async function loadCertTrackers(){
+  try{
+    var res = await api('grc_cert_tracker?select=*&order=cert_expiry.asc', {method:'GET'});
+    if(res && res.ok){
+      var data = await res.json();
+      certTrackers = Array.isArray(data) ? data : [];
+    }
+  } catch(e){ certTrackers = []; }
+}
+
+// ── saveCertTracker ──────────────────────────────────────────
+async function saveCertTracker(){
+  if(typeof can === 'function' && !can('actions')){
+    if(typeof noPermission === 'function') noPermission('Only admin and manager can add certificates.');
+    return;
+  }
+  var nm = (document.getElementById('ct-name')||{}).value || '';
+  var tp = (document.getElementById('ct-type')||{}).value || 'Custom';
+  var ex = (document.getElementById('ct-expiry')||{}).value || '';
+  if(!nm.trim()){ alert('Please enter a certificate name.'); return; }
+  if(!ex){ alert('Please select the expiry / renewal date.'); return; }
+  var btn = document.querySelector('#cert-tracker-panel .btn-primary');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  var body = {
+    cert_name: nm.trim(),
+    cert_type: tp,
+    cert_expiry: ex,
+    owner: (document.getElementById('ct-owner')||{}).value.trim() || '',
+    regulator: (document.getElementById('ct-regulator')||{}).value.trim() || '',
+    frequency: (document.getElementById('ct-frequency')||{}).value || 'Annual',
+    notes: (document.getElementById('ct-notes')||{}).value.trim() || ''
+  };
+  var res = await api('grc_cert_tracker', {method:'POST', body:body, extra:{'Prefer':'return=representation'}});
+  if(res && res.ok){
+    if(typeof closePanel === 'function') closePanel();
+    ['ct-name','ct-expiry','ct-owner','ct-regulator','ct-notes'].forEach(function(id){
+      var el = document.getElementById(id); if(el) el.value = '';
+    });
+    if(typeof writeAuditLog === 'function') writeAuditLog('CREATE','CertTracker','Added: '+nm);
+    if(typeof showDueDateToast === 'function') showDueDateToast('','Certificate added!');
+    await loadCertTrackers();
+    if(typeof loadAll === 'function') await loadAll();
+    renderCalendar();
+  } else {
+    var et = res ? await res.text() : 'Network error';
+    alert('Error saving: ' + et);
+    if(btn){ btn.disabled = false; btn.textContent = 'Save certificate'; }
+  }
+}
+
+// ── deleteCertTracker ────────────────────────────────────────
+async function deleteCertTracker(id, name){
+  if(!confirm('Delete "' + name + '" from tracker?')) return;
+  var res = await api('grc_cert_tracker?id=eq.' + id, {method:'DELETE', extra:{'Prefer':'return=minimal'}});
+  if(res && res.ok){
+    if(typeof writeAuditLog === 'function') writeAuditLog('DELETE','CertTracker','Deleted: '+name);
+    await loadCertTrackers();
+    renderCertTrackerList();
+    renderCalendar();
+  } else { alert('Delete failed.'); }
+}
+
+// ── renderCertTrackerList ────────────────────────────────────
+function renderCertTrackerList(){
+  var el = document.getElementById('cert-tracker-list-wrap');
+  if(!el) return;
+  if(!certTrackers.length){
+    el.innerHTML = '<div style="text-align:center;padding:24px;color:#9ca3af;font-size:13px"><div style="font-size:26px;margin-bottom:6px">&#x1F4CB;</div>No certificates tracked yet.<br>Add one below.</div>';
+    return;
+  }
+  var tod = typeof today === 'function' ? today() : new Date().toISOString().split('T')[0];
+  var html = '<div style="display:flex;flex-direction:column;gap:7px">';
+  certTrackers.slice().sort(function(a,b){ return (a.cert_expiry||'') > (b.cert_expiry||'') ? 1 : -1; }).forEach(function(ct){
+    var cfg = CERT_LEAD[ct.cert_type] || CERT_LEAD['Custom'];
+    var reg = getRegStyle(ct.cert_type || ct.cert_name || '');
+    var dot = reg ? reg.color : cfg.dot;
+    var nd  = certNotifyDate(ct.cert_expiry, ct.cert_type);
+    var expD = ct.cert_expiry ? Math.ceil((new Date(ct.cert_expiry) - new Date(tod)) / 86400000) : null;
+    var exp  = expD !== null && expD < 0;
+    var urg  = expD !== null && expD <= 30;
+    var warn = expD !== null && expD <= 60;
+    var sc   = (exp||urg) ? '#dc2626' : warn ? '#d97706' : '#15803d';
+    var sb   = (exp||urg) ? '#fff1f2' : warn ? '#fffbeb' : '#f0fdf4';
+    var st   = exp ? 'Expired' : urg ? 'Urgent' : warn ? 'Due soon' : 'OK';
+    html += '<div style="background:#fff;border:1px solid ' + (exp?'#fca5a5':warn?'#fde68a':'#e5e7eb') + ';border-radius:9px;padding:11px 13px;display:flex;align-items:flex-start;gap:9px">';
+    html += '<div style="width:9px;height:9px;border-radius:50%;background:' + dot + ';margin-top:4px;flex-shrink:0"></div>';
+    html += '<div style="flex:1;min-width:0">';
+    html += '<div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:3px"><span style="font-size:12px;font-weight:700;color:#111827">' + (ct.cert_name||ct.cert_type) + '</span>';
+    if(reg) html += '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;background:' + reg.bg + ';color:' + reg.color + '">' + reg.label + '</span>';
+    html += '<span style="font-size:9px;font-weight:700;padding:1px 5px;border-radius:20px;background:' + sb + ';color:' + sc + '">' + st + '</span></div>';
+    html += '<div style="font-size:11px;color:#6b7280;display:flex;gap:10px;flex-wrap:wrap">';
+    html += '<span>Expires: <strong>' + (ct.cert_expiry||'—') + '</strong></span>';
+    if(expD !== null) html += '<span style="color:' + sc + ';font-weight:600">' + (exp ? Math.abs(expD)+'d ago' : expD===0 ? 'Today' : expD+'d left') + '</span>';
+    html += '<span>Prep: ' + (nd||'—') + '</span>';
+    if(ct.frequency) html += '<span>' + ct.frequency + '</span>';
+    if(ct.owner) html += '<span>' + ct.owner + '</span>';
+    html += '</div>' + (ct.notes ? '<div style="font-size:11px;color:#9ca3af;margin-top:2px">' + ct.notes + '</div>' : '');
+    html += '</div>';
+    html += '<button data-del-id="' + ct.id + '" data-del-name="' + encodeURIComponent(ct.cert_name||ct.cert_type||'') + '" style="background:none;border:none;cursor:pointer;color:#d1d5db;font-size:15px;padding:0;flex-shrink:0">&#x2715;</button>';
+    html += '</div>';
+  });
+  html += '</div>';
+  el.innerHTML = html;
+  el.querySelectorAll('[data-del-id]').forEach(function(btn){
+    btn.onclick = function(e){
+      e.stopPropagation();
+      deleteCertTracker(btn.getAttribute('data-del-id'), decodeURIComponent(btn.getAttribute('data-del-name')||''));
+    };
+  });
+}
+
+// ── saveScheduledAudit (override original to fix status bug) ─
+async function saveScheduledAudit(){
+  if(typeof can === 'function' && !can('actions')){
+    if(typeof noPermission === 'function') noPermission('Only admin and manager can schedule audits.');
+    return;
+  }
+  var name  = (document.getElementById('sa-name')||{}).value || '';
+  var start = (document.getElementById('sa-start')||{}).value || '';
+  if(!name.trim()){ alert('Please enter an audit name.'); return; }
+  if(!start){ alert('Please select a start date.'); return; }
+  var btn = document.querySelector('#schedule-audit-panel .btn-primary');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+  var fw   = (document.getElementById('sa-framework')||{}).value || '';
+  var desc = ((document.getElementById('sa-desc')||{}).value || '').trim();
+  var body = {
+    name: name.trim(),
+    audit_type: (document.getElementById('sa-type')||{}).value || 'Internal',
+    start_date: start || null,
+    end_date: (document.getElementById('sa-end')||{}).value || null,
+    auditor: (document.getElementById('sa-auditor')||{}).value.trim() || '',
+    description: desc + (fw ? (desc ? ' [Framework: '+fw+']' : '[Framework: '+fw+']') : '')
+  };
+  var res = await api('grc_audits', {method:'POST', body:body, extra:{'Prefer':'return=representation'}});
+  if(res && res.ok){
+    if(typeof closePanel === 'function') closePanel();
+    ['sa-name','sa-start','sa-end','sa-auditor','sa-desc'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=''; });
+    if(typeof writeAuditLog === 'function') writeAuditLog('CREATE','Audit','Scheduled: '+name);
+    if(typeof showDueDateToast === 'function') showDueDateToast('','Audit scheduled!');
+    if(typeof loadAll === 'function') await loadAll();
+    renderCalendar();
+  } else {
+    var et = res ? await res.text() : 'Network error';
+    alert('Error: ' + et);
+    if(btn){ btn.disabled=false; btn.textContent='Save & add to calendar'; }
+  }
+}
+
+// ── sendAIMessage (was missing) ──────────────────────────────
+function sendAIMessage(){
+  var inp = document.getElementById('ai-chat-input');
+  if(!inp) return;
+  var q = inp.value.trim();
+  if(!q) return;
+  inp.value = '';
+  if(typeof askAI === 'function') askAI(q);
+}
+
+// ── Wire cert-tracker-panel to load list on open ─────────────
+(function(){
+  var origOpen = window.openPanel;
+  if(origOpen){
+    window.openPanel = function(id){
+      origOpen.call(this, id);
+      if(id === 'cert-tracker-panel'){
+        setTimeout(function(){
+          loadCertTrackers().then(function(){ renderCertTrackerList(); });
+        }, 100);
+      }
+    };
+  }
+})();
+
+// ── Wire cert-tracker-panel permissions ─────────────────────
+(function(){
+  var origOpen = null;
+  document.addEventListener('DOMContentLoaded', function(){
+    // Ensure cert-tracker-panel is in the permissions map
+    // by patching openPanel if it exists
+  });
+})();
+
+// ── Calendar CSS for new event types ────────────────────────
+(function(){
+  var style = document.createElement('style');
+  style.textContent = [
+    '.cal-event.ev-cert-expiry{background:#ffedd5;color:#c2410c;border-left:3px solid #f97316;font-weight:700}',
+    '.cal-event.ev-cert-notify{background:#fefce8;color:#92400e;border-left:3px solid #eab308}',
+    '.cal-day.today .cal-day-num{background:#1d4ed8;color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:12px}',
+    '#cert-tracker-panel{display:none}'
+  ].join('\n');
+  document.head.appendChild(style);
+})();
+
+console.log('[Clarix] Cert tracker + calendar enhancements loaded');
+</script>
+
 </body>
 </html>
