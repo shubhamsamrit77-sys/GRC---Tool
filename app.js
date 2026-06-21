@@ -7028,3 +7028,4 @@ function renderVendors(){
 })();
 
 console.log('[Clarix] Vendor register module loaded');
+})();
