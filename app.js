@@ -6751,3 +6751,280 @@ function updatePolicyBadge(){
   document.addEventListener('DOMContentLoaded',syncMbn);
   setTimeout(syncMbn,800);
 })();
+// ════════════════════════════════════════════════
+// VENDOR REGISTER — Third-Party Risk
+// ════════════════════════════════════════════════
+var vendors = [];
+window._vendorSearch = '';
+var activeVendorStatus = '';
+
+var VENDOR_RISK_COLOR = {
+  'Critical': {c:'#dc2626', bg:'#fff1f2', border:'#fca5a5'},
+  'High':     {c:'#d97706', bg:'#fffbeb', border:'#fde68a'},
+  'Medium':   {c:'#d97706', bg:'#fffbeb', border:'#fde68a'},
+  'Low':      {c:'#15803d', bg:'#f0fdf4', border:'#bbf7d0'}
+};
+var VENDOR_STATUS_COLOR = {
+  'Onboarding':       '#6b7280',
+  'Under Review':     '#d97706',
+  'Approved':         '#0369a1',
+  'Active':           '#15803d',
+  'Reassessment Due': '#dc2626',
+  'Offboarded':       '#9ca3af'
+};
+
+function vendorRiskTier(totalScore){
+  // total of 4 factors, each 0-5, max 20
+  if(totalScore >= 15) return 'Critical';
+  if(totalScore >= 10) return 'High';
+  if(totalScore >= 5)  return 'Medium';
+  return 'Low';
+}
+
+async function loadVendors(){
+  try{
+    var res = await api('grc_vendors?select=*&order=created_at.desc', {method:'GET'});
+    if(res && res.ok){
+      var data = await res.json();
+      vendors = Array.isArray(data) ? data : [];
+    }
+  } catch(e){ vendors = []; }
+}
+
+async function saveVendor(){
+  if(typeof can === 'function' && !can('actions')){
+    if(typeof noPermission === 'function') noPermission('Only admin and manager can manage vendors.');
+    return;
+  }
+  var name = (document.getElementById('v-name')||{}).value || '';
+  if(!name.trim()){ alert('Please enter a vendor name.'); return; }
+
+  var editId = (document.getElementById('vendor-edit-id')||{}).value || '';
+  var btn = document.querySelector('#vendor-panel .btn-primary');
+  if(btn){ btn.disabled = true; btn.textContent = 'Saving...'; }
+
+  var sData = parseInt((document.getElementById('v-score-data')||{}).value, 10) || 0;
+  var sOps  = parseInt((document.getElementById('v-score-ops')||{}).value, 10) || 0;
+  var sSec  = parseInt((document.getElementById('v-score-sec')||{}).value, 10) || 0;
+  var sComp = parseInt((document.getElementById('v-score-comp')||{}).value, 10) || 0;
+  var tier = vendorRiskTier(sData + sOps + sSec + sComp);
+
+  var body = {
+    vendor_name: name.trim(),
+    category: (document.getElementById('v-category')||{}).value || 'Other',
+    status: (document.getElementById('v-status')||{}).value || 'Onboarding',
+    data_access: (document.getElementById('v-data-access')||{}).value || 'Internal',
+    security_cert: (document.getElementById('v-security-cert')||{}).value || 'Unknown',
+    data_sensitivity_score: sData,
+    operational_criticality_score: sOps,
+    security_posture_score: sSec,
+    compliance_scope_score: sComp,
+    risk_tier: tier,
+    contract_start: (document.getElementById('v-contract-start')||{}).value || null,
+    contract_end: (document.getElementById('v-contract-end')||{}).value || null,
+    next_review_date: (document.getElementById('v-next-review')||{}).value || null,
+    owner: (document.getElementById('v-owner')||{}).value.trim() || '',
+    dpa_signed: (document.getElementById('v-dpa')||{}).value || 'No',
+    contact_name: (document.getElementById('v-contact-name')||{}).value.trim() || '',
+    contact_email: (document.getElementById('v-contact-email')||{}).value.trim() || '',
+    notes: (document.getElementById('v-notes')||{}).value.trim() || ''
+  };
+
+  var res = editId
+    ? await api('grc_vendors?id=eq.' + editId, {method:'PATCH', body:body, extra:{'Prefer':'return=minimal'}})
+    : await api('grc_vendors', {method:'POST', body:body, extra:{'Prefer':'return=representation'}});
+
+  if(res && res.ok){
+    if(typeof closePanel === 'function') closePanel();
+    resetVendorForm();
+    if(typeof writeAuditLog === 'function') writeAuditLog(editId ? 'UPDATE' : 'CREATE', 'Vendor', (editId ? 'Updated vendor: ' : 'Added vendor: ') + name);
+    if(typeof showDueDateToast === 'function') showDueDateToast('', editId ? 'Vendor updated!' : 'Vendor added!');
+    await loadVendors();
+    renderVendors();
+  } else {
+    var et = res ? await res.text() : 'Network error';
+    alert('Error saving: ' + et);
+  }
+  if(btn){ btn.disabled = false; btn.textContent = 'Save vendor'; }
+}
+
+function resetVendorForm(){
+  ['v-name','v-owner','v-contact-name','v-contact-email','v-notes','v-contract-start','v-contract-end','v-next-review'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '';
+  });
+  ['v-score-data','v-score-ops','v-score-sec','v-score-comp'].forEach(function(id){
+    var el = document.getElementById(id); if(el) el.value = '0';
+  });
+  document.getElementById('vendor-edit-id').value = '';
+  document.getElementById('vendor-panel-title').textContent = '🤝 Add vendor';
+}
+
+function editVendor(id){
+  var v = vendors.find(function(x){ return String(x.id) === String(id); });
+  if(!v) return;
+  document.getElementById('vendor-edit-id').value = v.id;
+  document.getElementById('v-name').value = v.vendor_name || '';
+  document.getElementById('v-category').value = v.category || 'Other';
+  document.getElementById('v-status').value = v.status || 'Onboarding';
+  document.getElementById('v-data-access').value = v.data_access || 'Internal';
+  document.getElementById('v-security-cert').value = v.security_cert || 'Unknown';
+  document.getElementById('v-score-data').value = v.data_sensitivity_score || 0;
+  document.getElementById('v-score-ops').value = v.operational_criticality_score || 0;
+  document.getElementById('v-score-sec').value = v.security_posture_score || 0;
+  document.getElementById('v-score-comp').value = v.compliance_scope_score || 0;
+  document.getElementById('v-contract-start').value = v.contract_start || '';
+  document.getElementById('v-contract-end').value = v.contract_end || '';
+  document.getElementById('v-next-review').value = v.next_review_date || '';
+  document.getElementById('v-owner').value = v.owner || '';
+  document.getElementById('v-dpa').value = v.dpa_signed || 'No';
+  document.getElementById('v-contact-name').value = v.contact_name || '';
+  document.getElementById('v-contact-email').value = v.contact_email || '';
+  document.getElementById('v-notes').value = v.notes || '';
+  document.getElementById('vendor-panel-title').textContent = '🤝 Edit vendor';
+  openPanel('vendor-panel');
+}
+
+async function deleteVendor(id, name){
+  if(typeof can === 'function' && !can('delete')){
+    if(typeof noPermission === 'function') noPermission('Only admin can delete vendors.');
+    return;
+  }
+  if(!confirm('Delete vendor "' + name + '"? This cannot be undone.')) return;
+  var res = await api('grc_vendors?id=eq.' + id, {method:'DELETE', extra:{'Prefer':'return=minimal'}});
+  if(res && res.ok){
+    if(typeof writeAuditLog === 'function') writeAuditLog('DELETE', 'Vendor', 'Deleted vendor: ' + name);
+    await loadVendors();
+    renderVendors();
+  } else { alert('Delete failed.'); }
+}
+
+function renderVendorSummary(){
+  var el = document.getElementById('vendor-summary');
+  if(!el) return;
+  var total = vendors.length;
+  var active = vendors.filter(function(v){ return v.status === 'Active'; }).length;
+  var critical = vendors.filter(function(v){ return v.risk_tier === 'Critical' || v.risk_tier === 'High'; }).length;
+  var dueReview = vendors.filter(function(v){
+    if(!v.next_review_date) return false;
+    var days = Math.ceil((new Date(v.next_review_date) - new Date(today())) / 86400000);
+    return days <= 30;
+  }).length;
+
+  var stats = [
+    {icon:'🤝', val:total, lbl:'Total vendors', color:'#5b5ef4', bg:'rgba(91,94,244,.1)'},
+    {icon:'✅', val:active, lbl:'Active', color:'#15803d', bg:'rgba(21,128,61,.1)'},
+    {icon:'⚠️', val:critical, lbl:'High / Critical risk', color:'#dc2626', bg:'rgba(220,38,38,.1)'},
+    {icon:'🗓', val:dueReview, lbl:'Review due in 30d', color:'#d97706', bg:'rgba(217,119,6,.1)'}
+  ];
+  el.innerHTML = stats.map(function(s){
+    return '<div class="tracker-stat"><div class="tracker-stat-icon" style="background:' + s.bg + ';color:' + s.color + '">' + s.icon + '</div><div><div class="tracker-stat-val" style="color:' + s.color + '">' + s.val + '</div><div class="tracker-stat-lbl">' + s.lbl + '</div></div></div>';
+  }).join('');
+}
+
+function renderVendorFilters(){
+  var el = document.getElementById('vendor-status-filters');
+  if(!el) return;
+  var statuses = ['Onboarding','Under Review','Approved','Active','Reassessment Due','Offboarded'];
+  var html = '<button class="filter-tag' + (activeVendorStatus === '' ? ' active' : '') + '" data-s="">All</button>';
+  statuses.forEach(function(s){
+    if(vendors.some(function(v){ return v.status === s; })){
+      html += '<button class="filter-tag' + (activeVendorStatus === s ? ' active' : '') + '" data-s="' + s + '">' + s + '</button>';
+    }
+  });
+  el.innerHTML = html;
+  el.querySelectorAll('.filter-tag').forEach(function(b){
+    b.onclick = function(){ activeVendorStatus = b.getAttribute('data-s'); renderVendorFilters(); renderVendors(); };
+  });
+}
+
+function renderVendors(){
+  renderVendorSummary();
+  renderVendorFilters();
+  var grid = document.getElementById('vendor-cards-grid');
+  if(!grid) return;
+
+  var q = (window._vendorSearch || '').toLowerCase();
+  var list = vendors.filter(function(v){
+    var matchesSearch = !q ||
+      (v.vendor_name||'').toLowerCase().indexOf(q) > -1 ||
+      (v.owner||'').toLowerCase().indexOf(q) > -1 ||
+      (v.category||'').toLowerCase().indexOf(q) > -1;
+    var matchesStatus = !activeVendorStatus || v.status === activeVendorStatus;
+    return matchesSearch && matchesStatus;
+  });
+
+  if(!list.length){
+    grid.innerHTML = '<div class="tracker-empty"><div class="tracker-empty-icon">🤝</div><div class="tracker-empty-title">' + (q || activeVendorStatus ? 'No vendors match' : 'No vendors yet') + '</div><div class="tracker-empty-sub">' + (q || activeVendorStatus ? 'Try a different search or filter' : 'Add your first vendor to start tracking third-party risk') + '</div>' + (q || activeVendorStatus ? '' : '<button class="btn btn-primary" onclick="openPanel(&quot;vendor-panel&quot;)">+ Add first vendor</button>') + '</div>';
+    return;
+  }
+
+  grid.innerHTML = list.map(function(v){
+    var tier = v.risk_tier || 'Low';
+    var rc = VENDOR_RISK_COLOR[tier] || VENDOR_RISK_COLOR['Low'];
+    var statusColor = VENDOR_STATUS_COLOR[v.status] || '#6b7280';
+    var reviewDays = v.next_review_date ? Math.ceil((new Date(v.next_review_date) - new Date(today())) / 86400000) : null;
+    var reviewLabel = reviewDays === null ? '—' : reviewDays < 0 ? Math.abs(reviewDays) + 'd overdue' : reviewDays === 0 ? 'Today' : reviewDays + 'd left';
+    var reviewColor = reviewDays === null ? 'var(--text3)' : reviewDays < 0 ? '#dc2626' : reviewDays <= 30 ? '#d97706' : '#15803d';
+
+    return '<div class="tc">' +
+      '<div class="tc-bar" style="background:' + rc.c + '"></div>' +
+      '<div class="tc-body">' +
+        '<div class="tc-header">' +
+          '<div class="tc-name">' + (v.vendor_name || '—') + '</div>' +
+          '<div class="tc-status"><span style="font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;background:' + rc.bg + ';color:' + rc.c + ';border:1px solid ' + rc.border + '">' + tier + ' risk</span></div>' +
+        '</div>' +
+        '<div class="tc-meta">' +
+          '<span class="tc-chip">' + (v.category || 'Other') + '</span>' +
+          '<span class="tc-chip" style="color:' + statusColor + ';border-color:' + statusColor + '33">' + (v.status || 'Onboarding') + '</span>' +
+          '<span class="tc-chip">Data: ' + (v.data_access || 'Internal') + '</span>' +
+        '</div>' +
+        '<div class="tc-footer">' +
+          '<div class="tc-person">👤 ' + (v.owner || 'Unassigned') + '</div>' +
+          '<div class="tc-due" style="color:' + reviewColor + '">Review: ' + reviewLabel + '</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="tc-actions">' +
+        '<button class="tc-btn" onclick="editVendor(\'' + v.id + '\')">Edit</button>' +
+        '<button class="tc-btn del-btn" onclick="deleteVendor(\'' + v.id + '\', ' + JSON.stringify(v.vendor_name || '').replace(/"/g, '&quot;') + ')">Delete</button>' +
+      '</div>' +
+    '</div>';
+  }).join('');
+}
+
+// ── Wire vendor nav button into navCfg-style switching ────────
+(function(){
+  var btn = document.getElementById('nav-vendors');
+  if(!btn) return;
+  btn.onclick = function(){
+    if(typeof can === 'function' && !can('actions')){
+      if(typeof noPermission === 'function') noPermission('Your role does not have access to this section.');
+      return;
+    }
+    document.querySelectorAll('.sb-btn').forEach(function(b){ b.classList.remove('active'); });
+    document.querySelectorAll('.sec').forEach(function(s){ s.classList.remove('active'); });
+    btn.classList.add('active');
+    var sec = document.getElementById('s-vendors');
+    if(sec) sec.classList.add('active');
+    document.getElementById('page-title').textContent = 'Vendor Register';
+    document.getElementById('page-sub').textContent = 'Third-party risk — onboarding, assessment and ongoing monitoring';
+    renderVendors();
+    if(window.innerWidth <= 600){
+      document.getElementById('sidebar').classList.remove('open');
+      document.getElementById('sb-overlay').classList.remove('open');
+    }
+  };
+})();
+
+// ── Load vendors on app start (hook into loadAll if present) ──
+(function(){
+  var origLoadAll = window.loadAll;
+  if(origLoadAll){
+    window.loadAll = async function(){
+      await origLoadAll.apply(this, arguments);
+      await loadVendors();
+      try{ renderVendors(); }catch(e){ console.warn('Vendor render error:', e.message); }
+    };
+  }
+})();
+
+console.log('[Clarix] Vendor register module loaded');
