@@ -6996,10 +6996,6 @@ function renderVendors(){
   var btn = document.getElementById('nav-vendors');
   if(!btn) return;
   btn.onclick = function(){
-    if(typeof can === 'function' && !can('actions')){
-      if(typeof noPermission === 'function') noPermission('Your role does not have access to this section.');
-      return;
-    }
     document.querySelectorAll('.sb-btn').forEach(function(b){ b.classList.remove('active'); });
     document.querySelectorAll('.sec').forEach(function(s){ s.classList.remove('active'); });
     btn.classList.add('active');
@@ -7025,6 +7021,6 @@ function renderVendors(){
       try{ renderVendors(); }catch(e){ console.warn('Vendor render error:', e.message); }
     };
   }
+})();
 
 console.log('[Clarix] Vendor register module loaded');
-
