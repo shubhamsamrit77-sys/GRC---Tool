@@ -7025,7 +7025,6 @@ function renderVendors(){
       try{ renderVendors(); }catch(e){ console.warn('Vendor render error:', e.message); }
     };
   }
-})();
 
 console.log('[Clarix] Vendor register module loaded');
 
